@@ -1,7 +1,7 @@
 {
-  "version": 5,
-  "updated": "10 sep 2026",
-  "description": "Feed automático de MacroTerminal V5: macro, bancos centrales, curvas y régimen Risk-On/Risk-Off.",
+  "version": 4,
+  "updated": "17/09/2026 01:24 UTC",
+  "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
       "id": "us",
@@ -107,52 +107,40 @@
         "tenors": [
           {
             "term": "3M",
-            "yield": "3.732%",
+            "yield": "4.140%",
             "change": "-0.29 pb",
             "isKey": false
           },
           {
             "term": "1Y",
-            "yield": "4.029%",
+            "yield": "4.450%",
             "change": "-1.90 pb",
             "isKey": false
           },
           {
             "term": "2Y",
-            "yield": "4.183%",
+            "yield": "4.740%",
             "change": "-1.90 pb",
             "isKey": true
           },
           {
             "term": "5Y",
-            "yield": "4.326%",
+            "yield": "4.860%",
             "change": "-0.10 pb",
             "isKey": false
           },
           {
             "term": "10Y",
-            "yield": "4.611%",
+            "yield": "5.010%",
             "change": "+0.20 pb",
             "isKey": true
-          },
-          {
-            "term": "20Y",
-            "yield": "5.168%",
-            "change": "+1.10 pb",
-            "isKey": false
-          },
-          {
-            "term": "30Y",
-            "yield": "5.167%",
-            "change": "+0.60 pb",
-            "isKey": false
           }
         ],
         "spreads": [
           {
             "label": "10Y − 2Y",
-            "desc": "Salud económica global",
-            "value": "+0.43%"
+            "desc": "Pendiente 2s10s",
+            "value": "+0.27%"
           },
           {
             "label": "10Y − 3M",
@@ -164,17 +152,21 @@
             "desc": "Prima por plazo a largo plazo",
             "value": "+0.56%"
           }
-        ]
+        ],
+        "date": "09/16/2026",
+        "source": "U.S. Department of the Treasury"
       },
       "indicators": [
         {
           "cat": "INFLACIÓN",
           "name": "IPC (Mensual)",
-          "actual": "-0.4%",
+          "actual": "335.0%",
           "est": "-0.1%",
           "surprise": "-0.3%",
-          "date": "12 ago",
-          "imp": "★★★"
+          "date": "2026-Aug",
+          "imp": "★★★",
+          "source": "U.S. Bureau of Labor Statistics",
+          "rateImpact": 1
         },
         {
           "cat": "INFLACIÓN",
@@ -188,20 +180,24 @@
         {
           "cat": "EMPLEO",
           "name": "Nóminas no agrícolas (NFP)",
-          "actual": "57K",
+          "actual": "159K",
           "est": "114K",
           "surprise": "-57K",
-          "date": "07 ago",
-          "imp": "★★★"
+          "date": "2026-Aug",
+          "imp": "★★★",
+          "source": "U.S. Bureau of Labor Statistics",
+          "rateImpact": 1
         },
         {
           "cat": "EMPLEO",
           "name": "Tasa de desempleo",
-          "actual": "4.2%",
+          "actual": "4.1%",
           "est": "4.3%",
           "surprise": "-0.1%",
-          "date": "07 ago",
-          "imp": "★★★"
+          "date": "2026-Aug",
+          "imp": "★★★",
+          "source": "U.S. Bureau of Labor Statistics",
+          "rateImpact": -1
         },
         {
           "cat": "CRECIMIENTO",
@@ -211,6 +207,28 @@
           "surprise": "-0.6%",
           "date": "30 jul",
           "imp": "★★★"
+        },
+        {
+          "cat": "INFLACIÓN",
+          "name": "Core CPI (Mensual)",
+          "actual": "338.0%",
+          "est": "",
+          "surprise": "",
+          "date": "2026-Aug",
+          "imp": "★★★",
+          "source": "U.S. Bureau of Labor Statistics",
+          "rateImpact": 1
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Salarios (AHE)",
+          "actual": "37.8%",
+          "est": "",
+          "surprise": "",
+          "date": "2026-Aug",
+          "imp": "★★",
+          "source": "U.S. Bureau of Labor Statistics",
+          "rateImpact": 1
         }
       ]
     },
@@ -1188,14 +1206,175 @@
     }
   },
   "riskOnOff": {
-    "updated": "Pendiente de primera sincronización de mercado",
-    "score": null,
-    "label": "SIN SINCRONIZAR",
-    "confidence": null,
-    "method": "Composite transparent regime: equities, volatility, tail-risk, credit, FX, rates, commodities and crypto. Score is descriptive, not a trade signal.",
-    "assets": [],
-    "confirmations": [],
-    "tensions": [],
+    "updated": "17/09/2026 01:24 UTC",
+    "score": 30.8,
+    "label": "RISK OFF",
+    "confidence": 70,
+    "method": "Composite transparent regime: equities, volatility, tail-risk, FX, commodities, duration and crypto. Large oil moves are treated as contextual inflation risk, not automatically as risk-on.",
+    "assets": [
+      {
+        "name": "SP500",
+        "symbol": "^GSPC",
+        "value": 7551.81005859375,
+        "change1d": -0.4471543537976519,
+        "change5d": -1.1072003703498812,
+        "role": "Equities / broad risk appetite",
+        "signal": "risk-off",
+        "signalLabel": "↓ stress"
+      },
+      {
+        "name": "NASDAQ",
+        "symbol": "^IXIC",
+        "value": 25978.423828125,
+        "change1d": -0.012110447279189973,
+        "change5d": -1.047165873984779,
+        "role": "Growth / high beta equities",
+        "signal": "risk-off",
+        "signalLabel": "↓ stress"
+      },
+      {
+        "name": "VIX",
+        "symbol": "^VIX",
+        "value": 17.709999084472656,
+        "change1d": 2.9651063890188123,
+        "change5d": 7.594168101620213,
+        "role": "Equity volatility",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "VVIX",
+        "symbol": "^VVIX",
+        "value": 95.41000366210938,
+        "change1d": 0.5268148569249398,
+        "change5d": 0.9629668382109768,
+        "role": "Volatility-of-volatility",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "SKEW",
+        "symbol": "^SKEW",
+        "value": 145.9499969482422,
+        "change1d": -0.4501764268206254,
+        "change5d": -2.2110573211107654,
+        "role": "Tail-risk pricing",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "GOLD",
+        "symbol": "GC=F",
+        "value": 4335.0,
+        "change1d": 0.05077999011446899,
+        "change5d": -2.8179476272489956,
+        "role": "Defensive / real asset",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "COPPER",
+        "symbol": "HG=F",
+        "value": 6.4730000495910645,
+        "change1d": 1.6408858141830462,
+        "change5d": -4.8577955076172685,
+        "role": "Cyclical growth proxy",
+        "signal": "risk-off",
+        "signalLabel": "↓ stress"
+      },
+      {
+        "name": "BRENT",
+        "symbol": "BZ=F",
+        "value": 105.58999633789062,
+        "change1d": -2.9057504938936773,
+        "change5d": 4.327632934530801,
+        "role": "Energy / inflation shock",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "WTI",
+        "symbol": "CL=F",
+        "value": 102.0199966430664,
+        "change1d": -3.6001182292999645,
+        "change5d": 6.215505884046224,
+        "role": "Energy / inflation shock",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "DXY",
+        "symbol": "DX-Y.NYB",
+        "value": 100.33899688720703,
+        "change1d": 0.02890970922049263,
+        "change5d": 1.2604708804886844,
+        "role": "Dollar liquidity / stress",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "AUDJPY",
+        "symbol": "AUDJPY=X",
+        "value": 110.76599884033203,
+        "change1d": 0.11840439424428695,
+        "change5d": -0.10732136321938146,
+        "role": "Carry / risk appetite",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "BTC",
+        "symbol": "BTC-USD",
+        "value": 76356.8125,
+        "change1d": 0.984367149077614,
+        "change5d": -1.0586292343802706,
+        "role": "High-beta liquidity proxy",
+        "signal": "risk-off",
+        "signalLabel": "↓ stress"
+      },
+      {
+        "name": "ETH",
+        "symbol": "ETH-USD",
+        "value": 2421.6201171875,
+        "change1d": 0.9392408000276742,
+        "change5d": -3.702728548059042,
+        "role": "High-beta liquidity proxy",
+        "signal": "risk-off",
+        "signalLabel": "↓ stress"
+      },
+      {
+        "name": "TLT",
+        "symbol": "TLT",
+        "value": 80.87999725341797,
+        "change1d": 0.210628386660483,
+        "change5d": -1.0400172135114905,
+        "role": "Duration / defensive hedge",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      },
+      {
+        "name": "SPY",
+        "symbol": "SPY",
+        "value": 754.0499877929688,
+        "change1d": -0.4409916675517711,
+        "change5d": -1.0952303716819989,
+        "role": "Equity benchmark",
+        "signal": "neutral",
+        "signalLabel": "→ mixed"
+      }
+    ],
+    "confirmations": [
+      "VIX: absolute volatility level.",
+      "GOLD: defensive demand.",
+      "VVIX: vol-of-vol level."
+    ],
+    "tensions": [
+      "SP500: 5D price trend.",
+      "NASDAQ: 5D price trend.",
+      "SKEW: tail-risk pricing.",
+      "COPPER: cyclical confirmation.",
+      "DXY: dollar direction."
+    ],
     "coverage": {
       "liveSources": [
         "Yahoo Finance chart endpoint",
@@ -1220,5 +1399,14 @@
         "SPY"
       ]
     }
+  },
+  "automation": {
+    "updatedAt": "17/09/2026 01:24 UTC",
+    "runner": "GitHub Actions / update_feed.py",
+    "intervalMinutes": 15,
+    "notes": [
+      "U.S. Treasury + BLS conectores gratuitos activos cuando sus endpoints responden.",
+      "TE_API_KEY no configurada: Actual/Anterior desde fuentes oficiales conectadas; Consenso/Forecast queda sin completar donde no existe una fuente pública oficial."
+    ]
   }
 }
