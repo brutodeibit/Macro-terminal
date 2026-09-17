@@ -1,0 +1,1224 @@
+{
+  "version": 5,
+  "updated": "10 sep 2026",
+  "description": "Feed automático de MacroTerminal V5: macro, bancos centrales, curvas y régimen Risk-On/Risk-Off.",
+  "economies": {
+    "us": {
+      "id": "us",
+      "updated": "Actualizado · 17 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.federalreserve.gov/",
+      "sourceStatus": "FOMC oficial 16 sep 2026 + feed automático",
+      "name": "Estados Unidos",
+      "flag": "🇺🇸",
+      "subtitle": "Fed, fondos federales, curva de Treasuries e indicadores macro de EEUU.",
+      "rates": {
+        "official": "3.75–4.00%",
+        "real": "0.25%",
+        "posture": "Subida +25 pb",
+        "postureBadge": "badge-hawkish",
+        "postureText": "Restrictivo",
+        "nextMeeting": "27-28/10/2026",
+        "expectations": [
+          {
+            "label": "Bajada -50 pb",
+            "value": "1%"
+          },
+          {
+            "label": "Bajada -25 pb",
+            "value": "1%"
+          },
+          {
+            "label": "Mantener",
+            "value": "54%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "43%"
+          },
+          {
+            "label": "Subida +50 pb",
+            "value": "1%"
+          }
+        ]
+      },
+      "conference": {
+        "history": [
+          {
+            "date": "16 Sep 2026",
+            "title": "FOMC: subida de 25 pb a 3,75%-4,00%",
+            "tone": "Restrictivo (Hawkish)",
+            "summary": "El FOMC subió el rango objetivo 25 pb por voto 12-0. El comunicado señaló que la actividad se expande a ritmo sólido, el gasto doméstico es resiliente, la productividad y la inversión son fuertes, el mercado laboral se mantiene estable y la inflación sigue elevada.",
+            "keyPoints": [
+              "Subida unánime de 25 pb al 3,75%-4,00%.",
+              "Inflación sigue elevada y la Fed busca un retorno más rápido al objetivo del 2%.",
+              "Actividad, gasto doméstico, productividad e inversión permanecen firmes.",
+              "El comunicado mantiene abierta una política dependiente de los datos y de la evolución de los riesgos."
+            ]
+          },
+          {
+            "date": "29 Jul 2026",
+            "title": "FOMC: mantenimiento 3,50%-3,75%",
+            "tone": "Restrictivo / dividido",
+            "summary": "La Fed mantuvo el rango en 3,50%-3,75%; tres miembros votaron por subir 25 pb. Las actas destacaron inflación elevada, actividad sólida y alta incertidumbre.",
+            "keyPoints": [
+              "Mantenimiento con tres disidencias a favor de +25 pb.",
+              "Inflación elevada.",
+              "Actividad económica todavía sólida.",
+              "Incertidumbre relevante sobre perspectivas y riesgos."
+            ]
+          },
+          {
+            "date": "17 Jun 2026",
+            "title": "FOMC: mantenimiento 3,50%-3,75%",
+            "tone": "Prudente / dependiente de datos",
+            "summary": "El FOMC mantuvo el rango y continuó evaluando el equilibrio entre inflación, empleo y crecimiento antes de cambiar la postura.",
+            "keyPoints": [
+              "Tipos sin cambio.",
+              "Seguimiento de inflación y empleo.",
+              "Política condicionada a nuevos datos.",
+              "Riesgos y perspectivas permanecen abiertos."
+            ]
+          }
+        ],
+        "date": "16 Sep 2026",
+        "title": "Reserva Federal: subida de tipos y rueda de prensa",
+        "summary": "La Reserva Federal elevó el objetivo de los fondos federales 25 pb hasta 3,75%-4,00%. El voto fue 12-0. El comunicado indicó que la actividad económica se expande a ritmo sólido, el gasto doméstico ha sido resiliente, la productividad es fuerte y la inversión robusta; los avances del empleo han seguido el ritmo de la fuerza laboral y el desempleo ha cambiado poco. La inflación permanece elevada y la decisión busca apoyar un retorno más oportuno al 2%.",
+        "tone": "Tono Restrictivo (Hawkish)",
+        "toneBadge": "badge-hawkish",
+        "toneDescription": "La señal de septiembre es más restrictiva que la de julio porque la Fed no solo mantuvo una postura restrictiva sino que elevó el rango 25 pb. Aun así, el análisis del monitor debe separar la decisión de la reacción de mercado y seguir la trayectoria posterior de inflación, empleo, crecimiento y expectativas de tipos.",
+        "keyPoints": [
+          "Subida unánime de 25 pb al 3,75%-4,00%.",
+          "Inflación sigue elevada y la Fed busca un retorno más rápido al objetivo del 2%.",
+          "Actividad, gasto doméstico, productividad e inversión permanecen firmes.",
+          "El comunicado mantiene abierta una política dependiente de los datos y de la evolución de los riesgos."
+        ],
+        "watchFactors": [
+          "Inflación PCE/CPI/PPI y expectativas de inflación.",
+          "Mercado laboral: nóminas, desempleo, salarios, horas y peticiones de desempleo.",
+          "2Y/10Y y expectativas de tipos tras la subida.",
+          "Próxima reunión FOMC del 27-28 de octubre."
+        ],
+        "sourceUrl": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm"
+      },
+      "bonds": {
+        "shape": "CURVA NORMAL",
+        "shapeDesc": "Prestar a más tiempo paga más. Estructura de curva saludable.",
+        "tenors": [
+          {
+            "term": "3M",
+            "yield": "3.732%",
+            "change": "-0.29 pb",
+            "isKey": false
+          },
+          {
+            "term": "1Y",
+            "yield": "4.029%",
+            "change": "-1.90 pb",
+            "isKey": false
+          },
+          {
+            "term": "2Y",
+            "yield": "4.183%",
+            "change": "-1.90 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "4.326%",
+            "change": "-0.10 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "4.611%",
+            "change": "+0.20 pb",
+            "isKey": true
+          },
+          {
+            "term": "20Y",
+            "yield": "5.168%",
+            "change": "+1.10 pb",
+            "isKey": false
+          },
+          {
+            "term": "30Y",
+            "yield": "5.167%",
+            "change": "+0.60 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Salud económica global",
+            "value": "+0.43%"
+          },
+          {
+            "label": "10Y − 3M",
+            "desc": "Indicador de recesión favorito de la Fed",
+            "value": "+0.88%"
+          },
+          {
+            "label": "30Y − 10Y",
+            "desc": "Prima por plazo a largo plazo",
+            "value": "+0.56%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC (Mensual)",
+          "actual": "-0.4%",
+          "est": "-0.1%",
+          "surprise": "-0.3%",
+          "date": "12 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "INFLACIÓN",
+          "name": "PCE subyacente (Anual)",
+          "actual": "3.3%",
+          "est": "3.3%",
+          "surprise": "0%",
+          "date": "30 jul",
+          "imp": "★★★"
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Nóminas no agrícolas (NFP)",
+          "actual": "57K",
+          "est": "114K",
+          "surprise": "-57K",
+          "date": "07 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Tasa de desempleo",
+          "actual": "4.2%",
+          "est": "4.3%",
+          "surprise": "-0.1%",
+          "date": "07 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "CRECIMIENTO",
+          "name": "PIB (Trimestral)",
+          "actual": "1.5%",
+          "est": "2.1%",
+          "surprise": "-0.6%",
+          "date": "30 jul",
+          "imp": "★★★"
+        }
+      ]
+    },
+    "eu": {
+      "id": "eu",
+      "updated": "Actualizado · 17 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.ecb.europa.eu/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Eurozona",
+      "flag": "🇪🇺",
+      "subtitle": "Banco Central Europeo (BCE), tipos de depósito e indicadores del área del euro.",
+      "rates": {
+        "official": "2.50%",
+        "real": "0.40%",
+        "posture": "Subida +25 pb",
+        "postureBadge": "badge-hawkish",
+        "postureText": "Restrictivo",
+        "nextMeeting": "28-29/10/2026",
+        "expectations": [
+          {
+            "label": "Bajada -25 pb",
+            "value": "15%"
+          },
+          {
+            "label": "Mantener",
+            "value": "80%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "5%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "10 Sep 2026",
+        "title": "BCE: subida de tipos y rueda de prensa",
+        "summary": "El Consejo de Gobierno del BCE mantuvo los tipos sin cambios. Lagarde remarcó que el proceso de desinflación sigue avanzando pero requiere cautela extrema debido a la rigidez del sector servicios y el crecimiento de los salarios.",
+        "tone": "Tono Restrictivo (Hawkish)",
+        "toneBadge": "badge-neutral",
+        "toneDescription": "El BCE endureció la política monetaria en septiembre en respuesta a una inflación prevista claramente por encima del objetivo durante más tiempo. El monitor separa la señal monetaria de la señal de crecimiento: el crecimiento también fue revisado al alza, por lo que el movimiento no se interpreta como una simple respuesta defensiva a debilidad económica.",
+        "keyPoints": [
+          "Subida de 25 pb de los tres tipos oficiales.",
+          "Inflación 2026 proyectada en 3,0%; las previsiones 2027-2028 se revisaron al alza.",
+          "Crecimiento 2026-2027 revisado al alza por mayor resiliencia.",
+          "Riesgos geopolíticos y energéticos siguen siendo relevantes."
+        ],
+        "watchFactors": [
+          "Inflación general y subyacente, especialmente energía.",
+          "Proyecciones BCE y expectativas de inflación.",
+          "Actividad y crecimiento de la eurozona.",
+          "Próxima reunión monetaria del 28-29 de octubre."
+        ],
+        "history": [
+          {
+            "date": "10 Sep 2026",
+            "title": "BCE: subida de 25 pb",
+            "tone": "Restrictivo (Hawkish)",
+            "summary": "El BCE elevó en 25 pb sus tres tipos oficiales: depósito a 2,50%, refinanciación a 2,65% y facilidad marginal a 2,90%, con inflación proyectada por encima del objetivo durante un periodo prolongado.",
+            "keyPoints": [
+              "Subida de 25 pb de los tres tipos oficiales.",
+              "Inflación 2026 proyectada en 3,0%; las previsiones 2027-2028 se revisaron al alza.",
+              "Crecimiento 2026-2027 revisado al alza por mayor resiliencia.",
+              "Riesgos geopolíticos y energéticos siguen siendo relevantes."
+            ]
+          },
+          {
+            "date": "23 Jul 2026",
+            "title": "BCE: decisión y mantenimiento previo",
+            "tone": "Prudente / dependiente de datos",
+            "summary": "El Consejo mantuvo su evaluación de la información acumulada y dejó la política condicionada a la evolución de inflación y actividad antes de la decisión posterior de septiembre.",
+            "keyPoints": [
+              "Seguimiento de inflación subyacente.",
+              "Evaluación de actividad y transmisión monetaria.",
+              "Dependencia de datos.",
+              "Riesgos externos y energéticos."
+            ]
+          },
+          {
+            "date": "11 Jun 2026",
+            "title": "BCE: reunión de política monetaria",
+            "tone": "Prudente",
+            "summary": "El BCE continuó calibrando la política monetaria frente a la evolución de precios, crecimiento y transmisión de la política monetaria.",
+            "keyPoints": [
+              "Inflación y expectativas.",
+              "Actividad económica.",
+              "Transmisión de la política monetaria.",
+              "Riesgos internacionales."
+            ]
+          }
+        ],
+        "sourceUrl": "https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260910~314e508016.en.html"
+      },
+      "bonds": {
+        "shape": "CURVA NORMAL",
+        "shapeDesc": "Rendimientos de referencia en la Eurozona.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "2.510%",
+            "change": "+0.10 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "2.620%",
+            "change": "-0.05 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "2.710%",
+            "change": "-0.05 pb",
+            "isKey": true
+          },
+          {
+            "term": "30Y",
+            "yield": "3.150%",
+            "change": "+0.40 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Diferencial Eurozona",
+            "value": "+0.20%"
+          },
+          {
+            "label": "30Y − 10Y",
+            "desc": "Pendiente a largo plazo",
+            "value": "+0.44%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Subyacente Eurozona",
+          "actual": "2.8%",
+          "est": "2.8%",
+          "surprise": "0%",
+          "date": "18 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "CRECIMIENTO",
+          "name": "PIB Eurozona (Trimestral)",
+          "actual": "0.3%",
+          "est": "0.2%",
+          "surprise": "+0.1%",
+          "date": "14 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Tasa de Desempleo",
+          "actual": "6.5%",
+          "est": "6.4%",
+          "surprise": "+0.1%",
+          "date": "01 sep",
+          "imp": "★★☆"
+        }
+      ]
+    },
+    "de": {
+      "id": "de",
+      "updated": "Actualizado · 17 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.bundesbank.de/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Alemania",
+      "flag": "🇩🇪",
+      "subtitle": "Bunds alemanes e indicadores industriales de la 1ª economía europea.",
+      "rates": {
+        "official": "2.50%",
+        "real": "0.20%",
+        "posture": "BCE +25 pb",
+        "postureBadge": "badge-neutral",
+        "postureText": "Restrictivo",
+        "nextMeeting": "28-29/10/2026",
+        "expectations": [
+          {
+            "label": "Mantener BCE",
+            "value": "85%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "10 Sep 2026",
+        "title": "BCE: subida de tipos y rueda de prensa",
+        "summary": "El Consejo de Gobierno del BCE mantuvo los tipos sin cambios. Lagarde remarcó que el proceso de desinflación sigue avanzando pero requiere cautela extrema debido a la rigidez del sector servicios y el crecimiento de los salarios.",
+        "tone": "Tono Restrictivo (Hawkish)",
+        "toneBadge": "badge-neutral",
+        "toneDescription": "El BCE endureció la política monetaria en septiembre en respuesta a una inflación prevista claramente por encima del objetivo durante más tiempo. El monitor separa la señal monetaria de la señal de crecimiento: el crecimiento también fue revisado al alza, por lo que el movimiento no se interpreta como una simple respuesta defensiva a debilidad económica.",
+        "keyPoints": [
+          "Subida de 25 pb de los tres tipos oficiales.",
+          "Inflación 2026 proyectada en 3,0%; las previsiones 2027-2028 se revisaron al alza.",
+          "Crecimiento 2026-2027 revisado al alza por mayor resiliencia.",
+          "Riesgos geopolíticos y energéticos siguen siendo relevantes."
+        ],
+        "watchFactors": [
+          "Inflación general y subyacente, especialmente energía.",
+          "Proyecciones BCE y expectativas de inflación.",
+          "Actividad y crecimiento de la eurozona.",
+          "Próxima reunión monetaria del 28-29 de octubre."
+        ],
+        "history": [
+          {
+            "date": "10 Sep 2026",
+            "title": "BCE: subida de 25 pb",
+            "tone": "Restrictivo (Hawkish)",
+            "summary": "El BCE elevó en 25 pb sus tres tipos oficiales: depósito a 2,50%, refinanciación a 2,65% y facilidad marginal a 2,90%, con inflación proyectada por encima del objetivo durante un periodo prolongado.",
+            "keyPoints": [
+              "Subida de 25 pb de los tres tipos oficiales.",
+              "Inflación 2026 proyectada en 3,0%; las previsiones 2027-2028 se revisaron al alza.",
+              "Crecimiento 2026-2027 revisado al alza por mayor resiliencia.",
+              "Riesgos geopolíticos y energéticos siguen siendo relevantes."
+            ]
+          },
+          {
+            "date": "23 Jul 2026",
+            "title": "BCE: decisión y mantenimiento previo",
+            "tone": "Prudente / dependiente de datos",
+            "summary": "El Consejo mantuvo su evaluación de la información acumulada y dejó la política condicionada a la evolución de inflación y actividad antes de la decisión posterior de septiembre.",
+            "keyPoints": [
+              "Seguimiento de inflación subyacente.",
+              "Evaluación de actividad y transmisión monetaria.",
+              "Dependencia de datos.",
+              "Riesgos externos y energéticos."
+            ]
+          },
+          {
+            "date": "11 Jun 2026",
+            "title": "BCE: reunión de política monetaria",
+            "tone": "Prudente",
+            "summary": "El BCE continuó calibrando la política monetaria frente a la evolución de precios, crecimiento y transmisión de la política monetaria.",
+            "keyPoints": [
+              "Inflación y expectativas.",
+              "Actividad económica.",
+              "Transmisión de la política monetaria.",
+              "Riesgos internacionales."
+            ]
+          }
+        ],
+        "sourceUrl": "https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260910~314e508016.en.html"
+      },
+      "bonds": {
+        "shape": "CURVA BUND",
+        "shapeDesc": "Curva libre de riesgo de la Eurozona.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "2.250%",
+            "change": "-0.30 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "2.380%",
+            "change": "-0.10 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "2.520%",
+            "change": "+0.20 pb",
+            "isKey": true
+          },
+          {
+            "term": "30Y",
+            "yield": "2.880%",
+            "change": "+0.50 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Spread Bund Alemán",
+            "value": "+0.27%"
+          },
+          {
+            "label": "Alemania − Italia 10Y",
+            "desc": "Prima de riesgo periférica",
+            "value": "1.25%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "ADELANTADOS",
+          "name": "Índice IFO Clima Empresarial",
+          "actual": "87.0",
+          "est": "86.5",
+          "surprise": "+0.5",
+          "date": "25 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "PRODUCCIÓN",
+          "name": "Pedidos Industriales (Mensual)",
+          "actual": "-1.1%",
+          "est": "-0.5%",
+          "surprise": "-0.6%",
+          "date": "06 sep",
+          "imp": "★★★"
+        },
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Alemania (Anual)",
+          "actual": "2.2%",
+          "est": "2.2%",
+          "surprise": "0%",
+          "date": "29 ago",
+          "imp": "★★★"
+        }
+      ]
+    },
+    "uk": {
+      "id": "uk",
+      "updated": "Base de referencia · 10 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.bankofengland.co.uk/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Reino Unido",
+      "flag": "🇬🇧",
+      "subtitle": "Bank of England (BoE), curva de Gilts y libra esterlina (GBP).",
+      "rates": {
+        "official": "3.75%",
+        "real": "1.10%",
+        "posture": "Mantener",
+        "postureBadge": "badge-hawkish",
+        "postureText": "Restrictivo",
+        "nextMeeting": "18/09/2026",
+        "expectations": [
+          {
+            "label": "Bajada -25 pb",
+            "value": "30%"
+          },
+          {
+            "label": "Mantener",
+            "value": "70%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "MPC Decision",
+        "title": "Bank of England: Tipos de Interés y Comunicado del MPC",
+        "summary": "El Comité de Política Monetaria (MPC) decidió mantener la tasa oficial en el 3.75% tras una votación ajustada de 6 a 3. Andrew Bailey reiteró que la inflación del sector servicios requiere mantener los tipos en territorio restrictivo.",
+        "tone": "Tono Restrictivo (Hawkish)",
+        "toneBadge": "badge-hawkish",
+        "toneDescription": "La división en el seno del comité muestra opiniones encontradas, pero la mayoría prefiere curarse en salud debido a la persistencia de los incrementos salariales y el dinamismo del sector servicios británico.",
+        "keyPoints": [
+          "Votación dividida (6-3): Tres miembros del MPC abogaron abiertamente por recortar tipos 25 pb.",
+          "Rigidez en servicios: La inflación de servicios se mantiene por encima del promedio deseado.",
+          "Mercado laboral en ajuste: Cierto aumento en el desempleo pero los sueldos crecen con solidez.",
+          "Estrategia de cautela: El BoE prefiere dejar los tipos altos más tiempo antes que arriesgarse a un rebrote."
+        ],
+        "watchFactors": [
+          "Evolución del IPC del sector servicios y salarios semanales medios.",
+          "Nuevos datos de empleo emitidos por la Oficina Nacional de Estadística (ONS)."
+        ]
+      },
+      "bonds": {
+        "shape": "CURVA GILT",
+        "shapeDesc": "Rendimientos de los bonos británicos.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "4.100%",
+            "change": "+0.50 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "4.250%",
+            "change": "+0.80 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "4.850%",
+            "change": "+1.20 pb",
+            "isKey": true
+          },
+          {
+            "term": "30Y",
+            "yield": "5.200%",
+            "change": "+1.50 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Spread Gilt UK",
+            "value": "+0.75%"
+          },
+          {
+            "label": "30Y − 10Y",
+            "desc": "Pendiente a largo plazo",
+            "value": "+0.35%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC General UK (Anual)",
+          "actual": "2.6%",
+          "est": "2.5%",
+          "surprise": "+0.1%",
+          "date": "19 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Servicios UK",
+          "actual": "5.2%",
+          "est": "5.1%",
+          "surprise": "+0.1%",
+          "date": "19 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Crecimiento de Salarios",
+          "actual": "5.4%",
+          "est": "5.2%",
+          "surprise": "+0.2%",
+          "date": "13 ago",
+          "imp": "★★★"
+        }
+      ]
+    },
+    "jp": {
+      "id": "jp",
+      "updated": "Base de referencia · 10 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.boj.or.jp/en/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Japón",
+      "flag": "🇯🇵",
+      "subtitle": "Bank of Japan (BoJ), yen (JPY) y proceso de normalización monetaria.",
+      "rates": {
+        "official": "1.00%",
+        "real": "-1.20%",
+        "posture": "Subidas Progresivas",
+        "postureBadge": "badge-hawkish",
+        "postureText": "Normalización",
+        "nextMeeting": "22/09/2026",
+        "expectations": [
+          {
+            "label": "Mantener",
+            "value": "85%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "15%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "BoJ Policy Meeting",
+        "title": "Bank of Japan: Conferencia de Prensa de Kazuo Ueda",
+        "summary": "El Banco de Japón mantuvo los tipos en el 1.00%, reafirmando que continuará con las subidas graduales de tipos si la economía y la inflación evolucionan en línea con sus proyecciones de crecimiento salarial.",
+        "tone": "Tono Restrictivo Progresivo (Hawkish Moderado)",
+        "toneBadge": "badge-hawkish",
+        "toneDescription": "Kazuo Ueda mostró una postura decidida a seguir alejando al BoJ de los tipos ultrabajos. Destacó que el círculo virtuoso entre salarios y precios se está afianzando en las grandes empresas japonesas.",
+        "keyPoints": [
+          "Senda de subidas activa: El BoJ reafirma que el tipo de interés real sigue siendo negativo y debe subir.",
+          "Negociación salarial sólida: Los incrementos salariales del ciclo \"Shunto\" respaldan la inflación.",
+          "Sensibilidad al Yen: La volatilidad del tipo de cambio USD/JPY se sigue muy de cerca por su impacto importado.",
+          "Reducción de JGBs: Continúa la disminución planificada de compras de deuda soberana."
+        ],
+        "watchFactors": [
+          "IPC Subyacente de Tokio y cifras nacionales de inflación.",
+          "Evolución del tipo de cambio USD/JPY y rendimientos del bono JGB a 10 años."
+        ]
+      },
+      "bonds": {
+        "shape": "CURVA JGB",
+        "shapeDesc": "Subida progresiva de rendimientos en Japón.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "0.550%",
+            "change": "+0.20 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "0.780%",
+            "change": "+0.30 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "1.080%",
+            "change": "+0.50 pb",
+            "isKey": true
+          },
+          {
+            "term": "30Y",
+            "yield": "2.150%",
+            "change": "+1.10 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Spread Bonos Japoneses",
+            "value": "+0.53%"
+          },
+          {
+            "label": "30Y − 10Y",
+            "desc": "Pendiente tramo largo JGB",
+            "value": "+1.07%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Subyacente Tokio",
+          "actual": "2.8%",
+          "est": "2.7%",
+          "surprise": "+0.1%",
+          "date": "28 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "CRECIMIENTO",
+          "name": "PIB Japón (Trimestral)",
+          "actual": "0.7%",
+          "est": "0.5%",
+          "surprise": "+0.2%",
+          "date": "15 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "CONSUMO",
+          "name": "Gasto de los Hogares",
+          "actual": "0.1%",
+          "est": "-0.3%",
+          "surprise": "+0.4%",
+          "date": "05 sep",
+          "imp": "★★☆"
+        }
+      ]
+    },
+    "au": {
+      "id": "au",
+      "updated": "Base de referencia · 10 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.rba.gov.au/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Australia",
+      "flag": "🇦🇺",
+      "subtitle": "Reserve Bank of Australia (RBA) y dólar australiano (AUD).",
+      "rates": {
+        "official": "4.35%",
+        "real": "0.85%",
+        "posture": "Mantener/Vigilante",
+        "postureBadge": "badge-hawkish",
+        "postureText": "Restrictivo",
+        "nextMeeting": "29/09/2026",
+        "expectations": [
+          {
+            "label": "Mantener",
+            "value": "90%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "10%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "RBA Board Decision",
+        "title": "Reserve Bank of Australia: Cash Rate y Conferencia de Michele Bullock",
+        "summary": "El RBA mantuvo la Cash Rate en el 4.35%. La Gobernadora Michele Bullock recalcó que la inflación subyacente está descendiendo a un ritmo excesivamente lento y que no dudará en subir tipos si los datos lo exigen.",
+        "tone": "Tono Restrictivo (Hawkish)",
+        "toneBadge": "badge-hawkish",
+        "toneDescription": "El RBA se mantiene como uno de los bancos centrales más firmes en su mensaje. La directiva prefiere mantener una política monetaria estricta para garantizar que las expectativas de inflación permanezcan ancladas.",
+        "keyPoints": [
+          "Sin prisa por recortar: El junta del RBA reiteró que no contempla recortes de tipos a corto plazo.",
+          "Inflación recortada alta: La medida preferida de inflación subyacente sigue por encima del rango 2-3%.",
+          "Mercado laboral tenso: La tasa de desempleo contenida ejerce presión sobre el coste laboral.",
+          "Flexibilidad absoluta: Los ajustes futuros dependerán de los datos trimestrales de precios."
+        ],
+        "watchFactors": [
+          "IPC Trimestral (Trimmed Mean) publicado por la Oficina Australiana de Estadística.",
+          "Datos mensuales de creación de empleo y tasa de desempleo."
+        ]
+      },
+      "bonds": {
+        "shape": "CURVA AU",
+        "shapeDesc": "Rendimientos soberanos de Australia.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "3.900%",
+            "change": "+0.80 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "4.050%",
+            "change": "+1.00 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "4.250%",
+            "change": "+1.10 pb",
+            "isKey": true
+          },
+          {
+            "term": "30Y",
+            "yield": "4.650%",
+            "change": "+0.90 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Spread Curva Australiana",
+            "value": "+0.35%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Recortado RBA (Trimestral)",
+          "actual": "3.9%",
+          "est": "3.8%",
+          "surprise": "+0.1%",
+          "date": "31 jul",
+          "imp": "★★★"
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Tasa de Desempleo Australia",
+          "actual": "4.1%",
+          "est": "4.1%",
+          "surprise": "0%",
+          "date": "15 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "VENTAS",
+          "name": "Ventas Minoristas",
+          "actual": "0.5%",
+          "est": "0.3%",
+          "surprise": "+0.2%",
+          "date": "02 sep",
+          "imp": "★★☆"
+        }
+      ]
+    },
+    "nz": {
+      "id": "nz",
+      "updated": "Base de referencia · 10 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.rbnz.govt.nz/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Nueva Zelanda",
+      "flag": "🇳🇿",
+      "subtitle": "RBNZ, tasa OCR, curva soberana neozelandesa e indicadores de actividad.",
+      "rates": {
+        "official": "2.50%",
+        "real": "-1.60%",
+        "posture": "Subida +25 pb",
+        "postureBadge": "badge-hawkish",
+        "postureText": "Restrictivo",
+        "nextMeeting": "Próxima sesión",
+        "expectations": [
+          {
+            "label": "Mantener",
+            "value": "23%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "77%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "Última Reunión RBNZ",
+        "title": "Banco de Reserva de Nueva Zelanda: Subida de Tipos y Rueda de Prensa",
+        "summary": "El RBNZ subió el OCR 25 pb al 2,50%, citando inflación aún sobre el objetivo y condiciones financieras que se habían relajado previamente. El banco dejó claro que la prioridad absoluta es contener la persistencia inflacionaria.",
+        "tone": "Tono Restrictivo (Hawkish)",
+        "toneBadge": "badge-hawkish",
+        "toneDescription": "Mantiene una postura firme. Prevé que harán falta más subidas del OCR, con el calendario fuertemente ligado a la evolución de los datos entrantes de actividad e inflación no transable.",
+        "keyPoints": [
+          "Subida de tipos: El OCR se eleva 25 pb hasta el 2.50% por decisión mayoritaria.",
+          "Inflación interna rígida: Sin enfriamiento rápido en los sectores de construcción y servicios locales.",
+          "Efecto divisa: La depreciación reciente del NZD exige mantener la firmeza para evitar inflación importada.",
+          "Flexibilidad: El RBNZ ajustará el ritmo si los riesgos de crecimiento global se deterioran."
+        ],
+        "watchFactors": [
+          "Evolución del IPC no transable y ventas minoristas.",
+          "Presiones salariales y expectativas de inflación a 2 años."
+        ]
+      },
+      "bonds": {
+        "shape": "CURVA EMPINADA",
+        "shapeDesc": "Diferencial amplio entre plazos cortos y largos.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "3.573%",
+            "change": "-0.38 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "4.100%",
+            "change": "+0.20 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "4.705%",
+            "change": "+0.75 pb",
+            "isKey": true
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Pendiente Curva NZ",
+            "value": "+1.13%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "CONSUMO",
+          "name": "Ventas minoristas (Trimestral)",
+          "actual": "0.5%",
+          "est": "0.1%",
+          "surprise": "+0.4%",
+          "date": "22 may",
+          "imp": "★★★"
+        },
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC (Anual)",
+          "actual": "2.7%",
+          "est": "2.5%",
+          "surprise": "+0.2%",
+          "date": "21 jul",
+          "imp": "★★★"
+        }
+      ]
+    },
+    "ca": {
+      "id": "ca",
+      "updated": "Base de referencia · 10 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.bankofcanada.ca/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Canadá",
+      "flag": "🇨🇦",
+      "subtitle": "Bank of Canada (BoC), tasa overnight e indicadores de Canadá.",
+      "rates": {
+        "official": "2.25%",
+        "real": "0.10%",
+        "posture": "Pausa",
+        "postureBadge": "badge-neutral",
+        "postureText": "Neutro",
+        "nextMeeting": "02/09/2026",
+        "expectations": [
+          {
+            "label": "Bajada -25 pb",
+            "value": "20%"
+          },
+          {
+            "label": "Mantener",
+            "value": "75%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "5%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "BoC Rate Announcement",
+        "title": "Bank of Canada: Rueda de Prensa de Tiff Macklem",
+        "summary": "El Bank of Canada mantuvo su tipo de interés oficial en el 2.25%. Tiff Macklem señaló que las fuerzas de oferta y demanda en la economía canadiense están cerca del equilibrio, lo que permite una pausa prolongada.",
+        "tone": "Tono Neutral / Equilibrado",
+        "toneBadge": "badge-neutral",
+        "toneDescription": "El BoC muestra satisfacción con el avance de la inflación, que se sitúa cerca del centro de su rango meta. Sin embargo, vigilan de cerca el endeudamiento hipotecario de las familias y el impacto del comercio transfronterizo.",
+        "keyPoints": [
+          "Mantenimiento en 2.25%: Decisión alineada con las expectativas del consenso de mercado.",
+          "Inflación bajo control: Medidas subyacentes (CPI-Median y CPI-Trim) estables cerca del 2%.",
+          "Sector inmobiliario moderado: El adjustment en los tipos de hipotecas ha estabilizado la demanda.",
+          "Dependencia de EE.UU.: Monitoreo constante del desempeño económico de su principal socio comercial."
+        ],
+        "watchFactors": [
+          "Cifras de inflación subyacente de Statistics Canada.",
+          "Cambio neto en la creación de empleo y crecimiento de salarios."
+        ]
+      },
+      "bonds": {
+        "shape": "CURVA CANADÁ",
+        "shapeDesc": "Rendimientos de bonos soberanos canadienses.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "3.100%",
+            "change": "-0.50 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "3.250%",
+            "change": "-0.10 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "3.450%",
+            "change": "+0.20 pb",
+            "isKey": true
+          },
+          {
+            "term": "30Y",
+            "yield": "3.700%",
+            "change": "+0.40 pb",
+            "isKey": false
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Spread Curva Canadá",
+            "value": "+0.35%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Canadá (Anual)",
+          "actual": "2.4%",
+          "est": "2.4%",
+          "surprise": "0%",
+          "date": "19 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "EMPLEO",
+          "name": "Cambio de Empleo Neto",
+          "actual": "22K",
+          "est": "15K",
+          "surprise": "+7K",
+          "date": "08 ago",
+          "imp": "★★★"
+        },
+        {
+          "cat": "CRECIMIENTO",
+          "name": "PIB Canadá (Mensual)",
+          "actual": "0.2%",
+          "est": "0.1%",
+          "surprise": "+0.1%",
+          "date": "30 ago",
+          "imp": "★★☆"
+        }
+      ]
+    },
+    "ch": {
+      "id": "ch",
+      "updated": "Base de referencia · 10 sep 2026",
+      "sourceName": "Fuente oficial del banco central",
+      "sourceUrl": "https://www.snb.ch/en/",
+      "sourceStatus": "Estructura preparada para sincronización",
+      "name": "Suiza",
+      "flag": "🇨🇭",
+      "subtitle": "Swiss National Bank (SNB) y franco suizo (CHF).",
+      "rates": {
+        "official": "0.00%",
+        "real": "-0.30%",
+        "posture": "Mantener",
+        "postureBadge": "badge-neutral",
+        "postureText": "Neutro/Vigilante",
+        "nextMeeting": "24/09/2026",
+        "expectations": [
+          {
+            "label": "Mantener",
+            "value": "95%"
+          },
+          {
+            "label": "Subida +25 pb",
+            "value": "5%"
+          }
+        ]
+      },
+      "conference": {
+        "date": "SNB Monetary Policy Assessment",
+        "title": "Swiss National Bank: Evaluación Monetaria y Franco Suizo",
+        "summary": "El SNB mantuvo su tipo de interés oficial en el 0.00%. El presidente Martin Schlegel reiteró la disposición del banco central a intervenir activamente en el mercado cambiario si el franco suizo experimenta un encarecimiento excesivo.",
+        "tone": "Tono Neutral con Vigilancia Cambiaria",
+        "toneBadge": "badge-neutral",
+        "toneDescription": "La prioridad estratégica del SNB es evitar una apreciación desmedida del CHF que perjudique a las empresas exportadoras suizas. La inflación dentro del país permanece completamente bajo control en rangos mínimos.",
+        "keyPoints": [
+          "Tipo clave en 0.00%: Estabilidad garantizada para mantener la fluidez crediticia.",
+          "Inflación controlada: Los precios al consumo crecen cómodamente dentro de la banda de confort.",
+          "Intervención en Forex: El SNB venderá francos en los mercados si la moneda presiona a la baja la economía.",
+          "Exportaciones industriales: El sector relojero y de maquinaria sigue acusando la debilidad europea."
+        ],
+        "watchFactors": [
+          "Evolución del par EUR/CHF y volumen de reservas de divisas del SNB.",
+          "Índice KOF de previsión económica e IPC mensual suizo."
+        ]
+      },
+      "bonds": {
+        "shape": "CURVA SUIZA",
+        "shapeDesc": "Entorno de rendimientos reducidos.",
+        "tenors": [
+          {
+            "term": "2Y",
+            "yield": "0.450%",
+            "change": "-0.10 pb",
+            "isKey": true
+          },
+          {
+            "term": "5Y",
+            "yield": "0.520%",
+            "change": "0.00 pb",
+            "isKey": false
+          },
+          {
+            "term": "10Y",
+            "yield": "0.620%",
+            "change": "0.00 pb",
+            "isKey": true
+          }
+        ],
+        "spreads": [
+          {
+            "label": "10Y − 2Y",
+            "desc": "Spread Bonos Suiza",
+            "value": "+0.17%"
+          }
+        ]
+      },
+      "indicators": [
+        {
+          "cat": "INFLACIÓN",
+          "name": "IPC Suiza (Anual)",
+          "actual": "1.3%",
+          "est": "1.2%",
+          "surprise": "+0.1%",
+          "date": "03 sep",
+          "imp": "★★★"
+        },
+        {
+          "cat": "ADELANTADOS",
+          "name": "Barómetro Económico KOF",
+          "actual": "101.5",
+          "est": "100.8",
+          "surprise": "+0.7",
+          "date": "29 ago",
+          "imp": "★★★"
+        }
+      ]
+    }
+  },
+  "riskOnOff": {
+    "updated": "Pendiente de primera sincronización de mercado",
+    "score": null,
+    "label": "SIN SINCRONIZAR",
+    "confidence": null,
+    "method": "Composite transparent regime: equities, volatility, tail-risk, credit, FX, rates, commodities and crypto. Score is descriptive, not a trade signal.",
+    "assets": [],
+    "confirmations": [],
+    "tensions": [],
+    "coverage": {
+      "liveSources": [
+        "Yahoo Finance chart endpoint",
+        "U.S. Treasury",
+        "FRED optional for HY spread"
+      ],
+      "requiredSymbols": [
+        "^GSPC",
+        "^IXIC",
+        "^VIX",
+        "^VVIX",
+        "^SKEW",
+        "GC=F",
+        "HG=F",
+        "BZ=F",
+        "CL=F",
+        "DX-Y.NYB",
+        "AUDJPY=X",
+        "BTC-USD",
+        "ETH-USD",
+        "TLT",
+        "SPY"
+      ]
+    }
+  }
+}
