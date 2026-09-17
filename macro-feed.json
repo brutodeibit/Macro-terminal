@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated": "17/09/2026 21:04 UTC",
+  "updated": "17/09/2026 21:23 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1206,10 +1206,10 @@
     }
   },
   "riskOnOff": {
-    "updated": "17/09/2026 21:04 UTC",
-    "score": 62.5,
+    "updated": "17/09/2026 21:23 UTC",
+    "score": 62.9,
     "label": "NEUTRAL / MIXTO",
-    "confidence": 48,
+    "confidence": 61,
     "method": "Composite transparent regime: equities, volatility, tail-risk, FX, commodities, duration and crypto. Large oil moves are treated as contextual inflation risk, not automatically as risk-on.",
     "assets": [
       {
@@ -1255,9 +1255,9 @@
       {
         "name": "SKEW",
         "symbol": "^SKEW",
-        "value": 145.9499969482422,
-        "change1d": -0.4501764268206254,
-        "change5d": -2.2110573211107654,
+        "value": 145.6999969482422,
+        "change1d": -0.1712915417796501,
+        "change5d": -0.8978419846679353,
         "role": "Tail-risk pricing",
         "signal": "neutral",
         "signalLabel": "→ mixed"
@@ -1265,9 +1265,9 @@
       {
         "name": "GOLD",
         "symbol": "GC=F",
-        "value": 4381.10009765625,
-        "change1d": -0.14586672008547463,
-        "change5d": -0.594461647546296,
+        "value": 4380.60009765625,
+        "change1d": -0.15726273148147785,
+        "change5d": -0.605806462334435,
         "role": "Defensive / real asset",
         "signal": "neutral",
         "signalLabel": "→ mixed"
@@ -1275,9 +1275,9 @@
       {
         "name": "COPPER",
         "symbol": "HG=F",
-        "value": 6.614999771118164,
-        "change1d": 2.8531417908273404,
-        "change5d": 2.2885381678393157,
+        "value": 6.613999843597412,
+        "change1d": 2.837594445304892,
+        "change5d": 2.2730761681551748,
         "role": "Cyclical growth proxy",
         "signal": "risk-on",
         "signalLabel": "↑ favorable"
@@ -1285,9 +1285,9 @@
       {
         "name": "BRENT",
         "symbol": "BZ=F",
-        "value": 104.0999984741211,
-        "change1d": -1.634700299538261,
-        "change5d": -3.2797536647570347,
+        "value": 104.08999633789062,
+        "change1d": -1.6441514344313957,
+        "change5d": -3.2890467396299417,
         "role": "Energy / inflation shock",
         "signal": "neutral",
         "signalLabel": "→ mixed"
@@ -1295,9 +1295,9 @@
       {
         "name": "WTI",
         "symbol": "CL=F",
-        "value": 101.11000061035156,
-        "change1d": -1.2886846538040286,
-        "change5d": -1.336848850219463,
+        "value": 101.08999633789062,
+        "change1d": -1.3082143544789648,
+        "change5d": -1.3563690217706537,
         "role": "Energy / inflation shock",
         "signal": "neutral",
         "signalLabel": "→ mixed"
@@ -1305,9 +1305,9 @@
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.23300170898438,
-        "change1d": -0.07675790198719001,
-        "change5d": 1.1535022841217657,
+        "value": 100.21299743652344,
+        "change1d": -0.09670035333582128,
+        "change5d": 1.133314300268462,
         "role": "Dollar liquidity / stress",
         "signal": "neutral",
         "signalLabel": "→ mixed"
@@ -1315,9 +1315,9 @@
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 110.72799682617188,
-        "change1d": 0.13564532955052666,
-        "change5d": 0.1700704804482367,
+        "value": 110.89900207519531,
+        "change1d": 0.290292044532503,
+        "change5d": 0.32477036067903864,
         "role": "Carry / risk appetite",
         "signal": "neutral",
         "signalLabel": "→ mixed"
@@ -1325,9 +1325,9 @@
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 76454.96875,
-        "change1d": 0.4000619252155557,
-        "change5d": -1.0553837878717442,
+        "value": 76467.2109375,
+        "change1d": 0.41613826928050823,
+        "change5d": -1.0395404939225195,
         "role": "High-beta liquidity proxy",
         "signal": "risk-off",
         "signalLabel": "↓ stress"
@@ -1335,9 +1335,9 @@
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2448.610107421875,
-        "change1d": 1.344727748711727,
-        "change5d": -3.061606072681855,
+        "value": 2449.969970703125,
+        "change1d": 1.401010687998805,
+        "change5d": -3.0077702406539064,
         "role": "High-beta liquidity proxy",
         "signal": "risk-off",
         "signalLabel": "↓ stress"
@@ -1403,7 +1403,7 @@
     }
   },
   "automation": {
-    "updatedAt": "17/09/2026 21:04 UTC",
+    "updatedAt": "17/09/2026 21:23 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
