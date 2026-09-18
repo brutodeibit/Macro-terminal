@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "18/09/2026 12:45 UTC",
+  "updated": "18/09/2026 12:57 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,8 +1400,8 @@
     }
   },
   "riskOnOff": {
-    "updated": "18/09/2026 12:45 UTC",
-    "score": 72.3,
+    "updated": "18/09/2026 12:57 UTC",
+    "score": 71.8,
     "label": "RISK ON",
     "confidence": 75,
     "method": "Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.",
@@ -1425,9 +1425,9 @@
       {
         "name": "VIX",
         "symbol": "^VIX",
-        "value": 15.579999923706055,
-        "change1d": 0.9067379995309377,
-        "change5d": -1.6414155705633537,
+        "value": 15.520000457763672,
+        "change1d": 0.5181404116229027,
+        "change5d": -2.020200074126499,
         "role": "Volatilidad bursátil"
       },
       {
@@ -1473,65 +1473,65 @@
       {
         "name": "GOLD",
         "symbol": "GC=F",
-        "value": 4411.60009765625,
-        "change1d": 0.2704707551761887,
-        "change5d": 0.06124419633715128,
+        "value": 4407.10009765625,
+        "change1d": 0.16819105882792673,
+        "change5d": -0.04082208095818052,
         "role": "Activo defensivo"
       },
       {
         "name": "COPPER",
         "symbol": "HG=F",
-        "value": 6.671000003814697,
-        "change1d": 1.2829246764544333,
-        "change5d": 3.114613756009299,
+        "value": 6.6579999923706055,
+        "change1d": 1.0855510924142386,
+        "change5d": 2.913670695281567,
         "role": "Cíclico / crecimiento"
       },
       {
         "name": "BRENT",
         "symbol": "BZ=F",
-        "value": 98.8499984741211,
-        "change1d": -5.695479143373738,
-        "change5d": -5.506167768495828,
+        "value": 98.9000015258789,
+        "change1d": -5.647775411353706,
+        "change5d": -5.45836827373809,
         "role": "Energía / inflación"
       },
       {
         "name": "WTI",
         "symbol": "CL=F",
-        "value": 96.69999694824219,
-        "change1d": -5.112360442200914,
-        "change5d": -3.3483318354149416,
+        "value": 96.8499984741211,
+        "change1d": -4.9651702543011655,
+        "change5d": -3.198405277390437,
         "role": "Energía / inflación"
       },
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.50199890136719,
-        "change1d": 0.28137864421200476,
-        "change5d": 1.3942656542478948,
+        "value": 100.49700164794922,
+        "change1d": 0.2763923606786678,
+        "change5d": 1.3892240347165075,
         "role": "Dólar / liquidez"
       },
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 112.32099914550781,
-        "change1d": 1.576259445496242,
-        "change5d": 1.611179858177736,
+        "value": 112.2300033569336,
+        "change1d": 1.4939684055395253,
+        "change5d": 1.5288605277810063,
         "role": "Carry / apetito de riesgo"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 78083.0703125,
-        "change1d": 2.197924002240148,
-        "change5d": 1.6201769059236204,
+        "value": 77988.3515625,
+        "change1d": 2.0739527037839656,
+        "change5d": 1.4969064441860525,
         "role": "Beta alta / liquidez"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2502.949951171875,
-        "change1d": 2.28201173080973,
-        "change5d": 1.0467897452334674,
+        "value": 2500.25,
+        "change1d": 2.171679345895261,
+        "change5d": 0.9377898036808441,
         "role": "Beta alta / liquidez"
       },
       {
@@ -1561,8 +1561,7 @@
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
       "DXY: el dólar actúa como refugio/liquidez.",
-      "TLT/SPY: la duración gana terreno relativo a acciones.",
-      "GOLD: el oro muestra demanda defensiva."
+      "TLT/SPY: la duración gana terreno relativo a acciones."
     ],
     "coverage": {
       "liveSources": [
@@ -1590,7 +1589,7 @@
     }
   },
   "automation": {
-    "updatedAt": "18/09/2026 12:45 UTC",
+    "updatedAt": "18/09/2026 12:57 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
