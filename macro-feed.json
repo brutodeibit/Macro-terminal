@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "18/09/2026 08:07 UTC",
+  "updated": "18/09/2026 08:27 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,10 +1400,10 @@
     }
   },
   "riskOnOff": {
-    "updated": "18/09/2026 08:07 UTC",
-    "score": 71.5,
+    "updated": "18/09/2026 08:27 UTC",
+    "score": 72.3,
     "label": "RISK ON",
-    "confidence": 70,
+    "confidence": 73,
     "method": "Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.",
     "assets": [
       {
@@ -1425,9 +1425,9 @@
       {
         "name": "VIX",
         "symbol": "^VIX",
-        "value": 15.079999923706055,
-        "change1d": -2.331604057390191,
-        "change5d": -4.7979811967215795,
+        "value": 15.210000038146973,
+        "change1d": -1.4896343813930235,
+        "change5d": -3.9772734114398967,
         "role": "Volatilidad bursátil"
       },
       {
@@ -1473,65 +1473,65 @@
       {
         "name": "GOLD",
         "symbol": "GC=F",
-        "value": 4432.7001953125,
-        "change1d": 0.750051106553995,
-        "change5d": 0.5398238448574899,
+        "value": 4432.0,
+        "change1d": 0.7341364923435512,
+        "change5d": 0.52394243842937,
         "role": "Activo defensivo"
       },
       {
         "name": "COPPER",
         "symbol": "HG=F",
-        "value": 6.678500175476074,
-        "change1d": 1.396796557882296,
-        "change5d": 3.23054499623181,
+        "value": 6.677000045776367,
+        "change1d": 1.3740207336740307,
+        "change5d": 3.2073572740791034,
         "role": "Cíclico / crecimiento"
       },
       {
         "name": "BRENT",
         "symbol": "BZ=F",
-        "value": 98.25,
-        "change1d": -6.267887534776085,
-        "change5d": -6.079725239693968,
+        "value": 98.47000122070312,
+        "change1d": -6.058002759596115,
+        "change5d": -5.869419131846232,
         "role": "Energía / inflación"
       },
       {
         "name": "WTI",
         "symbol": "CL=F",
-        "value": 95.33000183105469,
-        "change1d": -6.456679025222289,
-        "change5d": -4.717642255604304,
+        "value": 95.45999908447266,
+        "change1d": -6.329118188457938,
+        "change5d": -4.587709972293208,
         "role": "Energía / inflación"
       },
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.29199981689453,
-        "change1d": 0.07184054611300006,
-        "change5d": 1.1824021769944126,
+        "value": 100.31199645996094,
+        "change1d": 0.0917932928929277,
+        "change5d": 1.2025763522489408,
         "role": "Dólar / liquidez"
       },
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 112.2770004272461,
-        "change1d": 1.536469688857478,
-        "change5d": 1.57137642241032,
+        "value": 112.46800231933594,
+        "change1d": 1.7092001479265484,
+        "change5d": 1.7441662636514144,
         "role": "Carry / apetito de riesgo"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 77764.03125,
-        "change1d": 1.780354230295611,
-        "change5d": 1.2049677467371511,
+        "value": 77954.53125,
+        "change1d": 2.029687465329899,
+        "change5d": 1.4528914467543563,
         "role": "Beta alta / liquidez"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2489.389892578125,
-        "change1d": 1.7278855600059373,
-        "change5d": 0.4993555510282688,
+        "value": 2497.8701171875,
+        "change1d": 2.074426421747866,
+        "change5d": 0.8417113670903031,
         "role": "Beta alta / liquidez"
       },
       {
@@ -1556,7 +1556,7 @@
       "COPPER: el cobre acompaña la demanda cíclica.",
       "VVIX: la volatilidad de la volatilidad no muestra estrés.",
       "VIX: la volatilidad bursátil está contenida.",
-      "SP500: la bolsa amplia acompaña el apetito por riesgo."
+      "AUDJPY: el carry confirma apetito por riesgo."
     ],
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
@@ -1590,7 +1590,7 @@
     }
   },
   "automation": {
-    "updatedAt": "18/09/2026 08:07 UTC",
+    "updatedAt": "18/09/2026 08:27 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
