@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "18/09/2026 04:07 UTC",
+  "updated": "18/09/2026 04:26 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,10 +1400,10 @@
     }
   },
   "riskOnOff": {
-    "updated": "18/09/2026 04:07 UTC",
-    "score": 66.8,
+    "updated": "18/09/2026 04:26 UTC",
+    "score": 67.8,
     "label": "RISK ON",
-    "confidence": 67,
+    "confidence": 70,
     "method": "Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.",
     "assets": [
       {
@@ -1473,65 +1473,65 @@
       {
         "name": "GOLD",
         "symbol": "GC=F",
-        "value": 4399.7001953125,
-        "change1d": 0.2780671296296333,
-        "change5d": -0.1724323216432233,
+        "value": 4393.2001953125,
+        "change1d": -0.14773733916972898,
+        "change5d": -0.35609125584602497,
         "role": "Activo defensivo"
       },
       {
         "name": "COPPER",
         "symbol": "HG=F",
-        "value": 6.58650016784668,
-        "change1d": 2.4100164941247337,
-        "change5d": 1.8478453699753539,
+        "value": 6.628499984741211,
+        "change1d": 0.6376651609235839,
+        "change5d": 2.4576848024971287,
         "role": "Cíclico / crecimiento"
       },
       {
         "name": "BRENT",
         "symbol": "BZ=F",
-        "value": 104.81999969482422,
-        "change1d": -0.9543627693050838,
-        "change5d": -2.6107940446914,
+        "value": 103.80000305175781,
+        "change1d": -0.9730935375272365,
+        "change5d": -0.7743022214585449,
         "role": "Energía / inflación"
       },
       {
         "name": "WTI",
         "symbol": "CL=F",
-        "value": 101.91000366210938,
-        "change1d": -0.5076604915719485,
-        "change5d": -0.5562057729827874,
+        "value": 101.12000274658203,
+        "change1d": -0.7751946689616984,
+        "change5d": 1.0694649297218861,
         "role": "Energía / inflación"
       },
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.22000122070312,
-        "change1d": -0.08971821361879462,
-        "change5d": 1.140382404455087,
+        "value": 100.19999694824219,
+        "change1d": -0.01996035942654073,
+        "change5d": 1.0895824977137591,
         "role": "Dólar / liquidez"
       },
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 112.04199981689453,
-        "change1d": 1.323949473149666,
-        "change5d": 1.3587831454018096,
+        "value": 111.9520034790039,
+        "change1d": 1.2425622754193455,
+        "change5d": 1.277367967959031,
         "role": "Carry / apetito de riesgo"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 77197.96875,
-        "change1d": 1.3757636648155103,
-        "change5d": -0.09382627176052205,
+        "value": 77248.2265625,
+        "change1d": 1.4417618277828614,
+        "change5d": -0.028784848674801022,
         "role": "Beta alta / liquidez"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2472.969970703125,
-        "change1d": 2.352950211222704,
-        "change5d": -2.097219780386539,
+        "value": 2468.570068359375,
+        "change1d": 2.1708440834252496,
+        "change5d": -2.2714081762227556,
         "role": "Beta alta / liquidez"
       },
       {
@@ -1555,8 +1555,8 @@
       "NASDAQ: la beta alta acompaña el régimen.",
       "VVIX: la volatilidad de la volatilidad no muestra estrés.",
       "VIX: la volatilidad bursátil está contenida.",
-      "SP500: la bolsa amplia acompaña el apetito por riesgo.",
-      "COPPER: el cobre acompaña la demanda cíclica."
+      "COPPER: el cobre acompaña la demanda cíclica.",
+      "SP500: la bolsa amplia acompaña el apetito por riesgo."
     ],
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
@@ -1591,7 +1591,7 @@
     }
   },
   "automation": {
-    "updatedAt": "18/09/2026 04:07 UTC",
+    "updatedAt": "18/09/2026 04:26 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
