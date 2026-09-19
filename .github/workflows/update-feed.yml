@@ -22,21 +22,26 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 1
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
       - name: Install dependencies
         run: pip install -r requirements.txt
+
       - name: Validate Python
         run: python -m py_compile update_feed.py market_features.py
+
       - name: Update feed
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-                    TE_API_KEY: ${{ secrets.TE_API_KEY }}
-                    FINRA_API_CLIENT_ID: ${{ secrets.FINRA_API_CLIENT_ID }}
-                    FINRA_API_CLIENT_SECRET: ${{ secrets.FINRA_API_CLIENT_SECRET }}
-                    FINRA_API_TOKEN: ${{ secrets.FINRA_API_TOKEN }}
+          TE_API_KEY: ${{ secrets.TE_API_KEY }}
+          FINRA_API_CLIENT_ID: ${{ secrets.FINRA_API_CLIENT_ID }}
+          FINRA_API_CLIENT_SECRET: ${{ secrets.FINRA_API_CLIENT_SECRET }}
+          FINRA_API_TOKEN: ${{ secrets.FINRA_API_TOKEN }}
         run: python update_feed.py
+
       - name: Commit feed changes
         run: |
           git config user.name "github-actions[bot]"
