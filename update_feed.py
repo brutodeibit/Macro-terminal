@@ -174,6 +174,6 @@ def ensure_slots(feed):
 def main():
  feed=load();update_us(feed);update_treasury(feed);update_te(feed);ensure_slots(feed);update_risk(feed)
  enrich_feed(feed)
- stamp=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC');feed['version']=6;feed['updated']=stamp;feed['automation']={'updatedAt':stamp,'runner':'GitHub Actions / update_feed.py','intervalMinutes':15,'notes:['Mercado/Risk-On-Off se refresca cada 15 min cuando Yahoo responde.','Indicadores macro solo cambian cuando se publica un nuevo dato.','Las curvas usan benchmarks reales disponibles; no se interpolan silenciosamente.','COT es semanal; opciones usan gamma proxy; dark pools/OTC son datos agregados y con retraso.']};write(feed);print('Feed actualizado',stamp)
+ stamp=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC');feed['version']=6;feed['updated']=stamp;feed['automation']={'updatedAt':stamp,'runner':'GitHub Actions / update_feed.py','intervalMinutes':15,'notes':['Mercado/Risk-On-Off se refresca cada 15 min cuando Yahoo responde.','Indicadores macro solo cambian cuando se publica un nuevo dato.','Las curvas usan benchmarks reales disponibles; no se interpolan silenciosamente.','COT es semanal; opciones usan gamma proxy; dark pools/OTC son datos agregados y con retraso.']};write(feed);print('Feed actualizado',stamp)
 
 if __name__=='__main__':main()
