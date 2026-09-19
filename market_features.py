@@ -1,57 +1,137 @@
 from __future__ import annotations
 import math, os, re, requests
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from bs4 import BeautifulSoup
 
-def gamma(calls, puts, spot):
+def _norm_pdf(x):
+ try:return math.exp(-0.5*x*x)/math.sqrt(2*math.pi)
+ except Exception:return None
+
+def _vanna_proxy(spot,strike,iv,t):
+ """Black-Scholes vanna proxy: dDelta/dVol. Not dealer positioning."""
+ try:
+  if not spot or not strike or not iv or not t:return None
+  sig=float(iv); 
+  if sig>3:sig/=100.0
+  if sig<=0:return None
+  sq=math.sqrt(max(t,1e-9))
+  d1=(math.log(spot/strike)+0.5*sig*sig*t)/(sig*sq)
+  d2=d1-sig*sq
+  return _norm_pdf(d1)*(-d2/sig)
+ except Exception:return None
+
+def _option_gex(calls,puts,spot):
  scale=float(spot or 0)**2*0.01*100.0
- vals=[]; posZones=[]; negZones=[]
+ vals=[]; posZones=[]; negZones=[]; callWall=None; putWall=None
  for x in calls:
   v=float(x.get("openInterest",0) or 0)*float(x.get("gamma",0) or 0)*scale
-  vals.append((x.get("strike",0),v)); posZones.append({"strike":x.get("strike",0),"gamma":v})
+  vals.append((float(x.get("strike") or 0),v)); posZones.append({"strike":x.get("strike"),"gamma":v})
+  if callWall is None or v>callWall["gamma"]: callWall={"strike":x.get("strike"),"gamma":v}
  for x in puts:
   v=-float(x.get("openInterest",0) or 0)*float(x.get("gamma",0) or 0)*scale
-  vals.append((x.get("strike",0),v)); negZones.append({"strike":x.get("strike",0),"gamma":v})
+  vals.append((float(x.get("strike") or 0),v)); negZones.append({"strike":x.get("strike"),"gamma":v})
+  if putWall is None or abs(v)>abs(putWall["gamma"]): putWall={"strike":x.get("strike"),"gamma":v}
  net=sum(v for _,v in vals); pos=sum(v for _,v in vals if v>0); neg=sum(v for _,v in vals if v<0)
- agg=sorted(vals,key=lambda z:z[0] if z[0] is not None else 0)
- cum=0; prev=None; flip=None
+ agg=sorted(vals,key=lambda z:z[0]); cum=0.0; prev_k=None; prev_cum=0.0; flip=None
  for k,v in agg:
   nxt=cum+v
-  if cum==0 and nxt==0: flip=k
-  elif cum*nxt<0 and prev is not None:
-   pk,pv=prev
+  if cum*nxt<0 and prev_k is not None:
    den=nxt-cum
-   flip=pk+((0-cum)/den)*(k-pk) if den else k
-  cum=nxt; prev=(k,cum)
+   flip=prev_k+((0-cum)/den)*(k-prev_k) if den else k
+   break
+  prev_k,prev_cum=k,cum
+  cum=nxt
  regime="NEGATIVE · potencial amplificación" if net<0 else "POSITIVE · potencial estabilización" if net>0 else "NEUTRAL"
  effect="Los hedges modelados pueden reforzar el movimiento" if net<0 else "Los hedges modelados pueden amortiguar el movimiento" if net>0 else "Sin sesgo de gamma agregado"
- return {"gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"gammaTotal":net,
-         "gammaRegime":regime,"gammaEffect":effect,"zeroGamma":flip,
-         "positiveZones":sorted(posZones,key=lambda x:x["gamma"],reverse=True)[:5],
-         "negativeZones":sorted(negZones,key=lambda x:abs(x["gamma"]),reverse=True)[:5]}
+ return {
+  "gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"gammaTotal":net,
+  "gammaRegime":regime,"gammaEffect":effect,"zeroGamma":flip,
+  "callWall":callWall.get("strike") if callWall else None,
+  "putWall":putWall.get("strike") if putWall else None,
+  "positiveZones":sorted(posZones,key=lambda x:x["gamma"],reverse=True)[:8],
+  "negativeZones":sorted(negZones,key=lambda x:abs(x["gamma"]),reverse=True)[:8]
+ }
 
+def _option_summary(rows,spot,expiration,oi_prev=None):
+ calls=[x for x in rows if x.get("type")=="C"]; puts=[x for x in rows if x.get("type")=="P"]
+ ex=max(0,(expiration-datetime.now(timezone.utc)).total_seconds()/86400.0)
+ co=sum(float(x.get("openInterest",0) or 0) for x in calls); po=sum(float(x.get("openInterest",0) or 0) for x in puts)
+ cv=sum(float(x.get("volume",0) or 0) for x in calls); pv=sum(float(x.get("volume",0) or 0) for x in puts)
+ gp=_option_gex(calls,puts,spot)
+ atm_calls=sorted(calls,key=lambda x:abs(float(x.get("strike") or 0)-spot))[:3]
+ atm_puts=sorted(puts,key=lambda x:abs(float(x.get("strike") or 0)-spot))[:3]
+ ivs=[float(x.get("iv") or 0) for x in (atm_calls[:1]+atm_puts[:1]) if float(x.get("iv") or 0)>0]
+ iv_atm=sum(ivs)/len(ivs) if ivs else None
+ if iv_atm and iv_atm>3:iv_atm/=100.0
+ expected=spot*iv_atm*math.sqrt(max(ex,0)/365.0) if iv_atm else None
+ dex=None;vanna=None;charm_vals=[];total_oi=co+po;gex_by=[]
+ for x in rows:
+  oi=float(x.get("openInterest",0) or 0); delta=x.get("delta"); gamma=float(x.get("gamma",0) or 0)
+  if delta is not None:dex=(dex or 0)+oi*float(delta)*spot*100.0
+  iv=float(x.get("iv") or 0); k=float(x.get("strike") or 0)
+  if x.get("vanna") is not None:
+   vanna=(vanna or 0)+oi*float(x["vanna"])*100.0
+  else:
+   vp=_vanna_proxy(spot,k,iv,max(ex,0)/365.0)
+   if vp is not None:vanna=(vanna or 0)+oi*vp*100.0
+  if x.get("charm") is not None:charm_vals.append(oi*float(x["charm"])*100.0)
+  sign=1 if x.get("type")=="C" else -1
+  gex_by.append({"strike":x.get("strike"),"gex":sign*oi*gamma*(spot**2)*0.01*100.0})
+ oi_delta=None;largest_oi_change=None
+ if oi_prev:
+  oi_delta=sum(float(x.get("openInterest",0) or 0)-float(oi_prev.get(x.get("key"),0) or 0) for x in rows)
+  changes=[]
+  for x in rows:
+   k=x.get("key")
+   if k in oi_prev:
+    d=float(x.get("openInterest",0) or 0)-float(oi_prev.get(k,0) or 0)
+    changes.append({"strike":x.get("strike"),"type":x.get("type"),"change":d})
+  if changes:largest_oi_change=max(changes,key=lambda z:abs(z["change"]))
+ charm=sum(charm_vals) if charm_vals else None
+ return {
+  "expiration":expiration.date().isoformat(),"daysToExpiry":round(ex,2),
+  "callOi":co,"putOi":po,"putCallOi":po/co if co else None,
+  "callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,
+  "totalVolume":cv+pv,"totalOpenInterest":total_oi,
+  "ivAtm":iv_atm*100 if iv_atm else None,"expectedMove":expected,
+  "dexProxy":dex,"vannaProxy":vanna,"charm":charm,
+  "oiChange":oi_delta,"largestOiChange":largest_oi_change,
+  **gp,
+  "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:10]
+ }
 
 def opt(sym):
  try:
   r=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+sym+".json",h={"User-Agent":"Mozilla/5.0","Accept":"application/json"}).json()
-  d=r.get("data",r); spot=float(d.get("close") or d.get("current_price") or 0); rows=d.get("options",[]) or []
-  if not rows or not spot:return None
-  now=datetime.now(timezone.utc);calls=[];puts=[];expiries=[]
-  for x in rows:
+  d=r.get("data",r); spot=float(d.get("close") or d.get("current_price") or 0); raw=d.get("options",[]) or []
+  if not raw or not spot:return None
+  now=datetime.now(timezone.utc); all_rows=[]; expiries={}
+  for x in raw:
    m=re.search(r"([0-9]{6})([CP])([0-9]{8})$",str(x.get("option") or ""))
    if not m:continue
    try:
     ex=datetime.strptime("20"+m.group(1),"%Y%m%d").replace(tzinfo=timezone.utc)
     if ex<=now:continue
-    row={"strike":int(m.group(3))/1000.0,"openInterest":float(x.get("open_interest") or 0),"impliedVolatility":float(x.get("iv") or 0),"gamma":float(x.get("gamma") or 0),"expiration":int(ex.timestamp())}
-    (calls if m.group(2)=="C" else puts).append(row);expiries.append(ex)
-   except Exception:pass
+    typ=m.group(2); strike=int(m.group(3))/1000.0
+    row={"strike":strike,"openInterest":float(x.get("open_interest") or 0),"volume":float(x.get("volume") or x.get("trade_volume") or 0),"iv":float(x.get("iv") or x.get("implied_volatility") or 0),"gamma":float(x.get("gamma") or 0),"delta":num(x.get("delta")),"theta":num(x.get("theta")),"vega":num(x.get("vega")),"vanna":num(x.get("vanna")),"charm":num(x.get("charm")),"bid":num(x.get("bid")),"ask":num(x.get("ask")),"expiration":int(ex.timestamp()),"type":typ}
+    row["key"]=typ+"|"+ex.date().isoformat()+"|"+str(strike)
+    all_rows.append(row); expiries.setdefault(ex.date().isoformat(),[]).append(row)
+   except Exception:continue
   if not expiries:return None
-  nearest=min(expiries);ts=int(nearest.timestamp());calls=[x for x in calls if x["expiration"]==ts];puts=[x for x in puts if x["expiration"]==ts]
-  co=sum(x["openInterest"] for x in calls);po=sum(x["openInterest"] for x in puts);tc=max(calls,key=lambda x:x["openInterest"],default={});tp=max(puts,key=lambda x:x["openInterest"],default={})
-  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,"topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),"method":"CBOE delayed chain · OI + GEX proxy; dato retrasado. GEX depende de una hipótesis de posicionamiento dealer.","source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Dealer side is assumed for the gamma proxy.",**gamma(calls,puts,spot)}
-
+  ex_dates=sorted(expiries)
+  nearest=datetime.fromisoformat(ex_dates[0]).replace(tzinfo=timezone.utc)
+  monthly_dates=[x for x in ex_dates if datetime.fromisoformat(x).weekday()==4 and 15<=datetime.fromisoformat(x).day<=21]
+  monthly=datetime.fromisoformat(monthly_dates[0]).replace(tzinfo=timezone.utc) if monthly_dates else nearest
+  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,
+          "expiration":ex_dates[0],"monthlyExpiration":monthly.date().isoformat(),
+          "profiles":[_option_summary(expiries[ex_dates[0]],spot,nearest),
+                       _option_summary(expiries[monthly.date().isoformat()],spot,monthly)],
+          "method":"CBOE delayed chain · OI/Greeks + GEX/DEX proxies; dealer positioning is not directly observable.",
+          "source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/",
+          "gammaNote":"GEX assumes a call-positive / put-negative hedge convention. DEX/Vanna/Charm are exposure proxies, not observed dealer books."}
  except Exception as e:
   print("OPTIONS_CHAIN",sym,type(e).__name__,str(e)[:180]); return None
+
 
 H={"User-Agent":"MacroTerminal/6.0","Accept-Language":"en-US,en;q=0.9"}; T=25
 def get(u,p=None,h=None):
@@ -130,49 +210,122 @@ def finra_access_token():
 
 def update_options(feed):
  out=[]
- for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA"):
+ previous=feed.get("options",{}).get("markets",[]) if isinstance(feed.get("options"),dict) else []
+ prev_map={}
+ for m in previous:
+  for p in (m.get("profiles") or []):
+   for zone in (p.get("topGexStrikes") or []):
+    pass
+ for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA","IWM"):
   try:
    x=opt(sym)
-   if x: out.append(x)
-  except Exception as e: print("OPTIONS",sym,type(e).__name__,str(e)[:180])
+   if x:out.append(x)
+  except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:180])
  if out:
-  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","note":"Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."}
+  hist=dict(feed.get("options",{}).get("history") or {}) if isinstance(feed.get("options"),dict) else {}
+  stamp=datetime.now(timezone.utc).isoformat()
+  for m in out:
+   arr=hist.get(m["ticker"],[])
+   snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),
+         "gammaNet":(m.get("profiles") or [{}])[0].get("gammaNet"),
+         "zeroGamma":(m.get("profiles") or [{}])[0].get("zeroGamma"),
+         "callWall":(m.get("profiles") or [{}])[0].get("callWall"),
+         "putWall":(m.get("profiles") or [{}])[0].get("putWall"),
+         "ivAtm":(m.get("profiles") or [{}])[0].get("ivAtm"),
+         "expectedMove":(m.get("profiles") or [{}])[0].get("expectedMove")}
+   arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10] and abs(float(h.get("spot") or 0)-float(snap.get("spot") or 0))<0.0001)]
+   arr.append(snap);hist[m["ticker"]]=arr[-64:]
+  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","note":"Cadena retrasada; GEX/DEX/Vanna/Charm son proxies basados en datos públicos y supuestos de posicionamiento. Se conserva historial intradía."}
 
 def update_dark_pools(feed):
  token=finra_access_token()
  if not token:return
- out=[]; now=datetime.now(timezone.utc)
- monday=now.date()-timedelta(days=now.weekday())
+ out=[]; old=feed.get("darkPools",{}) if isinstance(feed.get("darkPools"),dict) else {}
+ old_hist=dict(old.get("history") or {})
  for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG"):
-  found=None
-  for weeks_back in range(0,9):
-   week=(monday-timedelta(days=7*weeks_back)).isoformat()
-   ats=otc=at=ot=0.0; last=""
-   ok_any=False
-   for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
-    try:
-     payload={"limit":50,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[
-      {"compareType":"equal","fieldName":"weekStartDate","fieldValue":week},
+  ats=otc=at=ot=0.0; last=""; week=None; ok=False
+  for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
+   try:
+    payload={"limit":60,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[
       {"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},
       {"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":typ},
       {"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
-     d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
-     if not d:continue
-     ok_any=True
-     qty=sum(float(row.get("totalWeeklyShareQuantity") or 0) for row in d)
-     tr=sum(float(row.get("totalWeeklyTradeCount") or 0) for row in d)
-     lu=max(str(row.get("lastUpdateDate") or "") for row in d)
-     if typ=="ATS_W_SMBL":ats+=qty;at+=tr
-     else:otc+=qty;ot+=tr
-     last=max(last,lu)
-    except Exception as e:print("FINRA",sym,typ,week,type(e).__name__,str(e)[:160])
-   if ok_any and (ats or otc):
-    found={"symbol":sym,"weekStart":week,"lastUpdateDate":last,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,"atsTrades":at,"otcTrades":ot,"zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado","note":"ATS/OTC agregado por ticker. Se muestra la última semana disponible; no representa acumulación por precio."}
-    break
-  if found:out.append(found)
+    d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
+    rows=[x for x in (d if isinstance(d,list) else []) if x.get("weekStartDate")]
+    rows=sorted(rows,key=lambda x:str(x.get("weekStartDate")),reverse=True)
+    if not rows:continue
+    if week is None:week=rows[0].get("weekStartDate")
+    target=[x for x in rows if x.get("weekStartDate")==week]
+    qty=sum(float(row.get("totalWeeklyShareQuantity") or 0) for row in target)
+    tr=sum(float(row.get("totalWeeklyTradeCount") or 0) for row in target)
+    lu=max(str(row.get("lastUpdateDate") or "") for row in target)
+    ok=True
+    if typ=="ATS_W_SMBL":ats+=qty;at+=tr
+    else:otc+=qty;ot+=tr
+    last=max(last,lu)
+   except Exception as e:print("FINRA",sym,typ,type(e).__name__,str(e)[:160])
+  if ok and week and (ats or otc):
+   found={"symbol":sym,"weekStart":str(week)[:10],"lastUpdateDate":last,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,
+          "atsTrades":at,"otcTrades":ot,"avgSharesPerTrade":(ats+otc)/(at+ot) if (at+ot) else None,
+          "zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado",
+          "note":"FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."}
+   arr=old_hist.get(sym,[])
+   arr=[h for h in arr if h.get("weekStart")!=found["weekStart"]];arr.append(found);arr=sorted(arr,key=lambda x:x.get("weekStart",""))
+   arr=arr[-12:]; hist_vals=[x.get("totalOffExchange") for x in arr]
+   found["zScore"]=zscore(hist_vals,found["totalOffExchange"])
+   old_hist[sym]=arr
+   found["history"]=arr
+   out.append(found)
  if out:
-  feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency","method":"Weekly Summary production dataset · semana actual disponible; fallback a semanas previas si aún no existe dato.","coverage":"Rolling 12 months in FINRA weeklySummary."}
+  feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":old_hist,
+    "source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency",
+    "method":"Weekly Summary production dataset · última semana disponible por ticker; historial rodante de 12 semanas.",
+    "coverage":"Rolling 12 months in FINRA weeklySummary."}
 
+def update_dark_flow_radar(feed):
+ try:
+  html=get("https://squawkflow.com/dark-pool-flow").text
+  soup=BeautifulSoup(html,"html.parser")
+  text=" ".join(soup.stripped_strings)
+  def rx(pattern):
+   m=re.search(pattern,text,re.I|re.S);return m.group(1).strip() if m else None
+  tracked=rx(r"TRACKED NOTIONAL\s+\$([0-9.,]+[KMB]?)")
+  largest=rx(r"LARGEST MODELED\s+\$([0-9.,]+[KMB]?)")
+  buy=rx(r"BUY-SIDE ESTIMATE\s+([0-9]+(?:\.[0-9]+)?)%")
+  dix=rx(r"DIX\s+([0-9]+(?:\.[0-9]+)?)%")
+  dix_date=None
+  m=re.search(r"DIX\s+(?:BULLISH|BEARISH|NEUTRAL).*?([0-9]+(?:\.[0-9]+)?)%\s*\((\d{4}-\d{2}-\d{2})\)",text,re.I|re.S)
+  if m:dix=m.group(1);dix_date=m.group(2)
+  signals=[]
+  for tr in soup.select("table tr"):
+   cells=[c.get_text(" ",strip=True) for c in tr.find_all(["th","td"])]
+   if len(cells)>=4 and re.fullmatch(r"[A-Z][A-Z0-9.\-]{0,6}",cells[0] or ""):
+    if cells[1].startswith("$") and "$" in cells[3]:
+     signals.append({"symbol":cells[0],"price":cells[1],"shares":cells[2],"notional":cells[3]})
+  feed["darkFlowRadar"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+    "source":"SquawkFlow","sourceUrl":"https://squawkflow.com/dark-pool-flow","dataStatus":"MODELED · NOT PRINTS",
+    "trackedNotional":"$"+(tracked or "—"),"buySideEstimate":float(buy) if buy else None,
+    "largestModeled":"$"+(largest or "—"),"dix":float(dix) if dix else None,"dixDate":dix_date,
+    "signals":signals[:15],
+    "note":"Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."}
+ except Exception as e:
+  print("SQUAWK DARK FLOW",type(e).__name__,str(e)[:180])
+
+def update_squawkflow(feed):
+ out={}
+ headers={"Accept":"application/json","User-Agent":"MacroTerminal/6.0"}
+ for key,path,params in (
+   ("spxGex","/api/v1/gex/spx",None),
+   ("vixTerm","/api/public/vix-term-structure",None),
+   ("unusualOptions","/api/v1/options/flow/unusual",{"limit":"12"})
+ ):
+  try:
+   r=get("https://api.squawkflow.com"+path,params,headers).json()
+   if r.get("success") is not False:out[key]={"data":r.get("data"),"meta":r.get("meta"),"source":"SquawkFlow","sourceUrl":"https://squawkflow.com/docs/endpoints"}
+  except Exception as e:print("SQUAWKFLOW",key,type(e).__name__,str(e)[:160])
+ if out:
+  feed["squawkFlow"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),**out,
+    "note":"GEX SPX/VIX curve/flow from SquawkFlow public delayed data. Unusual options direction is inferred from quote location and aggregate chain activity; not confirmed trade intent."}
 
 def update_traditional_sentiment(feed):
  result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5}
@@ -284,7 +437,7 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
   try:
    fn(feed)
   except Exception as e:
