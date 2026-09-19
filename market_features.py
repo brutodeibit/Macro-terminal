@@ -464,7 +464,9 @@ def chart_exchange_offexchange(sym):
   print("CHARTEXCHANGE DP",sym,type(e).__name__,str(e)[:140]);return None
 
 def update_dark_pool_prints(feed):
- prints=[];sources=[];assets={}
+ prints=[]; sources=[]; assets={}
+ universe=("SPY","QQQ","GLD","USO","AAPL","NVDA","IWM","DIA","MSFT","META","AMD","AMZN","TSLA","JPM","COIN")
+
  try:
   html=get("https://capitolwhale.com/dark-pool-prints").text
   soup=BeautifulSoup(html,"html.parser")
@@ -489,49 +491,44 @@ def update_dark_pool_prints(feed):
   for raw in soup.stripped_strings:
    p=_parse_capitol_print_line(raw)
    if not p:continue
-   # Capitol Whale's compact free print table exposes size/venue and a % displacement,
-   # but not the exact execution price in the free row.
-   p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,
-             "notional":None,"side":"UNKNOWN","directionConfidence":None,
+   p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,"notional":None,
+             "side":"UNKNOWN","directionConfidence":None,
              "sideBasis":"Not published per print on free cockpit",
              "source":"Capitol Whale · free public view","realPrint":True})
    prints.append(p)
   prints=prints[:100]
   if prints:sources.append("Capitol Whale")
-  for t in sorted({p["ticker"] for p in prints}):
+ except Exception as e:
+  print("CAPITOL DARK PRINTS",type(e).__name__,str(e)[:180])
+  print_count=total_premium=bullish=largest=buy_pct=sell_pct=None;top=[]
+
+ # Keep every selected asset visible even when the public print list did not contain it.
+ for t in universe:
+  try:
    series=yahoo_intraday(t,"5m","1d") or []
    spot=series[-1]["price"] if series else None
    cs=chart_exchange_offexchange(t) or {}
-   arr=[]
-   for p in [x for x in prints if x["ticker"]==t]:
-    move=Number if False else None
-    mv=float(p.get("sessionMovePct") or 0)
-    approx=spot*(1+mv/100.0) if spot is not None else None
-    p["priceApprox"]=approx
-    if approx is not None:p["notional"]=approx*float(p.get("size") or 0)
-    arr.append(p)
+   arr=[x for x in prints if x["ticker"]==t]
+   # ChartExchange supplies authoritative daily off-exchange volume share; it does not
+   # identify institutions or side per print.
+   venue_map={}
+   for p in arr:
+    venue=str(p.get("venue") or "TRF")
+    z=venue_map.setdefault(venue,{"venue":venue,"prints":0,"shares":0,"notional":0})
+    z["prints"]+=1;z["shares"]+=float(p.get("size") or 0);z["notional"]+=float(p.get("notional") or 0)
    assets[t]={"ticker":t,"lastPrice":spot,"priceSeries":series[-90:],"prints":arr,
-             "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
-             "notional":sum(float(x.get("notional") or 0) for x in arr),
-             "dailyOffExchange":cs,
-             "source":"Yahoo Finance + Capitol Whale free print feed + ChartExchange public stats",
-             "note":"El precio de un print es aproximado cuando la vista gratuita solo expone el desplazamiento porcentual; se muestra como referencia visual, no como precio exacto del trade."}
-  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-    "prints":prints,"assets":assets,"sources":sources,
-    "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,
-    "largestPrintPremium":largest,"buyPct":buy_pct,"sellPct":sell_pct,"topTickers":top[:12],
-    "dataStatus":"REAL TRF PRINTS · PRICE APPROXIMATION WHEN FREE ROW OMITS EXACT PRICE",
-    "free":True,"documentedDelay":"Intraday public view; exact timing depends on source.",
-    "note":"FINRA TRF prints are real executions. The free public cockpit does not expose the exact execution price in every compact row, so the chart marker may use an explicitly labelled approximation from the source's relative-price field."}
- except Exception as e:
-  print("CAPITOL DARK PRINTS",type(e).__name__,str(e)[:180])
-
- if not feed.get("darkPoolPrints"):
-  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-    "prints":[],"assets":{},"printCount":None,"totalPremium":None,"buyPct":None,"sellPct":None,
-    "dataStatus":"NO FREE PRINT FEED AVAILABLE",
-    "note":"La fuente gratuita no respondió en esta ejecución. Se mantienen las estadísticas de off-exchange separadas cuando están disponibles."}
-
+     "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
+     "notional":sum(float(x.get("notional") or 0) for x in arr),
+     "dailyOffExchange":cs,"venueClusters":sorted(venue_map.values(),key=lambda x:x["shares"],reverse=True)[:8],
+     "source":"Yahoo Finance + Capitol Whale free print feed + ChartExchange public stats",
+     "note":"El print público identifica tamaño/venue, pero no la cartera o institución final. El precio individual puede no estar expuesto por la vista gratuita."}
+ feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+   "prints":prints,"assets":assets,"sources":sources,
+   "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,"largestPrintPremium":largest,
+   "buyPct":buy_pct,"sellPct":sell_pct,"topTickers":top[:12],
+   "dataStatus":"REAL TRF PRINTS · VENUE/MPID VISIBLE; PARTICIPANT NOT IDENTIFIED",
+   "free":True,"documentedDelay":"Intraday public view; exact timing depends on source.",
+   "note":"Los prints son ejecuciones off-exchange reportadas al TRF. El verde/rojo agregado es una clasificación de flujo; un print individual no permite saber qué cartera lo originó. Venue/MPID se muestra para agrupar actividad, no como identidad de fondo."}
 
 
 def update_traditional_sentiment(feed):
