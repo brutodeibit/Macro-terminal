@@ -12,7 +12,7 @@ from market_features import enrich_feed
 ROOT=Path(__file__).resolve().parent
 FEED_PATH=ROOT/'macro-feed.json'
 HEADERS={'User-Agent':'MacroTerminal/1.0','Accept-Language':'en-US,en;q=0.9'}
-TIMEOUT=25
+TIMEOUT=10
 
 ECONOMIES={
  'us':{'te':'united states'},'eu':{'te':'euro area'},'de':{'te':'germany'},'uk':{'te':'united kingdom'},
