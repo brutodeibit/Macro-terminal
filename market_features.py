@@ -522,6 +522,9 @@ def update_dark_pool_prints(feed):
      "dailyOffExchange":cs,"venueClusters":sorted(venue_map.values(),key=lambda x:x["shares"],reverse=True)[:8],
      "source":"Yahoo Finance + Capitol Whale free print feed + ChartExchange public stats",
      "note":"El print público identifica tamaño/venue, pero no la cartera o institución final. El precio individual puede no estar expuesto por la vista gratuita."}
+ except Exception as e:
+  print("DARK ASSET",t,type(e).__name__,str(e)[:140])
+
  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
    "prints":prints,"assets":assets,"sources":sources,
    "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,"largestPrintPremium":largest,
