@@ -189,14 +189,20 @@ def chart(sym):
  try:return (get("https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(sym,safe=""),{"range":"3mo","interval":"1d"}).json().get("chart",{}).get("result") or [None])[0]
  except Exception:return None
 def update_fx(feed):
- sy={"EUR":"EURUSD=X","GBP":"GBPUSD=X","JPY":"USDJPY=X","AUD":"AUDUSD=X","NZD":"NZDUSD=X","CAD":"USDCAD=X","CHF":"USDCHF=X"}; out={"USD":{"pair":"—","change1d":0,"change5d":0,"change20d":0}}
- for c,s in sy.items():
+ sy={"EUR":"EURUSD=X","GBP":"GBPUSD=X","JPY":"USDJPY=X","AUD":"AUDUSD=X","NZD":"NZDUSD=X","CAD":"USDCAD=X","CHF":"USDCHF=X"}
+ out={"USD":{"pair":"—","change1d":0,"change1w":0,"change15d":0,"change1m":0}}
+ for c,sym in sy.items():
   try:
-   q=chart(s)["indicators"]["quote"][0]["close"]; q=[float(x) for x in q if x is not None]; last=q[-1]; a=[(last/q[-2]-1)*100,(last/q[-6]-1)*100,(last/q[-21]-1)*100]
-   if c in ("JPY","CAD","CHF"): a=[-x for x in a]
-   out[c]={"pair":s,"last":last,"change1d":a[0],"change5d":a[1],"change20d":a[2]}
-  except Exception:pass
- feed["fx"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"currencies":out,"method":"Fuerza frente a USD normalizada; se combina con política, 2Y, tipo real y tendencia."}
+   r=chart(sym); q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
+   if len(q)<22:continue
+   last=q[-1]; a1=(last/q[-2]-1)*100; w=(last/q[-6]-1)*100; d15=(last/q[-16]-1)*100; m=(last/q[-22]-1)*100
+   if c in ("JPY","CAD","CHF"):a1,w,d15,m=[-x for x in (a1,w,d15,m)]
+   out[c]={"pair":sym,"last":last,"change1d":a1,"change1w":w,"change15d":d15,"change1m":m}
+  except Exception as e:print("FX",c,type(e).__name__,str(e)[:120])
+ feed["fx"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"currencies":out,
+   "method":"Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."}
+
+
 def cot_rows(dataset,where):
  try:
   h={"X-App-Token":os.getenv("CFTC_APP_TOKEN")} if os.getenv("CFTC_APP_TOKEN") else {}
@@ -255,7 +261,7 @@ def update_options(feed):
   for p in (m.get("profiles") or []):
    for zone in (p.get("topGexStrikes") or []):
     pass
- for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA","IWM"):
+ for sym in ("SPY","QQQ","DIA","GLD","SLV","USO","BNO","UUP","FXE","AAPL","NVDA","IWM"):
   try:
    x=opt(sym)
    if x:out.append(x)
@@ -465,7 +471,20 @@ def chart_exchange_offexchange(sym):
 
 def update_dark_pool_prints(feed):
  prints=[]; sources=[]; assets={}
- universe=("SPY","QQQ","GLD","USO","AAPL","NVDA","IWM","DIA","MSFT","META","AMD","AMZN","TSLA","JPM","COIN")
+ universe={
+  "SPY":{"label":"SPY","proxyFor":"S&P 500 E-Mini"},
+  "QQQ":{"label":"QQQ","proxyFor":"Nasdaq-100"},
+  "DIA":{"label":"DIA","proxyFor":"Dow Jones"},
+  "UUP":{"label":"UUP","proxyFor":"DXY / USD Index"},
+  "FXE":{"label":"FXE","proxyFor":"Euro FX"},
+  "GLD":{"label":"GLD","proxyFor":"Gold"},
+  "SLV":{"label":"SLV","proxyFor":"Silver"},
+  "USO":{"label":"USO","proxyFor":"WTI"},
+  "BNO":{"label":"BNO","proxyFor":"Brent"},
+  "AAPL":{"label":"AAPL","proxyFor":"Equity"},
+  "NVDA":{"label":"NVDA","proxyFor":"Equity"},
+  "IWM":{"label":"IWM","proxyFor":"Small Caps"}
+ }
 
  try:
   html=get("https://capitolwhale.com/dark-pool-prints").text
@@ -503,7 +522,7 @@ def update_dark_pool_prints(feed):
   print_count=total_premium=bullish=largest=buy_pct=sell_pct=None;top=[]
 
  # Keep every selected asset visible even when the public print list did not contain it.
- for t in universe:
+ for t,meta in universe.items():
   try:
    series=yahoo_intraday(t,"5m","1d") or []
    spot=series[-1]["price"] if series else None
@@ -516,7 +535,7 @@ def update_dark_pool_prints(feed):
     venue=str(p.get("venue") or "TRF")
     z=venue_map.setdefault(venue,{"venue":venue,"prints":0,"shares":0,"notional":0})
     z["prints"]+=1;z["shares"]+=float(p.get("size") or 0);z["notional"]+=float(p.get("notional") or 0)
-   assets[t]={"ticker":t,"lastPrice":spot,"priceSeries":series[-90:],"prints":arr,
+   assets[t]={"ticker":t,"label":meta.get("label",t),"proxyFor":meta.get("proxyFor"),"lastPrice":spot,"priceSeries":series[-90:],"prints":arr,
      "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
      "notional":sum(float(x.get("notional") or 0) for x in arr),
      "dailyOffExchange":cs,"venueClusters":sorted(venue_map.values(),key=lambda x:x["shares"],reverse=True)[:8],
