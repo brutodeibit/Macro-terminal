@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "19/09/2026 03:52 UTC",
+  "updated": "19/09/2026 04:07 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,10 +1400,10 @@
     }
   },
   "riskOnOff": {
-    "updated": "19/09/2026 03:52 UTC",
-    "score": 76.7,
+    "updated": "19/09/2026 04:07 UTC",
+    "score": 74.8,
     "label": "RISK ON",
-    "confidence": 67,
+    "confidence": 64,
     "method": "Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.",
     "assets": [
       {
@@ -1417,9 +1417,9 @@
       {
         "name": "NASDAQ",
         "symbol": "^IXIC",
-        "value": 26522.544921875,
-        "change1d": 0.3945906343037153,
-        "change5d": 0.7196505459366787,
+        "value": 26522.5390625,
+        "change1d": 0.3945684550763495,
+        "change5d": 0.7196282948968902,
         "role": "Growth / beta alta"
       },
       {
@@ -1449,9 +1449,9 @@
       {
         "name": "MOVE",
         "symbol": "^MOVE",
-        "value": 80.63500213623047,
-        "change1d": 5.792444036760425,
-        "change5d": -1.915821634572512,
+        "value": 80.63999938964844,
+        "change1d": 5.799000391179132,
+        "change5d": -1.9097429902790841,
         "role": "Volatilidad de bonos"
       },
       {
@@ -1473,41 +1473,41 @@
       {
         "name": "GOLD",
         "symbol": "GC=F",
-        "value": 4415.89990234375,
-        "change1d": 0.3682002480193791,
-        "change5d": 0.15876976468163218,
+        "value": 4424.89990234375,
+        "change1d": 0.5727596407159252,
+        "change5d": 0.362902319272318,
         "role": "Activo defensivo"
       },
       {
         "name": "COPPER",
         "symbol": "HG=F",
-        "value": 6.7154998779296875,
-        "change1d": 1.9585471311873048,
-        "change5d": 3.802454758697693,
+        "value": 6.614999771118164,
+        "change1d": 0.43269722227612384,
+        "change5d": 2.2490100442048133,
         "role": "Cíclico / crecimiento"
       },
       {
         "name": "BRENT",
         "symbol": "BZ=F",
-        "value": 98.7699966430664,
-        "change1d": -5.771802203178744,
-        "change5d": -5.5826440428366375,
+        "value": 103.87000274658203,
+        "change1d": -0.9063126798397603,
+        "change5d": -0.707387304705076,
         "role": "Energía / inflación"
       },
       {
         "name": "WTI",
         "symbol": "CL=F",
-        "value": 95.47000122070312,
-        "change1d": -6.31930351289024,
-        "change5d": -4.577712834936509,
+        "value": 100.30000305175781,
+        "change1d": -1.5798258782225627,
+        "change5d": 0.24987505484699302,
         "role": "Energía / inflación"
       },
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.21499633789062,
-        "change1d": -0.00499389617993895,
-        "change5d": 1.1047150534369443,
+        "value": 100.22000122070312,
+        "change1d": 0.0,
+        "change5d": 1.1097643700973547,
         "role": "Dólar / liquidez"
       },
       {
@@ -1521,17 +1521,17 @@
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 81142.0078125,
-        "change1d": 6.201571155220464,
-        "change5d": 5.601190570602732,
+        "value": 81124.9921875,
+        "change1d": 6.179300494709294,
+        "change5d": 5.579045810980143,
         "role": "Beta alta / liquidez"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2620.5400390625,
-        "change1d": 7.087281905478893,
-        "change5d": 5.794028451162969,
+        "value": 2621.56005859375,
+        "change1d": 7.12896458060075,
+        "change5d": 5.835207740050463,
         "role": "Beta alta / liquidez"
       },
       {
@@ -1553,10 +1553,10 @@
     ],
     "confirmations": [
       "VIX: la volatilidad bursátil está contenida.",
-      "COPPER: el cobre acompaña la demanda cíclica.",
       "ETH: cripto acompaña la liquidez/alta beta.",
       "BTC: cripto acompaña la liquidez/alta beta.",
-      "VVIX: la volatilidad de la volatilidad no muestra estrés."
+      "VVIX: la volatilidad de la volatilidad no muestra estrés.",
+      "NASDAQ: la beta alta acompaña el régimen."
     ],
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
@@ -1591,7 +1591,7 @@
     }
   },
   "automation": {
-    "updatedAt": "19/09/2026 03:52 UTC",
+    "updatedAt": "19/09/2026 04:07 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1602,7 +1602,7 @@
     ]
   },
   "fx": {
-    "updated": "19/09/2026 03:52 UTC",
+    "updated": "19/09/2026 04:07 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1663,7 +1663,7 @@
     "method": "Fuerza frente a USD normalizada; se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "19/09/2026 03:52 UTC",
+    "updated": "19/09/2026 04:07 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
