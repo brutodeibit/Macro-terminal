@@ -1092,13 +1092,24 @@
         function renderOptionsSection(){
             const o=macroDatabase.__options||{updated:'—',markets:[]};
             const cards=(o.markets||[]).map(m=>{
-              const p=(m.profiles||[])[0]||{};
-              const pm=(m.profiles||[])[1]||{};
+              // Compatibilidad: feed nuevo (profiles[]) o feed anterior (gamma* en raíz).
+              const p=(m.profiles&&m.profiles[0]) ? m.profiles[0] : m;
+              const pm=(m.profiles&&m.profiles[1]) ? m.profiles[1] : null;
               const gamma=Number(p.gammaNet), zg=Number(p.zeroGamma), iv=Number(p.ivAtm), em=Number(p.expectedMove);
-              const top=(p.topGexStrikes||[]).slice(0,4).map(x=>fmtNum(x.strike,0)+' ('+fmtCompactMoney(x.gex)+')').join(' · ');
-              return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><div><div class="text-sm font-bold text-white">'+esc(m.name||m.ticker||'')+'</div><div class="text-[10px] text-gray-500">Semanal '+esc(m.expiration||'—')+' · Mensual '+esc(m.monthlyExpiration||'—')+'</div></div><span class="mini-pill">GEX / DEX PROXY</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div>GEX '+fmtCompactMoney(gamma)+'</div><div>Flip '+fmtNum(zg,2)+'</div><div>ATM IV '+(Number.isFinite(iv)?iv.toFixed(1)+'%':'—')+'</div><div>Move ±'+fmtNum(em,2)+'</div></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-center"><div>Call Wall '+fmtNum(p.callWall,2)+'</div><div>Put Wall '+fmtNum(p.putWall,2)+'</div><div>DEX '+fmtCompactMoney(p.dexProxy)+'</div><div>Vanna '+fmtCompactMoney(p.vannaProxy)+'</div></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-center"><div>Charm '+fmtCompactMoney(p.charm)+'</div><div>P/C OI '+fmtNum(p.putCallOi,2)+'</div><div>P/C Vol '+fmtNum(p.putCallVolume,2)+'</div><div>Vol '+fmtCompactMoney(p.totalVolume)+'</div></div><div class="text-[10px] text-gray-400 mt-3"><b>GEX strikes:</b> '+esc(top||'—')+'</div><div class="text-[10px] text-gray-500 mt-3">'+esc(m.method||'Cboe delayed · proxies')+'</div></div>';
+              const dex=p.dexProxy ?? p.dex;
+              const vanna=p.vannaProxy ?? p.vanna;
+              const charm=p.charm;
+              const putCallOi=p.putCallOi ?? m.putCallOi;
+              const top=(p.topGexStrikes||[]).slice(0,4).map(x=>fmtNum(x.strike,0)+' ('+fmtCompactMoney(x.gex ?? x.gamma)+')').join(' · ');
+              const legacyZones=[...(m.positiveZones||[]),...(m.negativeZones||[])].slice(0,4);
+              const topLegacy=legacyZones.map(x=>fmtNum(x.strike,0)+' ('+fmtCompactMoney(x.gamma)+')').join(' · ');
+              const topStrikes=top||topLegacy;
+              const callWall=p.callWall ?? m.topCallStrike;
+              const putWall=p.putWall ?? m.topPutStrike;
+              const gText=Number.isFinite(gamma)?fmtCompactMoney(gamma):'N/D';
+              return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><div><div class="text-sm font-bold text-white">'+esc(m.name||m.ticker||'')+'</div><div class="text-[10px] text-gray-500">Semanal '+esc(m.expiration||'no disponible')+' · Mensual '+esc(m.monthlyExpiration||'no disponible')+'</div></div><span class="mini-pill">CBOE DELAYED · PROXY</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div>Spot <b>'+fmtNum(m.spot,2)+'</b></div><div>GEX <b>'+gText+'</b></div><div>Flip <b>'+fmtNum(zg,2)+'</b></div><div>ATM IV <b>'+((Number.isFinite(iv))?iv.toFixed(1)+'%':'N/D')+'</b></div></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-center"><div>Call Wall <b>'+fmtNum(callWall,2)+'</b></div><div>Put Wall <b>'+fmtNum(putWall,2)+'</b></div><div>DEX <b>'+fmtCompactMoney(dex)+'</b></div><div>Move '+(Number.isFinite(em)?'±'+fmtNum(em,2):'N/D')+'</div></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-center"><div>Vanna <b>'+fmtCompactMoney(vanna)+'</b></div><div>Charm <b>'+fmtCompactMoney(charm)+'</b></div><div>P/C OI <b>'+fmtNum(putCallOi,2)+'</b></div><div>Vol <b>'+fmtCompactMoney(p.totalVolume ?? m.totalVolume)+'</b></div></div><div class="text-[10px] text-gray-400 mt-3"><b>GEX strikes:</b> '+esc(topStrikes||'N/D')+'</div><div class="text-[10px] text-gray-500 mt-3">'+esc(m.method||'Cboe delayed · proxy')+'</div></div>';
             }).join('');
-            return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Mapa de derivados</div><h2 class="text-xl font-black text-white mt-1">OPCIONES · GEX + FLIP + WALLS + FLOW</h2><p class="text-sm text-gray-400 mt-1">GEX, Gamma Flip, Call/Put Wall, DEX, Vanna, Charm, IV ATM, movimiento esperado, P/C y perfiles semanal/mensual. Todo el dealer positioning se presenta como proxy.</p></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">'+cards+'</div></section>';
+            return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Mapa de derivados</div><h2 class="text-xl font-black text-white mt-1">OPCIONES · GEX / FLIP / WALLS</h2><p class="text-sm text-gray-400 mt-1">Resumen compacto. El detalle completo de cada activo se consulta en su ficha; no se muestran guiones como si fueran datos cuando la fuente no los publica.</p><span class="mini-pill inline-block mt-3">Actualizado '+esc(o.updated||'—')+'</span></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">'+(cards||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Sin cadena de opciones disponible.</div>')+'</div></section>';
         }
 
         function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
