@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "19/09/2026 09:38 UTC",
+  "updated": "19/09/2026 10:37 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,8 +1400,8 @@
     }
   },
   "riskOnOff": {
-    "updated": "19/09/2026 09:38 UTC",
-    "score": 72.7,
+    "updated": "19/09/2026 10:37 UTC",
+    "score": 72.9,
     "label": "RISK ON",
     "confidence": 64,
     "method": "Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.",
@@ -1521,17 +1521,17 @@
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 81280.5390625,
-        "change1d": 0.4685677126311072,
-        "change5d": 3.98800069525842,
+        "value": 81218.2421875,
+        "change1d": 0.3915643133376001,
+        "change5d": 3.908299852282582,
         "role": "Beta alta / liquidez"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2635.39990234375,
-        "change1d": 0.9210852800437763,
-        "change5d": 4.81198631596762,
+        "value": 2642.610107421875,
+        "change1d": 1.1971958319675569,
+        "change5d": 5.098742005421686,
         "role": "Beta alta / liquidez"
       },
       {
@@ -1553,8 +1553,8 @@
     ],
     "confirmations": [
       "VIX: la volatilidad bursátil está contenida.",
-      "VVIX: la volatilidad de la volatilidad no muestra estrés.",
       "ETH: cripto acompaña la liquidez/alta beta.",
+      "VVIX: la volatilidad de la volatilidad no muestra estrés.",
       "NASDAQ: la beta alta acompaña el régimen.",
       "AUDJPY: el carry confirma apetito por riesgo."
     ],
@@ -1591,7 +1591,7 @@
     }
   },
   "automation": {
-    "updatedAt": "19/09/2026 09:38 UTC",
+    "updatedAt": "19/09/2026 10:37 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1602,7 +1602,7 @@
     ]
   },
   "fx": {
-    "updated": "19/09/2026 09:38 UTC",
+    "updated": "19/09/2026 10:37 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1663,31 +1663,882 @@
     "method": "Fuerza frente a USD normalizada; se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "19/09/2026 09:38 UTC",
+    "updated": "19/09/2026 10:37 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
         "reportDate": "2026-09-15",
-        "net": -311831.0,
-        "long": 146263.0,
-        "short": 458094.0,
-        "zScore": -1.1969868623641797,
-        "netChange": -18688.0,
-        "reading": "Cortos netos"
+        "net": -293143.0,
+        "long": 161176.0,
+        "short": 454319.0,
+        "zScore": 1.5930809491073277,
+        "netChange": 47961.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "13874A",
+        "contract": "E-MINI S&P 500",
+        "openInterest": 2446519.0
       },
       {
         "name": "Nasdaq-100",
         "reportDate": "2026-09-15",
-        "net": -66643.0,
-        "long": 20330.0,
-        "short": 86973.0,
-        "zScore": 0.3086886270839959,
-        "netChange": -60256.0,
-        "reading": "Cortos netos"
+        "net": -6387.0,
+        "long": 52680.0,
+        "short": 59067.0,
+        "zScore": 0.9004192563687711,
+        "netChange": 25485.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "209742",
+        "contract": "NASDAQ MINI",
+        "openInterest": 325784.0
+      },
+      {
+        "name": "Dow Jones",
+        "reportDate": "2026-09-15",
+        "net": -2437.0,
+        "long": 9139.0,
+        "short": 11576.0,
+        "zScore": 1.038498061538307,
+        "netChange": 1822.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "124603",
+        "contract": "DJIA x $5",
+        "openInterest": 101191.0
+      },
+      {
+        "name": "DXY · USD Index",
+        "reportDate": "2026-09-15",
+        "net": -4909.0,
+        "long": 12118.0,
+        "short": 17027.0,
+        "zScore": 0.1052183984858536,
+        "netChange": -11095.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "098662",
+        "contract": "USD INDEX",
+        "openInterest": 43744.0
+      },
+      {
+        "name": "Euro FX",
+        "reportDate": "2026-09-15",
+        "net": -28156.0,
+        "long": 103260.0,
+        "short": 131416.0,
+        "zScore": -1.1007775530931276,
+        "netChange": 5129.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "099741",
+        "contract": "EURO FX",
+        "openInterest": 920035.0
+      },
+      {
+        "name": "Oro",
+        "reportDate": "2026-09-15",
+        "net": 133116.0,
+        "long": 142394.0,
+        "short": 9278.0,
+        "zScore": 0.6688747549126454,
+        "netChange": -1856.0,
+        "reading": "Largos netos",
+        "traderGroup": "Managed Money",
+        "reportFamily": "Disaggregated",
+        "contractCode": "088691",
+        "contract": "GOLD",
+        "openInterest": 409899.0
+      },
+      {
+        "name": "Plata",
+        "reportDate": "2026-09-15",
+        "net": 13124.0,
+        "long": 20205.0,
+        "short": 7081.0,
+        "zScore": -0.4143435593758979,
+        "netChange": -1262.0,
+        "reading": "Largos netos",
+        "traderGroup": "Managed Money",
+        "reportFamily": "Disaggregated",
+        "contractCode": "084691",
+        "contract": "SILVER",
+        "openInterest": 103745.0
+      },
+      {
+        "name": "WTI",
+        "reportDate": "2026-09-15",
+        "net": 106279.0,
+        "long": 221896.0,
+        "short": 115617.0,
+        "zScore": 1.2591730784451294,
+        "netChange": -5452.0,
+        "reading": "Largos netos",
+        "traderGroup": "Managed Money",
+        "reportFamily": "Disaggregated",
+        "contractCode": "067651",
+        "contract": "WTI-PHYSICAL",
+        "openInterest": 1955764.0
+      },
+      {
+        "name": "Brent",
+        "reportDate": "2026-09-15",
+        "net": 7896.0,
+        "long": 9534.0,
+        "short": 1638.0,
+        "zScore": -0.5881385480837202,
+        "netChange": 1983.0,
+        "reading": "Largos netos",
+        "traderGroup": "Managed Money",
+        "reportFamily": "Disaggregated",
+        "contractCode": "06765T",
+        "contract": "BRENT LAST DAY",
+        "openInterest": 260719.0
       }
     ],
     "source": "CFTC Public Reporting Environment",
-    "method": "COT semanal; z-score frente a hasta 52 observaciones.",
-    "sourceUrl": "https://publicreporting.cftc.gov/"
+    "method": "COT semanal; Leveraged Funds para índices/divisas TFF y Managed Money para commodities Disaggregated; filtrado por código CFTC.",
+    "sourceUrl": "https://publicreporting.cftc.gov/",
+    "errors": []
+  },
+  "options": {
+    "updated": "19/09/2026 10:37 UTC",
+    "markets": [
+      {
+        "name": "SPY",
+        "ticker": "SPY",
+        "spot": 761.69,
+        "expiration": "2026-09-21",
+        "putCallOi": 1.0385525091151282,
+        "topCallStrike": 770.0,
+        "topPutStrike": 755.0,
+        "maxOiStrike": 770.0,
+        "method": "CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.",
+        "source": "Cboe Global Markets",
+        "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+        "gammaNote": "Dealer side is assumed for the gamma proxy.",
+        "gammaPositive": 3185.0414,
+        "gammaNegative": -2208.9084000000003,
+        "gammaNet": 976.133,
+        "gammaTotal": 976.133,
+        "zeroGamma": 762.0,
+        "positiveZones": [
+          {
+            "strike": 770.0,
+            "gamma": 721.4416
+          },
+          {
+            "strike": 765.0,
+            "gamma": 620.4150000000001
+          },
+          {
+            "strike": 760.0,
+            "gamma": 308.2248
+          },
+          {
+            "strike": 762.0,
+            "gamma": 198.3973
+          },
+          {
+            "strike": 761.0,
+            "gamma": 179.237
+          }
+        ],
+        "negativeZones": [
+          {
+            "strike": 755.0,
+            "gamma": -386.928
+          },
+          {
+            "strike": 763.0,
+            "gamma": -337.9608
+          },
+          {
+            "strike": 760.0,
+            "gamma": -306.9825
+          },
+          {
+            "strike": 762.0,
+            "gamma": -176.43550000000002
+          },
+          {
+            "strike": 761.0,
+            "gamma": -162.16910000000001
+          }
+        ]
+      },
+      {
+        "name": "QQQ",
+        "ticker": "QQQ",
+        "spot": 721.45,
+        "expiration": "2026-09-21",
+        "putCallOi": 2.441462058005562,
+        "topCallStrike": 735.0,
+        "topPutStrike": 715.0,
+        "maxOiStrike": 715.0,
+        "method": "CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.",
+        "source": "Cboe Global Markets",
+        "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+        "gammaNote": "Dealer side is assumed for the gamma proxy.",
+        "gammaPositive": 2155.4278,
+        "gammaNegative": -1767.2536,
+        "gammaNet": 388.1741999999999,
+        "gammaTotal": 388.1741999999999,
+        "zeroGamma": 721.0,
+        "positiveZones": [
+          {
+            "strike": 724.0,
+            "gamma": 250.32840000000002
+          },
+          {
+            "strike": 720.0,
+            "gamma": 221.8034
+          },
+          {
+            "strike": 718.0,
+            "gamma": 188.32319999999999
+          },
+          {
+            "strike": 725.0,
+            "gamma": 166.3467
+          },
+          {
+            "strike": 722.0,
+            "gamma": 162.6352
+          }
+        ],
+        "negativeZones": [
+          {
+            "strike": 715.0,
+            "gamma": -766.5975000000001
+          },
+          {
+            "strike": 710.0,
+            "gamma": -156.4857
+          },
+          {
+            "strike": 716.0,
+            "gamma": -111.873
+          },
+          {
+            "strike": 720.0,
+            "gamma": -106.92179999999999
+          },
+          {
+            "strike": 714.0,
+            "gamma": -77.119
+          }
+        ]
+      },
+      {
+        "name": "GLD",
+        "ticker": "GLD",
+        "spot": 401.17,
+        "expiration": "2026-09-21",
+        "putCallOi": 0.9124858543945681,
+        "topCallStrike": 420.0,
+        "topPutStrike": 375.0,
+        "maxOiStrike": 375.0,
+        "method": "CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.",
+        "source": "Cboe Global Markets",
+        "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+        "gammaNote": "Dealer side is assumed for the gamma proxy.",
+        "gammaPositive": 176.6457,
+        "gammaNegative": -155.2522,
+        "gammaNet": 21.3935,
+        "gammaTotal": 21.3935,
+        "zeroGamma": 401.0,
+        "positiveZones": [
+          {
+            "strike": 400.0,
+            "gamma": 29.7
+          },
+          {
+            "strike": 405.0,
+            "gamma": 19.778
+          },
+          {
+            "strike": 410.0,
+            "gamma": 18.165399999999998
+          },
+          {
+            "strike": 401.0,
+            "gamma": 13.035
+          },
+          {
+            "strike": 415.0,
+            "gamma": 8.0445
+          }
+        ],
+        "negativeZones": [
+          {
+            "strike": 400.0,
+            "gamma": -36.6175
+          },
+          {
+            "strike": 396.0,
+            "gamma": -29.827199999999998
+          },
+          {
+            "strike": 397.0,
+            "gamma": -13.004199999999999
+          },
+          {
+            "strike": 398.0,
+            "gamma": -10.003300000000001
+          },
+          {
+            "strike": 399.0,
+            "gamma": -9.0552
+          }
+        ]
+      },
+      {
+        "name": "USO",
+        "ticker": "USO",
+        "spot": 153.82,
+        "expiration": "2026-09-23",
+        "putCallOi": 0.9072298045001844,
+        "topCallStrike": 185.0,
+        "topPutStrike": 145.0,
+        "maxOiStrike": 145.0,
+        "method": "CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.",
+        "source": "Cboe Global Markets",
+        "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+        "gammaNote": "Dealer side is assumed for the gamma proxy.",
+        "gammaPositive": 418.6252,
+        "gammaNegative": -521.0818,
+        "gammaNet": -102.45659999999998,
+        "gammaTotal": -102.45659999999998,
+        "zeroGamma": 154.0,
+        "positiveZones": [
+          {
+            "strike": 165.0,
+            "gamma": 80.752
+          },
+          {
+            "strike": 159.0,
+            "gamma": 36.039
+          },
+          {
+            "strike": 160.0,
+            "gamma": 34.2995
+          },
+          {
+            "strike": 157.0,
+            "gamma": 33.1045
+          },
+          {
+            "strike": 163.0,
+            "gamma": 26.8074
+          }
+        ],
+        "negativeZones": [
+          {
+            "strike": 145.0,
+            "gamma": -128.5514
+          },
+          {
+            "strike": 150.0,
+            "gamma": -104.331
+          },
+          {
+            "strike": 148.0,
+            "gamma": -34.6125
+          },
+          {
+            "strike": 147.0,
+            "gamma": -30.6544
+          },
+          {
+            "strike": 152.0,
+            "gamma": -28.5948
+          }
+        ]
+      },
+      {
+        "name": "AAPL",
+        "ticker": "AAPL",
+        "spot": 336.13,
+        "expiration": "2026-09-21",
+        "putCallOi": 0.5295822993250922,
+        "topCallStrike": 340.0,
+        "topPutStrike": 325.0,
+        "maxOiStrike": 340.0,
+        "method": "CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.",
+        "source": "Cboe Global Markets",
+        "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+        "gammaNote": "Dealer side is assumed for the gamma proxy.",
+        "gammaPositive": 1290.832,
+        "gammaNegative": -617.947,
+        "gammaNet": 672.885,
+        "gammaTotal": 672.885,
+        "zeroGamma": 335.0,
+        "positiveZones": [
+          {
+            "strike": 340.0,
+            "gamma": 457.4856
+          },
+          {
+            "strike": 335.0,
+            "gamma": 176.29500000000002
+          },
+          {
+            "strike": 330.0,
+            "gamma": 156.99450000000002
+          },
+          {
+            "strike": 345.0,
+            "gamma": 130.95239999999998
+          },
+          {
+            "strike": 337.5,
+            "gamma": 119.7287
+          }
+        ],
+        "negativeZones": [
+          {
+            "strike": 335.0,
+            "gamma": -196.8297
+          },
+          {
+            "strike": 330.0,
+            "gamma": -106.91199999999999
+          },
+          {
+            "strike": 332.5,
+            "gamma": -101.5685
+          },
+          {
+            "strike": 337.5,
+            "gamma": -85.701
+          },
+          {
+            "strike": 325.0,
+            "gamma": -57.9125
+          }
+        ]
+      },
+      {
+        "name": "NVDA",
+        "ticker": "NVDA",
+        "spot": 222.27,
+        "expiration": "2026-09-21",
+        "putCallOi": 0.8942607316197995,
+        "topCallStrike": 225.0,
+        "topPutStrike": 65.0,
+        "maxOiStrike": 65.0,
+        "method": "CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.",
+        "source": "Cboe Global Markets",
+        "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+        "gammaNote": "Dealer side is assumed for the gamma proxy.",
+        "gammaPositive": 2230.7285,
+        "gammaNegative": -536.4773,
+        "gammaNet": 1694.2512,
+        "gammaTotal": 1694.2512,
+        "zeroGamma": 222.5,
+        "positiveZones": [
+          {
+            "strike": 220.0,
+            "gamma": 531.1548
+          },
+          {
+            "strike": 225.0,
+            "gamma": 530.406
+          },
+          {
+            "strike": 222.5,
+            "gamma": 434.38
+          },
+          {
+            "strike": 217.5,
+            "gamma": 264.1404
+          },
+          {
+            "strike": 230.0,
+            "gamma": 148.458
+          }
+        ],
+        "negativeZones": [
+          {
+            "strike": 217.5,
+            "gamma": -122.27050000000001
+          },
+          {
+            "strike": 215.0,
+            "gamma": -102.805
+          },
+          {
+            "strike": 225.0,
+            "gamma": -82.6896
+          },
+          {
+            "strike": 220.0,
+            "gamma": -75.55680000000001
+          },
+          {
+            "strike": 212.5,
+            "gamma": -43.0095
+          }
+        ]
+      }
+    ],
+    "source": "Cboe Global Markets",
+    "sourceUrl": "https://www.cboe.com/delayed_quotes/",
+    "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."
+  },
+  "darkPools": {
+    "updated": "19/09/2026 10:37 UTC",
+    "markets": [
+      {
+        "symbol": "SPY",
+        "weekStart": "2023-12-11",
+        "atsShares": 109203433.0,
+        "otcShares": 103359136.0,
+        "totalOffExchange": 212562569.0,
+        "atsTrades": 297798.0,
+        "otcTrades": 514312.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      },
+      {
+        "symbol": "QQQ",
+        "weekStart": "2023-12-11",
+        "atsShares": 41868165.0,
+        "otcShares": 60971860.0,
+        "totalOffExchange": 102840025.0,
+        "atsTrades": 137365.0,
+        "otcTrades": 456336.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      },
+      {
+        "symbol": "GLD",
+        "weekStart": "2023-12-11",
+        "atsShares": 3823006.0,
+        "otcShares": 7995017.0,
+        "totalOffExchange": 11818023.0,
+        "atsTrades": 33309.0,
+        "otcTrades": 64558.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      },
+      {
+        "symbol": "USO",
+        "weekStart": "2023-12-11",
+        "atsShares": 1358831.0,
+        "otcShares": 4186442.0,
+        "totalOffExchange": 5545273.0,
+        "atsTrades": 9035.0,
+        "otcTrades": 20942.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      },
+      {
+        "symbol": "AAPL",
+        "weekStart": "2023-12-11",
+        "atsShares": 25688175.0,
+        "otcShares": 120701644.0,
+        "totalOffExchange": 146389819.0,
+        "atsTrades": 251846.0,
+        "otcTrades": 1295824.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      },
+      {
+        "symbol": "NVDA",
+        "weekStart": "2023-12-11",
+        "atsShares": 20961636.0,
+        "otcShares": 102253026.0,
+        "totalOffExchange": 123214662.0,
+        "atsTrades": 313986.0,
+        "otcTrades": 1120995.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      },
+      {
+        "symbol": "HYG",
+        "weekStart": "2023-12-11",
+        "atsShares": 35946561.0,
+        "otcShares": 44286709.0,
+        "totalOffExchange": 80233270.0,
+        "atsTrades": 100471.0,
+        "otcTrades": 18561.0,
+        "zScore": null,
+        "topVenues": [],
+        "lagLabel": "FINRA · semanal / retrasado",
+        "note": "ATS/OTC agregado por ticker; no representa acumulación por precio."
+      }
+    ],
+    "source": "FINRA OTC Transparency",
+    "sourceUrl": "https://www.finra.org/filing-reporting/otc-transparency",
+    "method": "Weekly Summary T1 · ATS_W_SMBL + OTC_W_SMBL."
+  },
+  "rotation": {
+    "updated": "19/09/2026 10:37 UTC",
+    "sectors": [
+      {
+        "name": "Tecnología",
+        "symbol": "XLK",
+        "change1d": 0.818892143419303,
+        "change1w": 1.0284051544737993,
+        "change1m": 3.245483954299755,
+        "vsSpy1d": 0.9382172383135323,
+        "vsSpy1w": 1.3685869782166793,
+        "vsSpy1m": 4.203796067864863
+      },
+      {
+        "name": "Energía",
+        "symbol": "XLE",
+        "change1d": -0.26365662141604185,
+        "change1w": -1.2741815149396318,
+        "change1m": 1.148153045793876,
+        "vsSpy1d": -0.14433152652181258,
+        "vsSpy1w": -0.9339996911967519,
+        "vsSpy1m": 2.1064651593589834
+      },
+      {
+        "name": "Financieras",
+        "symbol": "XLF",
+        "change1d": -0.03579179917926334,
+        "change1w": -2.427946532137004,
+        "change1m": -2.8183697717227507,
+        "vsSpy1d": 0.08353329571496593,
+        "vsSpy1w": -2.087764708394124,
+        "vsSpy1m": -1.8600576581576433
+      },
+      {
+        "name": "Industriales",
+        "symbol": "XLI",
+        "change1d": 0.4378471789928007,
+        "change1w": -1.519983286769988,
+        "change1m": -6.705137209599743,
+        "vsSpy1d": 0.55717227388703,
+        "vsSpy1w": -1.179801463027108,
+        "vsSpy1m": -5.746825096034636
+      },
+      {
+        "name": "Salud",
+        "symbol": "XLV",
+        "change1d": -0.24879934542948456,
+        "change1w": 1.8323650024873128,
+        "change1m": -4.149586515287796,
+        "vsSpy1d": -0.1294742505352553,
+        "vsSpy1w": 2.172546826230193,
+        "vsSpy1m": -3.1912744017226884
+      },
+      {
+        "name": "Consumo discrecional",
+        "symbol": "XLY",
+        "change1d": -0.3231893458336965,
+        "change1w": -1.7085696891095958,
+        "change1m": -6.374903273505083,
+        "vsSpy1d": -0.20386425093946725,
+        "vsSpy1w": -1.3683878653667159,
+        "vsSpy1m": -5.416591159939976
+      },
+      {
+        "name": "Consumo básico",
+        "symbol": "XLP",
+        "change1d": -0.8264400882337819,
+        "change1w": -0.695603526943489,
+        "change1m": -4.321698433329324,
+        "vsSpy1d": -0.7071149933395526,
+        "vsSpy1w": -0.35542170320060906,
+        "vsSpy1m": -3.3633863197642166
+      },
+      {
+        "name": "Utilities",
+        "symbol": "XLU",
+        "change1d": -1.4152078964327464,
+        "change1w": -3.043172762683166,
+        "change1m": -6.633352915214674,
+        "vsSpy1d": -1.295882801538517,
+        "vsSpy1w": -2.702990938940286,
+        "vsSpy1m": -5.675040801649567
+      },
+      {
+        "name": "Materiales",
+        "symbol": "XLB",
+        "change1d": -1.4198332064776609,
+        "change1w": -1.8841983711430088,
+        "change1m": -4.817210124229698,
+        "vsSpy1d": -1.3005081115834316,
+        "vsSpy1w": -1.5440165474001288,
+        "vsSpy1m": -3.8588980106645905
+      },
+      {
+        "name": "Comunicación",
+        "symbol": "XLC",
+        "change1d": -1.3707173444083898,
+        "change1w": -1.5896988808030366,
+        "change1m": -0.45814061950107954,
+        "vsSpy1d": -1.2513922495141605,
+        "vsSpy1w": -1.2495170570601566,
+        "vsSpy1m": 0.5001714940640278
+      },
+      {
+        "name": "REITs",
+        "symbol": "XLRE",
+        "change1d": -0.9548203552039447,
+        "change1w": -2.0497453412722133,
+        "change1m": -5.467887991538644,
+        "vsSpy1d": -0.8354952603097154,
+        "vsSpy1w": -1.7095635175293333,
+        "vsSpy1m": -4.509575877973537
+      }
+    ],
+    "styles": [
+      {
+        "name": "Growth vs Value",
+        "long": "VUG",
+        "short": "VTV",
+        "change1d": 0.6008428102124763,
+        "change1w": 2.0438097118179566,
+        "change1m": 3.4441247540107467
+      },
+      {
+        "name": "Cíclicos vs Defensivos",
+        "long": "XLY",
+        "short": "XLP",
+        "change1d": 0.5032507424000854,
+        "change1w": -1.0129661621661068,
+        "change1m": -2.053204840175759
+      },
+      {
+        "name": "Small vs Large",
+        "long": "IWM",
+        "short": "SPY",
+        "change1d": -0.34663384649016304,
+        "change1w": -1.3178915959116688,
+        "change1m": -4.881537762445854
+      },
+      {
+        "name": "High Beta vs Low Vol",
+        "long": "SPHB",
+        "short": "SPLV",
+        "change1d": 2.0109411543803635,
+        "change1w": 1.1740729488877166,
+        "change1m": 3.727790930420239
+      },
+      {
+        "name": "Nasdaq vs S&P",
+        "long": "QQQ",
+        "short": "SPY",
+        "change1d": 0.7511988611249354,
+        "change1w": 1.2592182045821798,
+        "change1m": 1.7082276242661565
+      }
+    ],
+    "sentimentTraditional": {
+      "bullishPct": 18.2,
+      "neutralPct": 0.0,
+      "bearishPct": 81.8
+    },
+    "method": "ETF sectorial: cambios 1D/1S/1M y fuerza relativa frente a SPY. Sentimiento tradicional = amplitud sectorial semanal; es un proxy de mercado, no una encuesta."
+  },
+  "cryptoSentiment": {
+    "updated": "19/09/2026 10:37 UTC",
+    "fearGreed": {
+      "value": 71.0,
+      "classification": "Greed",
+      "previous": 56.0
+    },
+    "btc": {
+      "change1d": 0.35348751331070183,
+      "change1w": 3.86888921472881,
+      "change1m": 3.7594663612190216,
+      "last": 81187.4375
+    },
+    "eth": {
+      "change1d": 1.1956625596784232,
+      "change1w": 5.09714961951202,
+      "change1m": 7.522676536054629,
+      "last": 2642.570068359375
+    },
+    "source": "Alternative.me Fear & Greed + Yahoo Finance"
+  },
+  "bondMarket": {
+    "updated": "19/09/2026 10:37 UTC",
+    "markets": [
+      {
+        "name": "Treasuries largos",
+        "symbol": "TLT",
+        "change1d": -0.648078732218138,
+        "change1w": 0.46988653457666896,
+        "change1m": -2.1320124242792726,
+        "last": 81.25
+      },
+      {
+        "name": "Treasuries intermedios",
+        "symbol": "IEF",
+        "change1d": -0.49314734053937936,
+        "change1w": -0.2307428629199637,
+        "change1m": -2.7628981340173664,
+        "last": 90.80000305175781
+      },
+      {
+        "name": "Treasuries cortos",
+        "symbol": "SHY",
+        "change1d": -0.1474960001005221,
+        "change1w": -0.15977003616109986,
+        "change1m": -0.999268485523297,
+        "last": 81.23999786376953
+      },
+      {
+        "name": "High Yield",
+        "symbol": "HYG",
+        "change1d": -0.24136488625495778,
+        "change1w": -0.08905813763757653,
+        "change1m": -1.4803667277994537,
+        "last": 78.52999877929688
+      },
+      {
+        "name": "Investment Grade",
+        "symbol": "LQD",
+        "change1d": -0.4374350493037582,
+        "change1w": 0.3642611719033795,
+        "change1m": -1.7547177929407964,
+        "last": 104.69999694824219
+      }
+    ],
+    "method": "ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."
+  },
+  "traditionalSentiment": {
+    "updated": "19/09/2026 10:37 UTC",
+    "bullishPct": 28.8,
+    "neutralPct": 17.9,
+    "bearishPct": 53.3,
+    "previousBullishPct": 38.0,
+    "previousNeutralPct": 22.7,
+    "previousBearishPct": 39.3,
+    "week": "2026-09-16",
+    "source": "AAII Investor Sentiment Survey",
+    "sourceUrl": "https://www.aaii.com/sentimentsurvey",
+    "bullBearSpread": -24.5
+  },
+  "optionsStats": {
+    "updated": "19/09/2026 10:37 UTC",
+    "totalPutCall": 0.81,
+    "indexPutCall": 0.98,
+    "source": "Cboe Daily Market Statistics",
+    "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   }
 }
