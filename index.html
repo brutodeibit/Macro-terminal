@@ -1011,50 +1011,34 @@
         }
 
         function renderGlobalSummary(){
-            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>{
-                const score=macroInterpretation(d).score;
-                return {d,score};
-            });
-            const avg=entries.reduce((a,x)=>a+x.score,0);
-            return `
-              <section id="sec-resumen" class="space-y-5">
-                ${renderRiskOnOff()}
-                <div class="glass rounded-2xl p-5">
-                  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div>
-                      <div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Mapa macro global</div>
-                      <h2 class="text-xl md:text-2xl font-black text-white mt-1">Dirección general de las divisas</h2>
-                      <p class="text-sm text-gray-400 mt-1 max-w-3xl">Vista rápida para detectar qué bancos centrales están endureciendo, manteniendo o relajando el sesgo. No es una señal automática de entrada.</p>
-                    </div>
-                    <div class="metric rounded-xl px-4 py-3 min-w-[190px]">
-                      <div class="text-[10px] text-gray-500 uppercase">Sesgo agregado</div>
-                      <div class="text-lg font-black ${biasClass(avg)} mt-1">${dirIcon(avg)} ${avg>1?'Más restrictivo':avg<-1?'Más acomodaticio':'Mixto'}</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex flex-wrap gap-2 text-[11px] text-gray-500">
-                  <span class="mini-pill">↑ = tono más restrictivo</span>
-                  <span class="mini-pill">↓ = tono más acomodaticio</span>
-                  <span class="mini-pill">→ = neutral / mixto</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  ${entries.map(({d,score})=>`
-                    <button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
-                      <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2"><span class="text-xl">${d.flag}</span><span class="font-bold text-white">${esc(d.name)}</span></div>
-                        <span class="text-lg font-black ${biasClass(score)}">${dirIcon(score)}</span>
-                      </div>
-                      <div class="mt-3 flex items-center justify-between">
-                        <span class="mini-pill">${esc(d.conference?.tone || d.rates?.postureText || 'Sin tono')}</span>
-                        <span class="text-xs ${biasClass(score)}">${biasLabel(score)}</span>
-                      </div>
-                      <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official)} · Próxima ${esc(d.rates?.nextMeeting)}</div>
-                    </button>`).join('')}
-                </div>
-              </section>`;
-        }
+ const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>({d,score:macroInterpretation(d).score}));
+ const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
+ const label=v=>v>0.9?'RESTRICTIVO':v<-0.9?'ACOMODATICIO':'MIXTO';
+ return `
+ <section id="sec-resumen" class="space-y-5">
+  ${renderRiskOnOff()}
+  <div class="glass rounded-2xl p-5">
+   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Mapa macro global</div>
+     <h2 class="text-xl md:text-2xl font-black text-white mt-1">Mapa global de política monetaria</h2>
+     <p class="text-sm text-gray-400 mt-1 max-w-3xl">Compara la presión monetaria de cada economía. No es un indicador de mercado alcista/bajista: restrictivo significa más presión sobre tipos y acomodaticio menos.</p>
+    </div>
+    <div class="metric rounded-xl px-4 py-3 min-w-[210px]"><div class="text-[10px] text-gray-500 uppercase">Presión monetaria agregada</div><div class="text-lg font-black ${biasClass(avg)} mt-1">${label(avg)}</div></div>
+   </div>
+  </div>
+  <div class="flex flex-wrap gap-2 text-[11px] text-gray-500"><span class="mini-pill">RESTRICTIVO = presión de tipos ↑</span><span class="mini-pill">ACOMODATICIO = presión de tipos ↓</span><span class="mini-pill">MIXTO = señales enfrentadas</span></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+   ${entries.map(({d,score})=>`
+    <button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
+     <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag}</span><span class="font-bold text-white">${esc(d.name)}</span></div><span class="text-xs font-black ${biasClass(score)}">${label(score)}</span></div>
+     <div class="mt-3 flex items-center justify-between"><span class="mini-pill">${esc(d.conference?.tone || d.rates?.postureText || 'Sin tono')}</span><span class="text-xs ${biasClass(score)}">${score>0.9?'presión de tipos ↑':score<-0.9?'presión de tipos ↓':'sin dirección clara'}</span></div>
+     <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official)} · Próxima ${esc(d.rates?.nextMeeting)}</div>
+    </button>`).join('')}
+  </div>
+ </section>`;
+}
 
-        function renderMeetingHistory(data){
+function renderMeetingHistory(data){
             const hist=data.conference?.history || [];
             const items=[
                 {label:'Última', cls:'meeting-current', item:hist[0], fallback:{date:data.conference?.date, title:data.conference?.title, tone:data.conference?.tone, summary:data.conference?.summary}},
