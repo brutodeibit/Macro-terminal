@@ -65,8 +65,14 @@ def update_risk(feed):
  for n,sym in YAHOO.items():
   m=yahoo_metrics(sym)
   if not m:continue
-  x={'name':n,'symbol':sym,'value':m['last'],'change1d':m['change1d'],'change1w':m['change1w'],'change1m':m['change1m'],'role':ROLES.get(n,'Confirmación')}
+  x={'name':n,'symbol':sym,'value':m['last'],
+     'change1d':m['change1d'],'change1w':m['change1w'],'change1m':m['change1m'],
+     'pointChange1d':m['last']-m['last']/(1+m['change1d']/100) if m['change1d'] is not None and m['change1d']!=-100 else None,
+     'pointChange1w':m['last']-m['last']/(1+m['change1w']/100) if m['change1w'] is not None and m['change1w']!=-100 else None,
+     'pointChange1m':m['last']-m['last']/(1+m['change1m']/100) if m['change1m'] is not None and m['change1m']!=-100 else None,
+     'role':ROLES.get(n,'Confirmación')}
   w=x.get('change1w')
+  data.append(x)
   if w is None:x['marketSignal']='SIN DATO'
   elif n in {'SP500','NASDAQ','HYG','LQD','AUDJPY','COPPER','BTC','ETH','SPY'}:x['marketSignal']='FAVORECE RISK-ON ↑' if w>0.15 else 'TENSIONA RISK-ON ↓' if w<-0.15 else 'NEUTRO →'
   elif n in {'VIX','VVIX','SKEW','MOVE','DXY'}:x['marketSignal']='CALMA / RISK-ON ↑' if w<-0.15 else 'ESTRÉS / RISK-OFF ↑' if w>0.15 else 'NEUTRO →'
