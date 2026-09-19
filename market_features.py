@@ -38,6 +38,9 @@ def opt(sym):
   co=sum(x["openInterest"] for x in calls);po=sum(x["openInterest"] for x in puts);tc=max(calls,key=lambda x:x["openInterest"],default={});tp=max(puts,key=lambda x:x["openInterest"],default={})
   return {"name":sym,"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,"topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),"method":"CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.","source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Dealer side is assumed for the gamma proxy.",**gamma(calls,puts,spot)}
 
+ except Exception as e:
+  print("OPTIONS_CHAIN",sym,type(e).__name__,str(e)[:180]); return None
+
 H={"User-Agent":"MacroTerminal/6.0","Accept-Language":"en-US,en;q=0.9"}; T=25
 def get(u,p=None,h=None):
  x=dict(H); x.update(h or {}); r=requests.get(u,params=p or {},headers=x,timeout=T); r.raise_for_status(); return r
