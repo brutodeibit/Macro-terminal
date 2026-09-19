@@ -162,6 +162,45 @@ def update_options_market_stats(feed):
   feed["optionsStats"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"totalPutCall":float(m1.group(1)) if m1 else None,"indexPutCall":float(m2.group(1)) if m2 else None,"source":"Cboe Daily Market Statistics","sourceUrl":"https://www.cboe.com/us/options/market_statistics/daily/"}
  except Exception as e:print("CBOE STATS",type(e).__name__,str(e)[:180])
 
+def update_bond_curves(feed):
+ key=os.getenv("TE_API_KEY")
+ if not key:return
+ country_map={"us":"United States","eu":"Euro Area","de":"Germany","uk":"United Kingdom","jp":"Japan","ca":"Canada","au":"Australia","nz":"New Zealand","ch":"Switzerland"}
+ term_map={"3M":"3M","1Y":"52W","2Y":"2Y","5Y":"5Y","10Y":"10Y","20Y":"20Y","30Y":"30Y"}
+ buckets={}
+ for typ in sorted(set(term_map.values())):
+  try:
+   u="https://api.tradingeconomics.com/markets/bond"
+   arr=get(u,{"c":key,"type":typ}).json()
+   for row in arr if isinstance(arr,list) else []:
+    country=str(row.get("Country") or "").strip()
+    ticker=str(row.get("Ticker") or row.get("Symbol") or "").upper()
+    name=str(row.get("Name") or "")
+    key_country=next((eid for eid,nm in country_map.items() if nm.lower()==country.lower()),None)
+    if not key_country and "EURO AREA" in (country.upper()+" "+name.upper()+" "+ticker):
+     key_country="eu"
+    if not key_country:continue
+    buckets[(key_country,typ)]=row
+  except Exception as e:print("BONDS TE",typ,type(e).__name__,str(e)[:160])
+ for eid,country in country_map.items():
+  eco=feed.get("economies",{}).get(eid)
+  if not eco:continue
+  tenors=eco.setdefault("bonds",{}).setdefault("tenors",[])
+  for t in tenors:
+   te_typ=term_map.get(t.get("term"))
+   row=buckets.get((eid,te_typ)) if te_typ else None
+   if not row:continue
+   last=row.get("Last"); 
+   if last not in (None,""): t["yield"]=f"{float(last):.3f}%"
+   t["change1d"]=row.get("DailyPercentualChange")
+   t["change1w"]=row.get("WeeklyPercentualChange")
+   t["change1m"]=row.get("MonthlyPercentualChange")
+   t["change1dBp"]=row.get("DailyChange")
+   t["change1wBp"]=row.get("WeeklyChange")
+   t["change1mBp"]=row.get("MonthlyChange")
+   t["source"]="Trading Economics / government bond market"
+ feed["bondCurvesUpdated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+
 def update_markets_rotation(feed):
  sector_cfg=[
   ("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),
@@ -216,9 +255,44 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
   try:
    fn(feed)
   except Exception as e:
    print(name,type(e).__name__,str(e)[:180])
+def update_risk(feed):
+ data=[]
+ for n,s in YAHOO.items():
+  m=yahoo(s)
+  if not m:continue
+  v,c1,c5=m; r=chart(s)
+  q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
+  c20=(q[-1]/q[-22]-1)*100 if len(q)>=22 else None
+  data.append({"name":n,"symbol":s,"value":v,"change1d":c1,"change1w":c5,"change5d":c5,"change1m":c20,"role":ROLES.get(n,"Confirmación")})
+ if not data:return
+ by={x["name"]:x for x in data};score=50.0;comp=[]
+ def add(n,p,w):
+  nonlocal score;score+=p;comp.append((p,n,w))
+ for n,w in [("SP500",8),("NASDAQ",8)]:
+  if n in by:add(n,max(-w,min(w,by[n]["change1w"]*w/1.5)),"tendencia 1S")
+ if "VIX" in by:
+  v=by["VIX"]["value"];add("VIX",8 if v<15 else 4 if v<20 else -4 if v<25 else -8,"nivel de volatilidad")
+ if "VVIX" in by:
+  v=by["VVIX"]["value"];add("VVIX",4 if v<90 else 1 if v<105 else -2 if v<115 else -4,"volatilidad de volatilidad")
+ if "SKEW" in by:
+  v=by["SKEW"]["value"];add("SKEW",3 if v<120 else 1 if v<130 else -2 if v<140 else -4,"riesgo de cola")
+ if "MOVE" in by:
+  v=by["MOVE"]["value"];add("MOVE",3 if v<70 else 1 if v<85 else -2 if v<110 else -5,"volatilidad de bonos")
+ for n,w in [("AUDJPY",2),("DXY",-2),("COPPER",1.5),("BTC",.8),("ETH",.8),("HYG",1.5),("LQD",1)]:
+  if n in by:add(n,max(-5,min(5,by[n]["change1w"]*w)),"confirmación intermercado")
+ if "GOLD" in by:add("GOLD",max(-3,min(3,-by["GOLD"]["change1w"]*1.2)),"demanda defensiva")
+ if "BRENT" in by and "WTI" in by:
+  oil=max(by["BRENT"]["change1w"],by["WTI"]["change1w"]);add("OIL",-2 if oil>6 else -1 if oil<-6 else 0,"shock energético contextual")
+ if "TLT" in by and "SPY" in by:add("TLT/SPY",max(-3,min(3,-(by["TLT"]["change1w"]-by["SPY"]["change1w"])*1.5)),"duración vs acciones")
+ score=max(0,min(100,score));label="RISK ON" if score>=65 else "RISK OFF" if score<=35 else "NEUTRAL / MIXTO"
+ pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp);conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
+ why={"SP500":"la bolsa amplia acompaña el apetito por riesgo","NASDAQ":"la beta alta acompaña el régimen","VIX":"la volatilidad bursátil está contenida","VVIX":"la volatilidad de la volatilidad no muestra estrés","SKEW":"el riesgo de cola no muestra tensión extrema","MOVE":"la volatilidad de bonos no muestra estrés significativo","HYG":"el crédito high yield acompaña el apetito por riesgo","LQD":"el crédito investment grade se mantiene estable","DXY":"el dólar actúa como refugio/liquidez","AUDJPY":"el carry confirma apetito por riesgo","COPPER":"el cobre acompaña la demanda cíclica","GOLD":"el oro muestra demanda defensiva","BTC":"cripto acompaña la liquidez/alta beta","ETH":"cripto acompaña la liquidez/alta beta","TLT/SPY":"la duración gana terreno relativo a acciones","OIL":"el petróleo aporta señal de crecimiento/inflación"}
+ positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5];negatives=sorted([x for x in comp if x[0]<0])[:5]
+ feed["riskOnOff"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"score":round(score,1),"label":label,"confidence":conf,"method":"Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.","assets":data,"confirmations":[f"{n}: {why.get(n,w)}." for _,n,w in positives],"tensions":[f"{n}: {why.get(n,w)}." for _,n,w in negatives],"coverage":feed.get("riskOnOff",{}).get("coverage",{})}
+
 
