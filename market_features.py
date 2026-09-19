@@ -1,3 +1,32 @@
+def opt(sym):
+ try:
+  r=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+sym+".json",h={"User-Agent":"Mozilla/5.0","Accept":"application/json"}).json()
+  d=r.get("data",r); spot=float(d.get("current_price") or 0); rows=d.get("options",[])
+  if not rows or not spot:return None
+  now=datetime.now(timezone.utc)
+  calls=[];puts=[]; expiries=[]
+  for x in rows:
+   t=str(x.get("option") or "")
+   m=re.search(r"([0-9]{6})([CP])([0-9]{8})$",t)
+   if not m:continue
+   try:
+    ex=datetime.strptime("20"+m.group(1),"%Y%m%d").replace(tzinfo=timezone.utc)
+    if ex<=now:continue
+    strike=int(m.group(3))/1000.0; typ=m.group(2); oi=float(x.get("open_interest") or 0); iv=float(x.get("iv") or 0); gam=float(x.get("gamma") or 0)
+    row={"strike":strike,"openInterest":oi,"impliedVolatility":iv,"gamma":gam,"expiration":int(ex.timestamp())}
+    (calls if typ=="C" else puts).append(row); expiries.append(ex)
+   except Exception:pass
+  if not calls and not puts:return None
+  nearest=min(expiries) if expiries else now
+  calls=[x for x in calls if x["expiration"]==int(nearest.timestamp())]
+  puts=[x for x in puts if x["expiration"]==int(nearest.timestamp())]
+  co=sum(x["openInterest"] for x in calls);po=sum(x["openInterest"] for x in puts)
+  tc=max(calls,key=lambda x:x["openInterest"],default={});tp=max(puts,key=lambda x:x["openInterest"],default={})
+  g=gamma(calls,puts,spot)
+  return {"name":sym,"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,
+   "topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),
+   "method":"CBOE delayed options chain · OI + quoted gamma; 15 min delayed. Gamma exposure is a modeling proxy, not dealer-position data.",
+   "source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Calls positive / puts negative; dealer side is assumed for the proxy.",**g}
 from __future__ import annotations
 import math, os, re, requests
 from datetime import datetime, timezone
@@ -42,38 +71,41 @@ def cot_one(rows,label,longs,shorts):
  hist=[p(r,longs)-p(r,shorts) for r in rows if p(r,longs) is not None and p(r,shorts) is not None]; net=lv-sv
  return {"name":label,"reportDate":str(rows[0].get("report_date_as_yyyy_mm_dd",""))[:10],"net":net,"long":lv,"short":sv,"zScore":zscore(hist,net),"netChange":net-(hist[1] if len(hist)>1 else net),"reading":("Largos netos" if net>0 else "Cortos netos")}
 def update_cot(feed):
- cfg=[("S&P 500 E-Mini","gpe5-46if","upper(contract_market_name) like '%S&P 500%'"),("Nasdaq-100","gpe5-46if","upper(contract_market_name) like '%NASDAQ%'"),("Oro","8jj7-5vf4","upper(commodity_name) like '%GOLD%'"),("Petróleo WTI","8jj7-5vf4","upper(commodity_name) like '%CRUDE OIL%'")]; out=[]
- for name,ds,w in cfg:
+ cfg=[
+  ("S&P 500 E-Mini","gpe5-46if","upper(contract_market_name) like '%E-MINI S&P 500%'",
+   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
+  ("Nasdaq-100","gpe5-46if","upper(contract_market_name) like '%NASDAQ-100%'",
+   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
+  ("DXY · USD Index","gpe5-46if","upper(contract_market_name) like '%U.S. DOLLAR INDEX%'",
+   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
+  ("Euro FX","gpe5-46if","upper(contract_market_name) like '%EURO FX%'",
+   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
+  ("Oro","72hh-3qpy","upper(contract_market_name) like '%GOLD%' and upper(contract_market_name) not like '%MINI%'",
+   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money"),
+  ("Plata","72hh-3qpy","upper(contract_market_name) like '%SILVER%' and upper(contract_market_name) not like '%MINI%'",
+   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money"),
+  ("Petróleo WTI","72hh-3qpy","upper(contract_market_name) like '%WTI%' and upper(contract_market_name) like '%CRUDE%'",
+   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money"),
+  ("Brent","72hh-3qpy","upper(contract_market_name) like '%BRENT%'",
+   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money")
+ ]
+ out=[]; errors=[]
+ for name,ds,w,L,S,group in cfg:
   rows=cot_rows(ds,w)
-  # TFF leverage-money fields for indices; legacy noncommercial for commodities.
-  if ds=="gpe5-46if": L=("lev_money_positions_long","lev_money_positions_long_all");S=("lev_money_positions_short","lev_money_positions_short_all")
-  else:L=("noncomm_positions_long_all","noncomm_positions_long");S=("noncomm_positions_short_all","noncomm_positions_short")
+  if not rows:
+   errors.append(name)
+   continue
   x=cot_one(rows,name,L,S)
-  if x:out.append(x)
- if out:feed["cot"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"CFTC Public Reporting Environment","method":"COT semanal; z-score frente a hasta 52 observaciones.","sourceUrl":"https://publicreporting.cftc.gov/"}
-def gamma(calls,puts,spot):
- by={}; now=int(datetime.now(timezone.utc).timestamp())
- for typ,rows in (("call",calls),("put",puts)):
-  for r in rows:
-   try:
-    k=float(r.get("strike") or 0);oi=float(r.get("openInterest") or 0);iv=float(r.get("impliedVolatility") or 0);ex=int(r.get("expiration") or 0)
-    if not k or not oi or not iv or ex<=now:continue
-    t=max((ex-now)/(365*86400),1/365);d1=(math.log(spot/k)+.5*iv*iv*t)/(iv*t**.5);g=math.exp(-.5*d1*d1)/(2*math.pi)**.5/(spot*iv*t**.5);v=g*oi*100*spot*spot*.01*(1 if typ=="call" else -1);by[k]=by.get(k,0)+v
-   except Exception:pass
- pos=[x for x in by.items() if x[1]>0];neg=[x for x in by.items() if x[1]<0];o=sorted(by.items());zg=None
- for (a,x),(b,y) in zip(o,o[1:]):
-  if (x<=0<=y) or (y<=0<=x):zg=(a+b)/2;break
- return {"gammaPositive":sum(v for _,v in pos) if pos else None,"gammaNegative":sum(v for _,v in neg) if neg else None,"gammaTotal":sum(by.values()) if by else None,"zeroGamma":zg,"positiveZones":[{"strike":k,"gamma":v} for k,v in sorted(pos,key=lambda x:x[1],reverse=True)[:4]],"negativeZones":[{"strike":k,"gamma":v} for k,v in sorted(neg,key=lambda x:x[1])[:4]]}
-def opt(sym):
- try:
-  base="https://query2.finance.yahoo.com/v7/finance/options/"+sym;r=get(base).json()["optionChain"]["result"][0];ex=r["expirationDates"][0];r=get(base,{"date":ex}).json()["optionChain"]["result"][0];o=r["options"][0];c=o.get("calls",[]);p=o.get("puts",[]);spot=float(r["quote"]["regularMarketPrice"])
-  for x in c+p:x["expiration"]=ex
-  co=sum(float(x.get("openInterest") or 0) for x in c);po=sum(float(x.get("openInterest") or 0) for x in p);tc=max(c,key=lambda x:float(x.get("openInterest") or 0),default={});tp=max(p,key=lambda x:float(x.get("openInterest") or 0),default={});g=gamma(c,p,spot)
-  return {"name":sym,"ticker":sym,"spot":spot,"expiration":datetime.fromtimestamp(ex,tz=timezone.utc).date().isoformat(),"putCallOi":po/co if co else None,"topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(c+p,key=lambda x:float(x.get("openInterest") or 0),default={}).get("strike"),"method":"OI + gamma proxy Black-Scholes; no es GEX propietario.","source":"Yahoo Finance","sourceUrl":"https://finance.yahoo.com/",**g}
- except Exception:return None
-def update_options(feed):
- out=[x for s in ("SPY","QQQ","GLD","USO") if (x:=opt(s))]
- if out:feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"Opciones públicas; gamma estimada, no GEX propietario."}
+  if x:
+   x["traderGroup"]=group
+   x["contract"]=str(rows[0].get("contract_market_name") or rows[0].get("commodity_name") or "")
+   x["openInterest"]=num(rows[0].get("open_interest_all"))
+   out.append(x)
+  else: errors.append(name)
+ if out:
+  feed["cot"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,
+   "source":"CFTC Public Reporting Environment","method":"COT semanal; Managed Money para commodities y Leveraged Money para índices/divisas; z-score frente a hasta 52 observaciones.",
+   "sourceUrl":"https://publicreporting.cftc.gov/","errors":errors}
 def finra_access_token():
  client_id=os.getenv("FINRA_API_CLIENT_ID")
  client_secret=os.getenv("FINRA_API_CLIENT_SECRET")
@@ -96,7 +128,7 @@ def update_dark_pools(feed):
  for sym in ("SPY","QQQ","HYG","GLD","USO","AAPL","NVDA"):
   try:
    payload={"limit":500,"fields":["issueSymbolIdentifier","issueName","MPID","marketParticipantName","summaryStartDate","weekStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","summaryTypeCode","lastUpdateDate"],"compareFilters":[{"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
-   d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json"}).json()
+   d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
    if not d:continue
    w=max(str(x.get("weekStartDate") or x.get("summaryStartDate") or "") for x in d);cur=[x for x in d if str(x.get("weekStartDate") or x.get("summaryStartDate") or "")==w];ats=sum(float(x.get("totalWeeklyShareQuantity") or 0) for x in cur if str(x.get("summaryTypeCode") or "").upper().startswith("ATS"));otc=sum(float(x.get("totalWeeklyShareQuantity") or 0) for x in cur if not str(x.get("summaryTypeCode") or "").upper().startswith("ATS"));out.append({"symbol":sym,"weekStart":w,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,"zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / con retraso","note":"Actividad OTC/ATS agregada; no implica acumulación por precio."})
   except Exception:pass
