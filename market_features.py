@@ -123,29 +123,17 @@ def update_cot(feed):
    "source":"CFTC Public Reporting Environment","method":"COT semanal; Managed Money para commodities y Leveraged Money para índices/divisas; z-score frente a hasta 52 observaciones.",
    "sourceUrl":"https://publicreporting.cftc.gov/","errors":errors}
 def finra_access_token():
- client_id=os.getenv("FINRA_API_CLIENT_ID")
- client_secret=os.getenv("FINRA_API_CLIENT_SECRET")
- if client_id and client_secret:
-  r=requests.post(
-   "https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token",
-   params={"grant_type":"client_credentials"},
-   auth=(client_id,client_secret),
-   headers={"User-Agent":"MacroTerminal/6.0","Accept":"application/json"},
-   timeout=T
-  )
-  r.raise_for_status()
-  return r.json().get("access_token")
- return os.getenv("FINRA_API_TOKEN")
-
-def update_options(feed):
- out=[]
- for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA"):
-  try:
-   x=opt(sym)
-   if x: out.append(x)
-  except Exception as e: print("OPTIONS",sym,type(e).__name__,str(e)[:180])
- if out:
-  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","note":"Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."}
+ try:
+  client_id=os.getenv("FINRA_API_CLIENT_ID")
+  client_secret=os.getenv("FINRA_API_CLIENT_SECRET")
+  if client_id and client_secret:
+   r=requests.post("https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token",params={"grant_type":"client_credentials"},auth=(client_id,client_secret),headers={"User-Agent":"MacroTerminal/6.0","Accept":"application/json"},timeout=T)
+   r.raise_for_status()
+   return r.json().get("access_token")
+  return os.getenv("FINRA_API_TOKEN")
+ except Exception as e:
+  print("FINRA AUTH",type(e).__name__,str(e)[:180])
+  return None
 
 def update_dark_pools(feed):
  token=finra_access_token()
@@ -160,4 +148,9 @@ def update_dark_pools(feed):
   except Exception:pass
  if out:feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency"}
 def enrich_feed(feed):
- update_fx(feed);update_cot(feed);update_options(feed);update_dark_pools(feed)
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools)):
+  try:
+   fn(feed)
+  except Exception as e:
+   print(name,type(e).__name__,str(e)[:180])
+
