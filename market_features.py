@@ -327,6 +327,93 @@ def update_squawkflow(feed):
   feed["squawkFlow"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),**out,
     "note":"GEX SPX/VIX curve/flow from SquawkFlow public delayed data. Unusual options direction is inferred from quote location and aggregate chain activity; not confirmed trade intent."}
 
+
+def _norm_dark_print(row, ticker, source):
+ def pick(keys, default=None):
+  for k in keys:
+   if isinstance(row,dict) and row.get(k) not in (None,""): return row.get(k)
+  return default
+ ts=pick(["timestamp","executed_at","execution_timestamp","time","ts","t","participant_timestamp","sip_timestamp","trf_timestamp"])
+ if isinstance(ts,(int,float)):
+  # normalize ns/ms/s epochs
+  if ts>1e17: ts=ts/1e9
+  elif ts>1e14: ts=ts/1e6
+  elif ts>1e11: ts=ts/1e3
+  try: ts=datetime.fromtimestamp(ts,tz=timezone.utc).isoformat()
+  except Exception: ts=str(ts)
+ price=num(pick(["price","execution_price","trade_price"]))
+ size=num(pick(["size","shares","quantity","trade_size"]))
+ notional=num(pick(["notional","notional_value","premium","dollar_value"]))
+ if notional is None and price is not None and size is not None:notional=price*size
+ side=str(pick(["direction","side","aggressor","flow_side","nbbo_location_proxy","nbbo_side"],"UNKNOWN")).upper()
+ if side in ("BUY","B","ASK","AT_ASK","AT-ASK","ABOVE_ASK"):side="BUY"
+ elif side in ("SELL","S","BID","AT_BID","AT-BID","BELOW_BID"):side="SELL"
+ else:side="UNKNOWN"
+ conf=pick(["direction_confidence","confidence","side_confidence"])
+ return {
+  "ticker":ticker,"timestamp":ts,"price":price,"size":size,"notional":notional,
+  "side":side,"directionConfidence":num(conf),"venue":pick(["venue","market_center","market","trf_name","trf","reported_venue"]),
+  "trfId":pick(["trf_id","trfi","trfId"]),"conditions":pick(["conditions","condition_codes","trade_conditions"],[]),
+  "source":source,"realPrint":True,
+  "sideBasis":"NBBO-location proxy" if side!="UNKNOWN" else "Not reported / not inferred"
+ }
+
+def update_dark_pool_prints(feed):
+ tickers=("SPY","QQQ","AAPL","NVDA","GLD","USO","IWM")
+ ow_key=os.getenv("OPTIONWHALES_API_KEY")
+ massive_key=os.getenv("MASSIVE_API_KEY")
+ prints=[]
+ source_used=[]
+
+ if ow_key:
+  for sym in tickers:
+   try:
+    r=get("https://api.optionwhales.io/v1/darkpool/prints/"+sym,{"limit":"120"},{"X-API-Key":ow_key,"Accept":"application/json"}).json()
+    data=r.get("data",r)
+    if isinstance(data,dict):
+     data=data.get("prints") or data.get("rows") or data.get("trades") or data.get("results") or []
+    if not isinstance(data,list):continue
+    for row in data:
+     p=_norm_dark_print(row,sym,"OptionWhales / TRF")
+     if p["price"] and p["size"] and p["notional"] and p["notional"]>=100000:
+      prints.append(p)
+    if data:source_used.append("OptionWhales")
+   except Exception as e:print("OW DARK PRINTS",sym,type(e).__name__,str(e)[:160])
+
+ # Massive is the raw-print fallback/validation layer. It is intentionally separate
+ # because the raw tape does not publish an aggressor side.
+ if massive_key:
+  now=datetime.now(timezone.utc)
+  start=int((now-timedelta(minutes=75)).timestamp()*1e9)
+  end=int((now-timedelta(minutes=15)).timestamp()*1e9)
+  for sym in tickers:
+   try:
+    r=get("https://api.massive.com/v3/trades/"+sym,{"timestamp.gte":start,"timestamp.lte":end,"limit":50000,"order":"desc","sort":"timestamp","apiKey":massive_key}).json()
+    data=r.get("results",[]) if isinstance(r,dict) else []
+    added=0
+    for row in data:
+     # Massive: exchange 4 denotes TRF/off-exchange. Keep only those.
+     if str(row.get("exchange"))!="4" and str(row.get("x"))!="4":continue
+     p=_norm_dark_print(row,sym,"Massive / FINRA TRF")
+     if p["price"] and p["size"] and p["notional"] and p["notional"]>=100000:
+      key=(sym,p["timestamp"],round(p["price"],6),round(p["size"],6))
+      if not any((x.get("ticker"),x.get("timestamp"),round(x.get("price") or 0,6),round(x.get("size") or 0,6))==key for x in prints):
+       prints.append(p);added+=1
+    if added:source_used.append("Massive")
+   except Exception as e:print("MASSIVE DARK PRINTS",sym,type(e).__name__,str(e)[:160])
+
+ if prints:
+  prints=sorted(prints,key=lambda x:str(x.get("timestamp") or ""),reverse=True)[:500]
+  feed["darkPoolPrints"]={
+   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+   "prints":prints,
+   "sources":list(dict.fromkeys(source_used)),
+   "selection":"TRF/off-exchange equity prints >= $100K notional",
+   "dataStatus":"REAL EXECUTIONS · SIDE INFERRED WHEN AVAILABLE",
+   "note":"Los prints son ejecuciones off-exchange reales reportadas a TRF. Un print no contiene de forma nativa comprador/vendedor; el verde/rojo solo se usa cuando la fuente aporta una clasificación por ubicación NBBO. No identifica qué institución compró o vendió.",
+   "latency":"OptionWhales ~15 min delayed; Massive Developer ~15 min delayed where plan permits."
+  }
+
 def update_traditional_sentiment(feed):
  result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5}
  try:
@@ -437,7 +524,7 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
   try:
    fn(feed)
   except Exception as e:
