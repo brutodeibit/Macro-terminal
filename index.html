@@ -977,40 +977,45 @@
         }
         function riskToneClass(sig){ return sig==='risk-on'?'risk-up':sig==='risk-off'?'risk-down':'risk-neutral'; }
         function renderRiskOnOff(){
-            const r=macroDatabase.__riskOnOff || {score:null,label:'SIN SINCRONIZAR',confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
-            const score=Number(r.score);
-            const valid=Number.isFinite(score);
-            const width=valid?Math.max(0,Math.min(100,score)):0;
-            const meterColor=valid?(score>=60?'#34d399':score<=40?'#f87171':'#fbbf24'):'#64748b';
-            const assets=(r.assets||[]).map(a=>`<div class="risk-cell"><div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${esc(a.name||a.symbol)}</span><span class="risk-badge ${riskToneClass(a.signal)}">${esc(a.signalLabel||a.signal||'—')}</span></div><div class="text-lg font-black text-white mt-2">${riskFmt(a.value,a.unit||'',a.name||a.symbol)}</div><div class="text-[10px] mt-1 flex flex-wrap gap-x-2 gap-y-1"><span class="${riskToneClass(a.signal)}">${Number.isFinite(Number(a.change1d))?(Number(a.change1d)>=0?"+":"")+Number(a.change1d).toFixed(2)+"% 1D":"—"}</span><span class="${riskToneClass(a.signal)}">${Number.isFinite(Number(a.change1w))?(Number(a.change1w)>=0?"+":"")+Number(a.change1w).toFixed(2)+"% 1S":"—"}</span><span class="${riskToneClass(a.signal)}">${Number.isFinite(Number(a.change1m))?(Number(a.change1m)>=0?"+":"")+Number(a.change1m).toFixed(2)+"% 1M":"—"}</span></div><div class="text-[10px] text-gray-600 mt-1">${esc(a.role||'Confirmación')}</div></div>`).join('');
-            const conf=(r.confirmations||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-emerald-400">•</span><span>${esc(x)}</span></li>`).join('');
-            const tens=(r.tensions||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-amber-400">•</span><span>${esc(x)}</span></li>`).join('');
-            return `<section id="sec-risk" class="space-y-4">
-                <div class="glass rounded-2xl p-5">
-                  <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-                    <div>
-                      <div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-scale-balanced text-blue-400"></i> Econic personalizado · régimen de mercado</div>
-                      <h2 class="text-xl md:text-2xl font-black text-white mt-1">RISK ON / RISK OFF</h2>
-                      <p class="text-sm text-gray-400 mt-1 max-w-4xl">Lectura intermercado del estado de riesgo. No depende de un solo activo: combina acciones, volatilidad, tail-risk, crédito, dólar, tipos, materias primas y cripto. La lectura muestra confirmaciones y tensiones para evitar un sesgo artificialmente “alcista”.</p>
-                    </div>
-                    <div class="metric rounded-xl px-5 py-4 min-w-[250px]">
-                      <div class="flex items-center justify-between"><div class="text-[10px] uppercase text-gray-500">Régimen actual</div><span class="risk-badge">Confianza ${valid && r.confidence!==null ? esc(String(r.confidence))+'%' : '—'}</span></div>
-                      <div class="text-2xl font-black ${valid?(score>=60?'risk-up':score<=40?'risk-down':'risk-neutral'):'text-gray-400'} mt-1">${esc(r.label||'SIN SINCRONIZAR')}</div>
-                      <div class="risk-meter mt-3"><div class="risk-meter-fill" style="width:${width}%;background:${meterColor}"></div></div>
-                      <div class="flex justify-between text-[9px] text-gray-600 mt-1"><span>RISK OFF</span><span>NEUTRAL</span><span>RISK ON</span></div>
-                    </div>
-                  </div>
-                  <div class="mt-4 text-[10px] text-gray-600">Última sincronización: ${esc(r.updated||'—')} · El score es una síntesis transparente del régimen, no una orden de trading.</div>
-                </div>
-                <div class="risk-grid">${assets || '<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando la primera sincronización de mercado.</div>'}</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmaciones</div><div class="text-[10px] text-gray-600 mt-1">Señales que apuntan al mismo régimen de mercado.</div><ul class="space-y-2 mt-3">${conf||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
-                  <div class="metric rounded-xl p-4 risk-alert"><div class="text-[10px] uppercase tracking-wider text-gray-500">Tensiones / cobertura</div><div class="text-[10px] text-gray-600 mt-1">Señales que aconsejan no dar por confirmado el régimen.</div><ul class="space-y-2 mt-3">${tens||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
-                </div>
-            </section>`;
-        }
+ const r=macroDatabase.__riskOnOff||{score:null,label:'SIN SINCRONIZAR',confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
+ const score=Number(r.score),valid=Number.isFinite(score),width=valid?Math.max(0,Math.min(100,score)):0;
+ const assets=(r.assets||[]).map(a=>\`
+ <div class="risk-cell">
+  <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">\${esc(a.name||a.symbol)}</span><span class="risk-badge">\${esc(a.marketSignal||'—')}</span></div>
+  <div class="text-lg font-black text-white mt-2">\${riskFmt(a.value,a.unit||'',a.name||a.symbol)}</div>
+  <div class="grid grid-cols-3 gap-1 mt-2">
+   <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1D</div><b class="text-[10px] \${a.change1d>=0?'text-emerald-300':'text-red-300'}">\${Number.isFinite(Number(a.change1d))?(a.change1d>=0?'+':'')+Number(a.change1d).toFixed(2)+'%':'—'}</b></div>
+   <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1S</div><b class="text-[10px] \${a.change1w>=0?'text-emerald-300':'text-red-300'}">\${Number.isFinite(Number(a.change1w))?(a.change1w>=0?'+':'')+Number(a.change1w).toFixed(2)+'%':'—'}</b></div>
+   <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1M</div><b class="text-[10px] \${a.change1m>=0?'text-emerald-300':'text-red-300'}">\${Number.isFinite(Number(a.change1m))?(a.change1m>=0?'+':'')+Number(a.change1m).toFixed(2)+'%':'—'}</b></div>
+  </div>
+  <div class="text-[10px] text-gray-600 mt-1">\${esc(a.role||'Confirmación')}</div>
+ </div>\`).join('');
+ const conf=(r.confirmations||[]).map(x=>\`<li class="text-xs text-gray-300 flex gap-2"><span class="text-emerald-400">•</span><span>\${esc(x)}</span></li>\`).join('');
+ const tens=(r.tensions||[]).map(x=>\`<li class="text-xs text-gray-300 flex gap-2"><span class="text-amber-400">•</span><span>\${esc(x)}</span></li>\`).join('');
+ return \`<section id="sec-risk" class="space-y-4">
+  <div class="glass rounded-2xl p-5">
+   <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+    <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-scale-balanced text-blue-400"></i> Econic personalizado · régimen de mercado</div>
+     <h2 class="text-xl md:text-2xl font-black text-white mt-1">RISK ON / RISK OFF</h2>
+     <p class="text-sm text-gray-400 mt-1 max-w-4xl">Lectura intermercado. Los porcentajes son variaciones de precio del último cierre disponible: 1D, 1 semana y 1 mes. La etiqueta de cada activo describe su relación con el régimen, no si “sube = alcista”.</p>
+    </div>
+    <div class="metric rounded-xl px-5 py-4 min-w-[250px]"><div class="flex items-center justify-between"><div class="text-[10px] uppercase text-gray-500">Régimen actual</div><span class="risk-badge">Confianza \${valid&&r.confidence!==null?esc(String(r.confidence))+'%':'—'}</span></div>
+     <div class="text-2xl font-black \${valid?(score>=60?'risk-up':score<=40?'risk-down':'risk-neutral'):'text-gray-400'} mt-1">\${esc(r.label||'SIN SINCRONIZAR')}</div>
+     <div class="risk-meter mt-3"><div class="risk-meter-fill" style="width:\${width}%"></div></div>
+     <div class="flex justify-between text-[9px] text-gray-600 mt-1"><span>RISK OFF</span><span>NEUTRAL</span><span>RISK ON</span></div>
+    </div>
+   </div>
+   <div class="mt-4 text-[10px] text-gray-600">Última sincronización: \${esc(r.updated||'—')} · 1S = semana de mercado (~5 cierres), 1M = ~21 cierres. El fin de semana conserva el último cierre disponible.</div>
+  </div>
+  <div class="risk-grid">\${assets||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando sincronización.</div>'}</div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+   <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmaciones</div><div class="text-[10px] text-gray-600 mt-1">Señales que apuntan al mismo régimen.</div><ul class="space-y-2 mt-3">\${conf||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
+   <div class="metric rounded-xl p-4 risk-alert"><div class="text-[10px] uppercase tracking-wider text-gray-500">Tensiones / cobertura</div><div class="text-[10px] text-gray-600 mt-1">Señales que impiden simplificar el contexto.</div><ul class="space-y-2 mt-3">\${tens||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
+  </div>
+ </section>\`;
+}
 
-        function renderGlobalSummary(){
+function renderGlobalSummary(){
  const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>({d,score:macroInterpretation(d).score}));
  const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
  const label=v=>v>0.9?'RESTRICTIVO':v<-0.9?'ACOMODATICIO':'MIXTO';
