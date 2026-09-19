@@ -100,35 +100,74 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:10]
  }
 
+def _norm_pdf(x): return math.exp(-0.5*x*x)/math.sqrt(2*math.pi)
+def _norm_cdf(x): return 0.5*(1+math.erf(x/math.sqrt(2)))
+def _bs_greeks(S,K,T,sigma,r,typ):
+ if not S or not K or T<=0 or not sigma or sigma<=0:return (None,None,None,None)
+ try:
+  d1=(math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*math.sqrt(T)); d2=d1-sigma*math.sqrt(T)
+  delta=_norm_cdf(d1) if typ=="C" else _norm_cdf(d1)-1
+  gamma=_norm_pdf(d1)/(S*sigma*math.sqrt(T))
+  # Approximate vanna/charm proxies; useful as directional exposure estimates, not dealer-book observations.
+  vanna=-math.exp(-r*T)*_norm_pdf(d1)*d2/sigma
+  charm=-(math.exp(-r*T)*_norm_pdf(d1)*(2*r*T-d2*sigma*math.sqrt(T))/(2*T*sigma*math.sqrt(T)))
+  if typ=="P": charm=-charm
+  return delta,gamma,vanna,charm
+ except Exception:return (None,None,None,None)
+
+def _yahoo_option_chain(sym,expiration=None):
+ u="https://query1.finance.yahoo.com/v7/finance/options/"+requests.utils.quote(sym,safe="")
+ params={"date":str(int(expiration))} if expiration else {}
+ j=get(u,params).json().get("optionChain",{}).get("result",[])
+ return j[0] if j else None
+
 def opt(sym):
  try:
-  r=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+sym+".json",h={"User-Agent":"Mozilla/5.0","Accept":"application/json"}).json()
-  d=r.get("data",r); spot=float(d.get("close") or d.get("current_price") or 0); raw=d.get("options",[]) or []
-  if not raw or not spot:return None
-  now=datetime.now(timezone.utc); all_rows=[]; expiries={}
-  for x in raw:
-   m=re.search(r"([0-9]{6})([CP])([0-9]{8})$",str(x.get("option") or ""))
-   if not m:continue
-   try:
-    ex=datetime.strptime("20"+m.group(1),"%Y%m%d").replace(tzinfo=timezone.utc)
-    if ex<=now:continue
-    typ=m.group(2); strike=int(m.group(3))/1000.0
-    row={"strike":strike,"openInterest":float(x.get("open_interest") or 0),"volume":float(x.get("volume") or x.get("trade_volume") or 0),"iv":float(x.get("iv") or x.get("implied_volatility") or 0),"gamma":float(x.get("gamma") or 0),"delta":num(x.get("delta")),"theta":num(x.get("theta")),"vega":num(x.get("vega")),"vanna":num(x.get("vanna")),"charm":num(x.get("charm")),"bid":num(x.get("bid")),"ask":num(x.get("ask")),"expiration":int(ex.timestamp()),"type":typ}
-    row["key"]=typ+"|"+ex.date().isoformat()+"|"+str(strike)
-    all_rows.append(row); expiries.setdefault(ex.date().isoformat(),[]).append(row)
-   except Exception:continue
-  if not expiries:return None
-  ex_dates=sorted(expiries)
-  nearest=datetime.fromisoformat(ex_dates[0]).replace(tzinfo=timezone.utc)
-  monthly_dates=[x for x in ex_dates if datetime.fromisoformat(x).weekday()==4 and 15<=datetime.fromisoformat(x).day<=21]
-  monthly=datetime.fromisoformat(monthly_dates[0]).replace(tzinfo=timezone.utc) if monthly_dates else nearest
+  base=_yahoo_option_chain(sym)
+  if not base:return None
+  spot=num(base.get("quote",{}).get("regularMarketPrice") or base.get("quote",{}).get("postMarketPrice"))
+  expirations=[int(x) for x in (base.get("expirationDates") or [])]
+  now=datetime.now(timezone.utc)
+  expirations=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc)>now]
+  if not spot or not expirations:return None
+  monthly=[]
+  for ex in expirations:
+   d=datetime.fromtimestamp(ex,tz=timezone.utc)
+   if d.weekday()==4 and 15<=d.day<=21:monthly.append(ex)
+  selected=[expirations[0]]
+  if monthly and monthly[0] not in selected:selected.append(monthly[0])
+  profiles=[]
+  all_raw=[]
+  for ex in selected:
+   chain=_yahoo_option_chain(sym,ex)
+   if not chain:continue
+   rows=[]
+   for typ,key in (("C","calls"),("P","puts")):
+    for x in chain.get(key,[]) or []:
+     K=num(x.get("strike"));oi=num(x.get("openInterest")) or 0;vol=num(x.get("volume")) or 0;iv=num(x.get("impliedVolatility")) or 0
+     if not K or iv<=0:continue
+     T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
+     delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv,0.04,typ)
+     rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"type":typ,"expiration":ex})
+   if rows:
+    profiles.append(_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc)))
+    all_raw.extend(rows)
+  if not profiles:return None
+  # Add actual call/put OI and volume ratios to the nearest profile.
+  for p in profiles:
+   ex=int(datetime.fromisoformat(p["expiration"]).replace(tzinfo=timezone.utc).timestamp())
+   rr=[x for x in all_raw if x["expiration"]==ex]
+   coi=sum(x["openInterest"] for x in rr if x["type"]=="C");poi=sum(x["openInterest"] for x in rr if x["type"]=="P")
+   cv=sum(x["volume"] for x in rr if x["type"]=="C");pv=sum(x["volume"] for x in rr if x["type"]=="P")
+   p["putCallOi"]=poi/coi if coi else None;p["putCallVol"]=pv/cv if cv else None
+   p["totalVolume"]=cv+pv
+  monthly_exp=monthly[0] if monthly else selected[-1]
   return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,
-          "expiration":ex_dates[0],"monthlyExpiration":monthly.date().isoformat(),
-          "profiles":[_option_summary(expiries[ex_dates[0]],spot,nearest),
-                       _option_summary(expiries[monthly.date().isoformat()],spot,monthly)],
-          "method":"CBOE delayed chain · OI/Greeks + GEX/DEX proxies; dealer positioning is not directly observable.",
-          "source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/",
-          "gammaNote":"GEX assumes a call-positive / put-negative hedge convention. DEX/Vanna/Charm are exposure proxies, not observed dealer books."}
+    "expiration":datetime.fromtimestamp(selected[0],tz=timezone.utc).date().isoformat(),
+    "monthlyExpiration":datetime.fromtimestamp(monthly_exp,tz=timezone.utc).date().isoformat(),
+    "profiles":profiles,"method":"Yahoo Finance option chain · OI/volume + Black-Scholes Greeks; GEX/DEX/Vanna/Charm are modelled proxies, not observed dealer positioning.",
+    "source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/"+sym+"/options/",
+    "gammaNote":"Gamma/DEX/Vanna/Charm are calculated from public OI, IV and model Greeks. Dealer side is not directly observable."}
  except Exception as e:
   print("OPTIONS_CHAIN",sym,type(e).__name__,str(e)[:180]); return None
 
