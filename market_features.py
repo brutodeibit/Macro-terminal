@@ -1,3 +1,7 @@
+from __future__ import annotations
+import math, os, re, requests
+from datetime import datetime, timezone
+
 def opt(sym):
  try:
   r=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+sym+".json",h={"User-Agent":"Mozilla/5.0","Accept":"application/json"}).json()
@@ -27,9 +31,7 @@ def opt(sym):
    "topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),
    "method":"CBOE delayed options chain · OI + quoted gamma; 15 min delayed. Gamma exposure is a modeling proxy, not dealer-position data.",
    "source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Calls positive / puts negative; dealer side is assumed for the proxy.",**g}
-from __future__ import annotations
-import math, os, re, requests
-from datetime import datetime, timezone
+
 H={"User-Agent":"MacroTerminal/6.0","Accept-Language":"en-US,en;q=0.9"}; T=25
 def get(u,p=None,h=None):
  x=dict(H); x.update(h or {}); r=requests.get(u,params=p or {},headers=x,timeout=T); r.raise_for_status(); return r
@@ -120,6 +122,16 @@ def finra_access_token():
   r.raise_for_status()
   return r.json().get("access_token")
  return os.getenv("FINRA_API_TOKEN")
+
+def update_options(feed):
+ out=[]
+ for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA"):
+  try:
+   x=opt(sym)
+   if x: out.append(x)
+  except Exception as e: print("OPTIONS",sym,type(e).__name__,str(e)[:180])
+ if out:
+  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","note":"Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."}
 
 def update_dark_pools(feed):
  token=finra_access_token()
