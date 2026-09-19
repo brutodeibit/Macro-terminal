@@ -46,28 +46,37 @@ def write(feed):
  tmp=FEED_PATH.with_suffix('.tmp')
  tmp.write_text(json.dumps(feed,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); tmp.replace(FEED_PATH)
 
-def yahoo(symbol):
+def yahoo_metrics(symbol):
  try:
   u='https://query1.finance.yahoo.com/v8/finance/chart/'+requests.utils.quote(symbol,safe='')
-  j=get(u,{'range':'1mo','interval':'1d'}).json()['chart']['result'][0]
-  c=[x for x in j['indicators']['quote'][0].get('close',[]) if x is not None]
-  if not c:return None
-  last=float(c[-1]); prev=float(c[-2]) if len(c)>1 else last; p5=float(c[-6]) if len(c)>5 else float(c[0])
-  return last,(last/prev-1)*100,(last/p5-1)*100
- except Exception as e: print('Yahoo',symbol,e); return None
+  j=get(u,{'range':'3mo','interval':'1d'}).json()['chart']['result'][0]
+  q=[float(x) for x in j.get('indicators',{}).get('quote',[{}])[0].get('close',[]) if x is not None]
+  if len(q)<2:return None
+  last=q[-1]
+  return {'last':last,'change1d':(last/q[-2]-1)*100,
+          'change1w':(last/q[-6]-1)*100 if len(q)>=6 else None,
+          'change1m':(last/q[-22]-1)*100 if len(q)>=22 else None}
+ except Exception as e:
+  print('Yahoo',symbol,e);return None
+
 
 def update_risk(feed):
  data=[]
- for n,s in YAHOO.items():
-  m=yahoo(s)
+ for n,sym in YAHOO.items():
+  m=yahoo_metrics(sym)
   if not m:continue
-  v,c1,c5=m; data.append({'name':n,'symbol':s,'value':v,'change1d':c1,'change5d':c5,'role':ROLES.get(n,'Confirmación')})
+  x={'name':n,'symbol':sym,'value':m['last'],'change1d':m['change1d'],'change1w':m['change1w'],'change1m':m['change1m'],'role':ROLES.get(n,'Confirmación')}
+  w=x.get('change1w')
+  if w is None:x['marketSignal']='SIN DATO'
+  elif n in {'SP500','NASDAQ','HYG','LQD','AUDJPY','COPPER','BTC','ETH','SPY'}:x['marketSignal']='FAVORECE RISK-ON ↑' if w>0.15 else 'TENSIONA RISK-ON ↓' if w<-0.15 else 'NEUTRO →'
+  elif n in {'VIX','VVIX','SKEW','MOVE','DXY'}:x['marketSignal']='CALMA / RISK-ON ↑' if w<-0.15 else 'ESTRÉS / RISK-OFF ↑' if w>0.15 else 'NEUTRO →'
+  else:x['marketSignal']='CONTEXTO ↑' if w>0.15 else 'CONTEXTO ↓' if w<-0.15 else 'NEUTRO →'
  if not data:return
- by={x['name']:x for x in data}; score=50.0; comp=[]
+ by={x['name']:x for x in data};score=50.0;comp=[]
  def add(n,p,w):
-  nonlocal score; score+=p; comp.append((p,n,w))
+  nonlocal score;score+=p;comp.append((p,n,w))
  for n,w in [('SP500',8),('NASDAQ',8)]:
-  if n in by:add(n,max(-w,min(w,by[n]['change5d']*w/1.5)),'tendencia 5D')
+  if n in by:add(n,max(-w,min(w,(by[n]['change1w'] or 0)*w/1.5)),'tendencia 1S')
  if 'VIX' in by:
   v=by['VIX']['value'];add('VIX',8 if v<15 else 4 if v<20 else -4 if v<25 else -8,'nivel de volatilidad')
  if 'VVIX' in by:
@@ -77,16 +86,22 @@ def update_risk(feed):
  if 'MOVE' in by:
   v=by['MOVE']['value'];add('MOVE',3 if v<70 else 1 if v<85 else -2 if v<110 else -5,'volatilidad de bonos')
  for n,w in [('AUDJPY',2),('DXY',-2),('COPPER',1.5),('BTC',.8),('ETH',.8),('HYG',1.5),('LQD',1)]:
-  if n in by:add(n,max(-5,min(5,by[n]['change5d']*w)),'confirmación intermercado')
- if 'GOLD' in by:add('GOLD',max(-3,min(3,-by['GOLD']['change5d']*1.2)),'demanda defensiva')
+  if n in by:add(n,max(-5,min(5,(by[n]['change1w'] or 0)*w)),'confirmación intermercado')
+ if 'GOLD' in by:add('GOLD',max(-3,min(3,-(by['GOLD']['change1w'] or 0)*1.2)),'demanda defensiva')
  if 'BRENT' in by and 'WTI' in by:
-  oil=max(by['BRENT']['change5d'],by['WTI']['change5d']); add('OIL',-2 if oil>6 else -1 if oil<-6 else 0,'shock energético contextual')
- if 'TLT' in by and 'SPY' in by:add('TLT/SPY',max(-3,min(3,-(by['TLT']['change5d']-by['SPY']['change5d'])*1.5)),'duración vs acciones')
- score=max(0,min(100,score)); label='RISK ON' if score>=65 else 'RISK OFF' if score<=35 else 'NEUTRAL / MIXTO'
- pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp); conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
+  oil=max(by['BRENT']['change1w'] or 0,by['WTI']['change1w'] or 0);add('OIL',-2 if oil>6 else -1 if oil<-6 else 0,'shock energético contextual')
+ if 'TLT' in by and 'SPY' in by:add('TLT/SPY',max(-3,min(3,-((by['TLT']['change1w'] or 0)-(by['SPY']['change1w'] or 0))*1.5)),'duración vs acciones')
+ score=max(0,min(100,score));label='RISK ON' if score>=65 else 'RISK OFF' if score<=35 else 'NEUTRAL / MIXTO'
+ pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp)
+ conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
  why={'SP500':'la bolsa amplia acompaña el apetito por riesgo','NASDAQ':'la beta alta acompaña el régimen','VIX':'la volatilidad bursátil está contenida','VVIX':'la volatilidad de la volatilidad no muestra estrés','SKEW':'el riesgo de cola no muestra tensión extrema','MOVE':'la volatilidad de bonos no muestra estrés significativo','HYG':'el crédito high yield acompaña el apetito por riesgo','LQD':'el crédito investment grade se mantiene estable','DXY':'el dólar actúa como refugio/liquidez','AUDJPY':'el carry confirma apetito por riesgo','COPPER':'el cobre acompaña la demanda cíclica','GOLD':'el oro muestra demanda defensiva','BTC':'cripto acompaña la liquidez/alta beta','ETH':'cripto acompaña la liquidez/alta beta','TLT/SPY':'la duración gana terreno relativo a acciones','OIL':'el petróleo aporta señal de crecimiento/inflación'}
- positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5]; negatives=sorted([x for x in comp if x[0]<0])[:5]
- feed['riskOnOff']={'updated':datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),'score':round(score,1),'label':label,'confidence':conf,'method':'Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.','assets':data,'confirmations':[f'{n}: {why.get(n,w)}.' for _,n,w in positives],'tensions':[f'{n}: {why.get(n,w)}.' for _,n,w in negatives], 'coverage':feed.get('riskOnOff',{}).get('coverage',{})}
+ positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5];negatives=sorted([x for x in comp if x[0]<0])[:5]
+ feed['riskOnOff']={'updated':datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),'score':round(score,1),'label':label,'confidence':conf,
+  'method':'Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.',
+  'assets':data,'confirmations':[f'{n}: {why.get(n,w)}.' for _,n,w in positives],
+  'tensions':[f'{n}: {why.get(n,w)}.' for _,n,w in negatives],
+  'coverage':{'totalAssets':len(data),'windows':['1D','1S','1M'],'symbols':[x['symbol'] for x in data]}}
+
 
 def fred_csv(sid):
  try:
@@ -174,6 +189,6 @@ def ensure_slots(feed):
 def main():
  feed=load();update_us(feed);update_treasury(feed);update_te(feed);ensure_slots(feed);update_risk(feed)
  enrich_feed(feed)
- stamp=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC');feed['version']=6;feed['updated']=stamp;feed['automation']={'updatedAt':stamp,'runner':'GitHub Actions / update_feed.py','intervalMinutes':15,'notes':['Mercado/Risk-On-Off se refresca cada 15 min cuando Yahoo responde.','Indicadores macro solo cambian cuando se publica un nuevo dato.','Las curvas usan benchmarks reales disponibles; no se interpolan silenciosamente.','COT es semanal; opciones usan gamma proxy; dark pools/OTC son datos agregados y con retraso.']};write(feed);print('Feed actualizado',stamp)
+ stamp=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC');feed['version']=6;feed['updated']=stamp;feed['automation']={'updatedAt':stamp,'runner':'GitHub Actions / update_feed.py','intervalMinutes':15,'notes':['Mercado/Risk-On-Off se refresca cada 15 min cuando Yahoo responde; todos los activos muestran 1D/1S/1M.','Indicadores macro solo cambian cuando se publica un nuevo dato.','Las curvas usan benchmarks reales disponibles; no se interpolan silenciosamente.','COT es semanal; opciones usan gamma proxy; dark pools/OTC son datos agregados y con retraso.']};write(feed);print('Feed actualizado',stamp)
 
 if __name__=='__main__':main()
