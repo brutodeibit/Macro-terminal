@@ -3,17 +3,29 @@ import math, os, re, requests
 from datetime import datetime, timezone
 
 def gamma(calls, puts, spot):
- vals=[]
- posZones=[]; negZones=[]
+ scale=float(spot or 0)**2*0.01*100.0
+ vals=[]; posZones=[]; negZones=[]
  for x in calls:
-  oi=x.get("openInterest",0) or 0; g=x.get("gamma",0) or 0; v=oi*g
+  v=float(x.get("openInterest",0) or 0)*float(x.get("gamma",0) or 0)*scale
   vals.append((x.get("strike",0),v)); posZones.append({"strike":x.get("strike",0),"gamma":v})
  for x in puts:
-  oi=x.get("openInterest",0) or 0; g=x.get("gamma",0) or 0; v=-oi*g
+  v=-float(x.get("openInterest",0) or 0)*float(x.get("gamma",0) or 0)*scale
   vals.append((x.get("strike",0),v)); negZones.append({"strike":x.get("strike",0),"gamma":v})
  net=sum(v for _,v in vals); pos=sum(v for _,v in vals if v>0); neg=sum(v for _,v in vals if v<0)
- zero=min((k for k,_ in vals), key=lambda k:abs(k-spot)) if vals else None
- return {"gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"gammaTotal":net,"zeroGamma":zero,
+ agg=sorted(vals,key=lambda z:z[0] if z[0] is not None else 0)
+ cum=0; prev=None; flip=None
+ for k,v in agg:
+  nxt=cum+v
+  if cum==0 and nxt==0: flip=k
+  elif cum*nxt<0 and prev is not None:
+   pk,pv=prev
+   den=nxt-cum
+   flip=pk+((0-cum)/den)*(k-pk) if den else k
+  cum=nxt; prev=(k,cum)
+ regime="NEGATIVE · potencial amplificación" if net<0 else "POSITIVE · potencial estabilización" if net>0 else "NEUTRAL"
+ effect="Los hedges modelados pueden reforzar el movimiento" if net<0 else "Los hedges modelados pueden amortiguar el movimiento" if net>0 else "Sin sesgo de gamma agregado"
+ return {"gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"gammaTotal":net,
+         "gammaRegime":regime,"gammaEffect":effect,"zeroGamma":flip,
          "positiveZones":sorted(posZones,key=lambda x:x["gamma"],reverse=True)[:5],
          "negativeZones":sorted(negZones,key=lambda x:abs(x["gamma"]),reverse=True)[:5]}
 
@@ -36,7 +48,7 @@ def opt(sym):
   if not expiries:return None
   nearest=min(expiries);ts=int(nearest.timestamp());calls=[x for x in calls if x["expiration"]==ts];puts=[x for x in puts if x["expiration"]==ts]
   co=sum(x["openInterest"] for x in calls);po=sum(x["openInterest"] for x in puts);tc=max(calls,key=lambda x:x["openInterest"],default={});tp=max(puts,key=lambda x:x["openInterest"],default={})
-  return {"name":sym,"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,"topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),"method":"CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.","source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Dealer side is assumed for the gamma proxy.",**gamma(calls,puts,spot)}
+  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,"topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),"method":"CBOE delayed chain · OI + GEX proxy; dato retrasado. GEX depende de una hipótesis de posicionamiento dealer.","source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Dealer side is assumed for the gamma proxy.",**gamma(calls,puts,spot)}
 
  except Exception as e:
   print("OPTIONS_CHAIN",sym,type(e).__name__,str(e)[:180]); return None
@@ -129,21 +141,38 @@ def update_options(feed):
 def update_dark_pools(feed):
  token=finra_access_token()
  if not token:return
- out=[]
+ out=[]; now=datetime.now(timezone.utc)
+ monday=now.date()-timedelta(days=now.weekday())
  for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG"):
-  ats=otc=at=ot=0.0;week=""
-  for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
-   try:
-    payload={"limit":50,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[{"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},{"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":typ},{"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
-    d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
-    if not d:continue
-    row=max(d,key=lambda x:str(x.get("weekStartDate") or x.get("summaryStartDate") or ""))
-    qty=float(row.get("totalWeeklyShareQuantity") or 0);tr=float(row.get("totalWeeklyTradeCount") or 0);week=str(row.get("weekStartDate") or row.get("summaryStartDate") or week)
-    if typ=="ATS_W_SMBL":ats+=qty;at+=tr
-    else:otc+=qty;ot+=tr
-   except Exception as e:print("FINRA",sym,typ,type(e).__name__,str(e)[:160])
-  if ats or otc:out.append({"symbol":sym,"weekStart":week,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,"atsTrades":at,"otcTrades":ot,"zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado","note":"ATS/OTC agregado por ticker; no representa acumulación por precio."})
- if out:feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency","method":"Weekly Summary T1 · ATS_W_SMBL + OTC_W_SMBL."}
+  found=None
+  for weeks_back in range(0,9):
+   week=(monday-timedelta(days=7*weeks_back)).isoformat()
+   ats=otc=at=ot=0.0; last=""
+   ok_any=False
+   for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
+    try:
+     payload={"limit":50,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[
+      {"compareType":"equal","fieldName":"weekStartDate","fieldValue":week},
+      {"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},
+      {"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":typ},
+      {"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
+     d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
+     if not d:continue
+     ok_any=True
+     qty=sum(float(row.get("totalWeeklyShareQuantity") or 0) for row in d)
+     tr=sum(float(row.get("totalWeeklyTradeCount") or 0) for row in d)
+     lu=max(str(row.get("lastUpdateDate") or "") for row in d)
+     if typ=="ATS_W_SMBL":ats+=qty;at+=tr
+     else:otc+=qty;ot+=tr
+     last=max(last,lu)
+    except Exception as e:print("FINRA",sym,typ,week,type(e).__name__,str(e)[:160])
+   if ok_any and (ats or otc):
+    found={"symbol":sym,"weekStart":week,"lastUpdateDate":last,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,"atsTrades":at,"otcTrades":ot,"zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado","note":"ATS/OTC agregado por ticker. Se muestra la última semana disponible; no representa acumulación por precio."}
+    break
+  if found:out.append(found)
+ if out:
+  feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency","method":"Weekly Summary production dataset · semana actual disponible; fallback a semanas previas si aún no existe dato.","coverage":"Rolling 12 months in FINRA weeklySummary."}
+
 
 def update_traditional_sentiment(feed):
  result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5}
