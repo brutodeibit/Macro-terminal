@@ -1128,15 +1128,23 @@
         }
         function renderDarkPoolSection(){
             const d=macroDatabase.__darkPools||{updated:'—',markets:[],history:{}};
+            const tape=macroDatabase.__darkPoolPrints||{updated:'—',prints:[]};
             const cards=(d.markets||[]).map(m=>{
-              const hist=m.history||d.history?.[m.symbol]||[];
-              const max=Math.max(...hist.map(x=>Number(x.totalOffExchange)||0),1);
+              const hist=m.history||d.history?.[m.symbol]||[], max=Math.max(...hist.map(x=>Number(x.totalOffExchange)||0),1);
               const bars=hist.slice(-12).map(x=>{const v=Number(x.totalOffExchange)||0,h=Math.max(4,Math.round(v/max*70));return '<div class="flex-1 flex flex-col justify-end" title="'+esc(x.weekStart)+'"><div class="rounded-t bg-blue-500/70" style="height:'+h+'px"></div></div>';}).join('');
-              return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><div><div class="text-sm font-bold text-white">'+esc(m.symbol)+'</div><div class="text-[10px] text-gray-500">Semana '+esc(m.weekStart||'—')+'</div></div><span class="mini-pill">FINRA REAL · AGREGADO</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div>ATS '+(Number(m.atsShares)||0).toLocaleString('es-ES')+'</div><div>OTC '+(Number(m.otcShares)||0).toLocaleString('es-ES')+'</div><div>Total '+(Number(m.totalOffExchange)||0).toLocaleString('es-ES')+'</div><div>Avg/Trade '+(Number.isFinite(Number(m.avgSharesPerTrade))?Number(m.avgSharesPerTrade).toLocaleString('es-ES',{maximumFractionDigits:0}):'—')+'</div></div><div class="mt-4"><div class="text-[9px] uppercase text-gray-600 mb-1">12 semanas</div><div class="flex items-end gap-1 h-20">'+bars+'</div></div><div class="text-[10px] text-amber-300 mt-3">'+esc(m.note||'')+'</div></div>';
+              return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><div><div class="text-sm font-bold text-white">'+esc(m.symbol)+'</div><div class="text-[10px] text-gray-500">Semana '+esc(m.weekStart||'—')+'</div></div><span class="mini-pill">FINRA REAL · AGREGADO</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div>ATS '+(Number(m.atsShares)||0).toLocaleString('es-ES')+'</div><div>OTC '+(Number(m.otcShares)||0).toLocaleString('es-ES')+'</div><div>Total '+(Number(m.totalOffExchange)||0).toLocaleString('es-ES')+'</div><div>Avg/Trade '+(Number.isFinite(Number(m.avgSharesPerTrade))?Number(m.avgSharesPerTrade).toLocaleString('es-ES',{maximumFractionDigits:0}):'—')+'</div></div><div class="mt-4"><div class="text-[9px] uppercase text-gray-600 mb-1">12 semanas</div><div class="flex items-end gap-1 h-20">'+bars+'</div></div></div>';
+            }).join('');
+            const prints=(tape.prints||[]).slice(0,160);
+            const tapeRows=prints.map(p=>{
+              const buy=p.side==='BUY', sell=p.side==='SELL';
+              const cls=buy?'text-emerald-300 border-emerald-500/30 bg-emerald-500/5':sell?'text-red-300 border-red-500/30 bg-red-500/5':'text-gray-300 border-gray-700 bg-gray-900/20';
+              const dot=buy?'●':sell?'●':'•';
+              return '<div class="grid grid-cols-[55px_1fr_80px_90px_90px] gap-2 items-center border-b border-gray-800/60 py-2 text-[10px] '+cls+'"><span class="font-black">'+dot+' '+esc(p.side||'UNK')+'</span><span><b class="text-white">'+esc(p.ticker||'')+'</b> · '+esc(p.timestamp?String(p.timestamp).slice(11,19):'—')+' · '+esc(p.venue||'TRF')+'</span><span class="text-right">$'+fmtNum(p.price,2)+'</span><span class="text-right">'+(Number(p.size)||0).toLocaleString('es-ES')+'</span><span class="text-right font-bold">'+fmtCompactMoney(p.notional)+'</span></div>';
             }).join('');
             const flow=macroDatabase.__darkFlowRadar||{};
-            const flowBox=(flow.trackedNotional||flow.dix!=null)?'<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><b class="text-sm text-white">DARK FLOW · MODELED</b><span class="mini-pill">NO SON PRINTS REALES</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div>Notional '+esc(flow.trackedNotional||'—')+'</div><div>Buy-side estimado '+(flow.buySideEstimate!=null?flow.buySideEstimate.toFixed(1)+'%':'—')+'</div><div>Mayor señal '+esc(flow.largestModeled||'—')+'</div><div>DIX '+(flow.dix!=null?flow.dix.toFixed(2)+'%':'—')+'</div></div><div class="text-[10px] text-gray-500 mt-2">Dirección/bloques = modelo externo; DIX separado. FINRA permanece como capa real.</div></div>':'';
-            return '<section id="sec-darkpool" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Actividad fuera de mercados lit</div><h2 class="text-xl font-black text-white mt-1">DARK POOLS / OTC · FLOW RADAR</h2><p class="text-sm text-gray-400 mt-1">FINRA real para ATS/OTC e historial + radar modelado para dirección. No se presenta el modelo como ejecución institucional observada.</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+cards+flowBox+'</div></section>';
+            const flowBox=(flow.trackedNotional||flow.dix!=null)?'<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><b class="text-sm text-white">DARK FLOW · MODELED</b><span class="mini-pill">INFERIDO</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div>Notional '+esc(flow.trackedNotional||'—')+'</div><div>Buy-side '+(flow.buySideEstimate!=null?flow.buySideEstimate.toFixed(1)+'%':'—')+'</div><div>Mayor señal '+esc(flow.largestModeled||'—')+'</div><div>DIX '+(flow.dix!=null?flow.dix.toFixed(2)+'%':'—')+'</div></div></div>':'';
+            const tapeBox=prints.length?'<div class="metric rounded-xl p-4 md:col-span-2"><div class="flex items-center justify-between gap-2"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Cinta off-exchange</div><div class="text-sm font-bold text-white">REAL PRINTS · TRF</div></div><span class="mini-pill">VERDE/ROJO = NBBO / SIDE INFERIDO</span></div><div class="grid grid-cols-[55px_1fr_80px_90px_90px] gap-2 text-[9px] text-gray-600 py-2 border-b border-gray-800"><span>SIDE</span><span>TICKER · HORA · VENUE</span><span class="text-right">PRECIO</span><span class="text-right">ACCIONES</span><span class="text-right">NOTIONAL</span></div><div class="max-h-[520px] overflow-auto mt-1">'+tapeRows+'</div><div class="text-[10px] text-amber-300 mt-3">Importante: el print es una ejecución real reportada a TRF; no revela por sí mismo qué institución compró/vendió. El color indica solo la clasificación de dirección disponible por NBBO.</div></div>':'<div class="metric rounded-xl p-4 md:col-span-2 text-xs text-gray-500">No hay API de prints configurada todavía. La capa FINRA agregada sigue funcionando.</div>';
+            return '<section id="sec-darkpool" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Actividad fuera de mercados lit</div><h2 class="text-xl font-black text-white mt-1">DARK POOLS / OTC · REAL PRINT TAPE</h2><p class="text-sm text-gray-400 mt-1">Ahora distinguimos <b>ejecución real</b> de <b>dirección inferida</b>. FINRA aporta el agregado semanal; la cinta TRF aporta puntos individuales con precio, tamaño y hora cuando hay proveedor de prints.</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+cards+tapeBox+flowBox+'</div></section>';
         }
 
         function renderRotationSection(){
@@ -1438,6 +1446,7 @@
                     if(feed.options) macroDatabase.__options = feed.options;
                     if(feed.fx) macroDatabase.__fx = feed.fx;
                     if(feed.darkPools) macroDatabase.__darkPools = feed.darkPools;
+                    if(feed.darkPoolPrints) macroDatabase.__darkPoolPrints = feed.darkPoolPrints;
                     if(feed.darkFlowRadar) macroDatabase.__darkFlowRadar = feed.darkFlowRadar;
                     if(feed.squawkFlow) macroDatabase.__squawkFlow = feed.squawkFlow;
                     if(feed.traditionalSentiment) macroDatabase.__traditionalSentiment = feed.traditionalSentiment;
@@ -1473,6 +1482,7 @@
         macroDatabase.__options = macroDatabase.__options || {updated:'—',markets:[]};
         macroDatabase.__fx = macroDatabase.__fx || {updated:'—',currencies:{}};
         macroDatabase.__darkPools = macroDatabase.__darkPools || {updated:'—',markets:[],history:{}};
+        macroDatabase.__darkPoolPrints = macroDatabase.__darkPoolPrints || {updated:'—',prints:[]};
         macroDatabase.__darkFlowRadar = macroDatabase.__darkFlowRadar || {};
         macroDatabase.__squawkFlow = macroDatabase.__squawkFlow || {};
         macroDatabase.__rotation = macroDatabase.__rotation || {updated:'—',sectors:[],styles:[],sentimentTraditional:{}};
