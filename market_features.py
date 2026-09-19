@@ -1,5 +1,5 @@
 from __future__ import annotations
-import math, os, re, requests
+import json, math, os, re, requests
 from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
 
@@ -358,61 +358,101 @@ def _norm_dark_print(row, ticker, source):
   "sideBasis":"NBBO-location proxy" if side!="UNKNOWN" else "Not reported / not inferred"
  }
 
+
+def _collect_print_like_rows(value):
+ rows=[]
+ if isinstance(value,dict):
+  keys={str(k).lower() for k in value.keys()}
+  if ({'ticker','symbol'} & keys) and ({'size','shares','quantity'} & keys) and ({'price','execution_price','trade_price'} & keys):
+   rows.append(value)
+  for v in value.values(): rows.extend(_collect_print_like_rows(v))
+ elif isinstance(value,list):
+  for v in value: rows.extend(_collect_print_like_rows(v))
+ return rows
+
+def _scrape_free_print_source(url):
+ r=get(url)
+ soup=BeautifulSoup(r.text,"html.parser")
+ candidates=[]
+ for tag in soup.find_all("script"):
+  txt=tag.string or tag.get_text(" ",strip=False)
+  if not txt or len(txt)<40:continue
+  t=txt.strip()
+  if t.startswith("{") and t.endswith("}"):
+   try:candidates.append(json.loads(t))
+   except Exception:pass
+  if any(m in txt.lower() for m in ("darkpool","dark_pool","prints","marketdata")):
+   # Try bounded JSON object fragments embedded in page state.
+   for m in re.finditer(r'(?s)\{.{0,80000}\}',txt):
+    raw=m.group(0)
+    try:candidates.append(json.loads(raw))
+    except Exception:pass
+ rows=[]
+ for obj in list(candidates):
+  rows.extend(_collect_print_like_rows(obj))
+ for line in (x.strip() for x in soup.stripped_strings):
+  m=re.match(r'^([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?)\s+([A-Z][A-Z0-9.\-]{0,7})\s+([0-9][0-9.,]*[KMB]?)\s+([A-Z0-9\-]+)\s+([+\-]?[0-9]+(?:\.[0-9]+)?)%$',line)
+  if m:rows.append({"time":m.group(1),"ticker":m.group(2),"size":m.group(3),"venue":m.group(4),"move":m.group(5)+"%"})
+ return rows
+
 def update_dark_pool_prints(feed):
- tickers=("SPY","QQQ","AAPL","NVDA","GLD","USO","IWM")
- ow_key=os.getenv("OPTIONWHALES_API_KEY")
- massive_key=os.getenv("MASSIVE_API_KEY")
- prints=[]
- source_used=[]
+ prints=[];sources=[]
+ try:
+  rows=_scrape_free_print_source("https://capitolwhale.com/dark-pool-prints")
+  seen=set()
+  for row in rows:
+   sym=str(row.get("ticker") or row.get("symbol") or "").upper()
+   if not sym:continue
+   price=num(row.get("price") or row.get("execution_price") or row.get("trade_price"))
+   size=num(row.get("size") or row.get("shares") or row.get("quantity"))
+   notional=num(row.get("notional") or row.get("notional_value") or row.get("premium") or row.get("dollar_value"))
+   if notional is None and price is not None and size is not None:notional=price*size
+   side=str(row.get("side") or row.get("direction") or row.get("aggressor") or "UNKNOWN").upper()
+   if "BUY" in side or side in ("B","ASK","AT_ASK"):side="BUY"
+   elif "SELL" in side or side in ("S","BID","AT_BID"):side="SELL"
+   else:side="UNKNOWN"
+   ts=row.get("timestamp") or row.get("time") or row.get("ts")
+   venue=row.get("venue") or row.get("trf") or row.get("reported_venue") or "TRF"
+   key=(sym,str(ts),round(float(price or 0),4),round(float(size or 0),2))
+   if ts and size and key not in seen:
+    seen.add(key)
+    prints.append({"ticker":sym,"timestamp":ts,"price":price,"size":size,"notional":notional,"side":side,
+      "directionConfidence":None,"venue":venue,"trfId":None,"source":"Capitol Whale · free public view",
+      "realPrint":True,"sideBasis":"provider/NBBO heuristic" if side!="UNKNOWN" else "not reported"})
+  if prints:sources.append("Capitol Whale")
+ except Exception as e:print("FREE CAPITOL WHALE",type(e).__name__,str(e)[:180])
 
- if ow_key:
-  for sym in tickers:
-   try:
-    r=get("https://api.optionwhales.io/v1/darkpool/prints/"+sym,{"limit":"120"},{"X-API-Key":ow_key,"Accept":"application/json"}).json()
-    data=r.get("data",r)
-    if isinstance(data,dict):
-     data=data.get("prints") or data.get("rows") or data.get("trades") or data.get("results") or []
-    if not isinstance(data,list):continue
-    for row in data:
-     p=_norm_dark_print(row,sym,"OptionWhales / TRF")
-     if p["price"] and p["size"] and p["notional"] and p["notional"]>=100000:
-      prints.append(p)
-    if data:source_used.append("OptionWhales")
-   except Exception as e:print("OW DARK PRINTS",sym,type(e).__name__,str(e)[:160])
-
- # Massive is the raw-print fallback/validation layer. It is intentionally separate
- # because the raw tape does not publish an aggressor side.
- if massive_key:
-  now=datetime.now(timezone.utc)
-  start=int((now-timedelta(minutes=75)).timestamp()*1e9)
-  end=int((now-timedelta(minutes=15)).timestamp()*1e9)
-  for sym in tickers:
-   try:
-    r=get("https://api.massive.com/v3/trades/"+sym,{"timestamp.gte":start,"timestamp.lte":end,"limit":50000,"order":"desc","sort":"timestamp","apiKey":massive_key}).json()
-    data=r.get("results",[]) if isinstance(r,dict) else []
-    added=0
-    for row in data:
-     # Massive: exchange 4 denotes TRF/off-exchange. Keep only those.
-     if str(row.get("exchange"))!="4" and str(row.get("x"))!="4":continue
-     p=_norm_dark_print(row,sym,"Massive / FINRA TRF")
-     if p["price"] and p["size"] and p["notional"] and p["notional"]>=100000:
-      key=(sym,p["timestamp"],round(p["price"],6),round(p["size"],6))
-      if not any((x.get("ticker"),x.get("timestamp"),round(x.get("price") or 0,6),round(x.get("size") or 0,6))==key for x in prints):
-       prints.append(p);added+=1
-    if added:source_used.append("Massive")
-   except Exception as e:print("MASSIVE DARK PRINTS",sym,type(e).__name__,str(e)[:160])
+ if len(prints)<20:
+  try:
+   rows=_scrape_free_print_source("https://api2.sensamarket.com/dark-pool")
+   for row in rows:
+    sym=str(row.get("ticker") or row.get("symbol") or "").upper()
+    if not sym:continue
+    price=num(row.get("price") or row.get("execution_price") or row.get("trade_price"))
+    size=num(row.get("size") or row.get("shares") or row.get("quantity"))
+    notional=num(row.get("notional") or row.get("value") or row.get("dollar_value") or row.get("premium"))
+    if notional is None and price is not None and size is not None:notional=price*size
+    side=str(row.get("side") or row.get("sentiment") or row.get("direction") or "UNKNOWN").upper()
+    if "BUY" in side:side="BUY"
+    elif "SELL" in side:side="SELL"
+    else:side="UNKNOWN"
+    ts=row.get("timestamp") or row.get("time") or row.get("ts")
+    if ts and size:
+     prints.append({"ticker":sym,"timestamp":ts,"price":price,"size":size,"notional":notional,"side":side,
+       "directionConfidence":None,"venue":row.get("venue") or "TRF","trfId":None,
+       "source":"SensaMarket · free delayed view","realPrint":True,"sideBasis":"NBBO execution-location inference"})
+   if rows:sources.append("SensaMarket")
+  except Exception as e:print("FREE SENSA",type(e).__name__,str(e)[:180])
 
  if prints:
-  prints=sorted(prints,key=lambda x:str(x.get("timestamp") or ""),reverse=True)[:500]
-  feed["darkPoolPrints"]={
-   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-   "prints":prints,
-   "sources":list(dict.fromkeys(source_used)),
-   "selection":"TRF/off-exchange equity prints >= $100K notional",
-   "dataStatus":"REAL EXECUTIONS · SIDE INFERRED WHEN AVAILABLE",
-   "note":"Los prints son ejecuciones off-exchange reales reportadas a TRF. Un print no contiene de forma nativa comprador/vendedor; el verde/rojo solo se usa cuando la fuente aporta una clasificación por ubicación NBBO. No identifica qué institución compró o vendió.",
-   "latency":"OptionWhales ~15 min delayed; Massive Developer ~15 min delayed where plan permits."
-  }
+  prints=sorted(prints,key=lambda x:str(x.get("timestamp") or ""),reverse=True)[:300]
+  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+    "prints":prints,"sources":list(dict.fromkeys(sources)),
+    "selection":"Public free TRF/off-exchange print pages; individual executions",
+    "dataStatus":"REAL EXECUTIONS · DIRECTION INFERRED","free":True,
+    "documentedDelay":"SensaMarket free view ≈4h; Capitol Whale core view intraday.",
+    "note":"Los prints son ejecuciones off-exchange reales reportadas al TRF. BUY/SELL no identifica al participante institucional; cuando el lado no está disponible se conserva UNKNOWN."}
+
 
 def update_traditional_sentiment(feed):
  result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5}
