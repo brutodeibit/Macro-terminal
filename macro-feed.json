@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "19/09/2026 13:32 UTC",
+  "updated": "19/09/2026 13:44 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,8 +1400,8 @@
     }
   },
   "riskOnOff": {
-    "updated": "19/09/2026 13:31 UTC",
-    "score": 72.5,
+    "updated": "19/09/2026 13:44 UTC",
+    "score": 72.6,
     "label": "RISK ON",
     "confidence": 64,
     "method": "Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.",
@@ -1521,17 +1521,17 @@
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 81203.7890625,
-        "change1d": 0.3736992156835761,
-        "change5d": 3.889808936869321,
+        "value": 81221.6484375,
+        "change1d": 0.3957746822982111,
+        "change5d": 3.912657711266454,
         "role": "Beta alta / liquidez"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2631.330078125,
-        "change1d": 0.7652337613843097,
-        "change5d": 4.650126114051156,
+        "value": 2633.580078125,
+        "change1d": 0.8513961846575935,
+        "change5d": 4.739610434438801,
         "role": "Beta alta / liquidez"
       },
       {
@@ -1591,7 +1591,7 @@
     }
   },
   "automation": {
-    "updatedAt": "19/09/2026 13:32 UTC",
+    "updatedAt": "19/09/2026 13:44 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1602,7 +1602,7 @@
     ]
   },
   "fx": {
-    "updated": "19/09/2026 13:31 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1663,7 +1663,7 @@
     "method": "Fuerza frente a USD normalizada; se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "19/09/2026 13:31 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -1679,6 +1679,21 @@
         "contractCode": "13874A",
         "contract": "E-MINI S&P 500",
         "openInterest": 2446519.0
+      },
+      {
+        "name": "Nasdaq-100",
+        "reportDate": "2026-09-15",
+        "net": -6387.0,
+        "long": 52680.0,
+        "short": 59067.0,
+        "zScore": 0.9004192563687711,
+        "netChange": 25485.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "209742",
+        "contract": "NASDAQ MINI",
+        "openInterest": 325784.0
       },
       {
         "name": "Dow Jones",
@@ -1789,12 +1804,10 @@
     "source": "CFTC Public Reporting Environment",
     "method": "COT semanal; Leveraged Funds para índices/divisas TFF y Managed Money para commodities Disaggregated; filtrado por código CFTC.",
     "sourceUrl": "https://publicreporting.cftc.gov/",
-    "errors": [
-      "Nasdaq-100"
-    ]
+    "errors": []
   },
   "options": {
-    "updated": "19/09/2026 13:31 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "markets": [
       {
         "name": "SPY",
@@ -2180,7 +2193,7 @@
     "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."
   },
   "darkPools": {
-    "updated": "19/09/2026 13:31 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "markets": [
       {
         "symbol": "SPY",
@@ -2279,7 +2292,7 @@
     "method": "Weekly Summary T1 · ATS_W_SMBL + OTC_W_SMBL."
   },
   "rotation": {
-    "updated": "19/09/2026 13:32 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -2442,28 +2455,28 @@
     "method": "ETF sectorial: cambios 1D/1S/1M y fuerza relativa frente a SPY. Sentimiento tradicional = amplitud sectorial semanal; es un proxy de mercado, no una encuesta."
   },
   "cryptoSentiment": {
-    "updated": "19/09/2026 13:32 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "fearGreed": {
       "value": 71.0,
       "classification": "Greed",
       "previous": 56.0
     },
     "btc": {
-      "change1d": 0.4221088019211727,
-      "change1w": 3.9399143200945286,
-      "change1m": 3.8304166437021836,
-      "last": 81242.953125
+      "change1d": 0.40770084208345825,
+      "change1w": 3.9250016466909843,
+      "change1m": 3.815519680366286,
+      "last": 81231.296875
     },
     "eth": {
-      "change1d": 0.867476845251125,
-      "change1w": 4.756311067150043,
-      "change1m": 7.173971803820578,
-      "last": 2634.0
+      "change1d": 0.907687845956251,
+      "change1w": 4.7980723585983265,
+      "change1m": 7.216696900061326,
+      "last": 2635.050048828125
     },
     "source": "Alternative.me Fear & Greed + Yahoo Finance"
   },
   "bondMarket": {
-    "updated": "19/09/2026 13:32 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -2509,7 +2522,7 @@
     "method": "ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."
   },
   "traditionalSentiment": {
-    "updated": "19/09/2026 13:32 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "bullishPct": 28.8,
     "neutralPct": 17.9,
     "bearishPct": 53.3,
@@ -2522,7 +2535,7 @@
     "bullBearSpread": -24.5
   },
   "optionsStats": {
-    "updated": "19/09/2026 13:32 UTC",
+    "updated": "19/09/2026 13:44 UTC",
     "totalPutCall": 0.81,
     "indexPutCall": 0.98,
     "source": "Cboe Daily Market Statistics",
