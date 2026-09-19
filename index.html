@@ -1131,6 +1131,7 @@ function renderMeetingHistory(data){
  const W=900,H=360,lo=ps.length?Math.min(...ps.map(x=>+x.price)):0,hi=ps.length?Math.max(...ps.map(x=>+x.price)):1,pad=(hi-lo||1)*.12,y0=lo-pad,y1=hi+pad;
  const minTs=ps.length?Math.min(...ps.map(p=>+p.ts)):0,maxTs=ps.length?Math.max(...ps.map(p=>+p.ts)):1,span=Math.max(maxTs-minTs,1);
  const xy=ps.map((p,i)=>({x:35+(+p.ts-minTs)*(W-50)/span,y:H-30-(+p.price-y0)/(y1-y0)*(H-60)}));
+ const path=xy.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
  const dots=(a.prints||[]).map((p,i)=>{let q=Number.isFinite(+p.price)?+p.price:+p.priceApprox,y=Number.isFinite(q)?H-30-(q-y0)/(y1-y0)*(H-60):H/2;
    let ts=Number.isFinite(+p.approxTs)?+p.approxTs:0,x=ts?35+(ts-minTs)*(W-50)/span:35+(i%Math.max(ps.length,1))*(W-50)/Math.max(ps.length-1,1);
    let r=Math.max(5,Math.min(22,Math.sqrt(Math.max(+p.size||1000,1))/7)),c=p.side==="BUY"?"#34d399":p.side==="SELL"?"#f87171":"#94a3b8";
