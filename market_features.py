@@ -386,78 +386,113 @@ def _parse_capitol_print_line(line):
  if not m:return None
  return {"time":m.group(1),"ticker":m.group(2),"size":_parse_share_token(m.group(3)),
          "venue":m.group(4),"sessionMovePct":float(m.group(5))}
+
+def yahoo_intraday(sym, interval="5m", range_="1d"):
+ try:
+  u="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(sym,safe="")
+  j=get(u,{"range":range_,"interval":interval}).json().get("chart",{}).get("result",[])
+  if not j:return None
+  r=j[0];ts=r.get("timestamp") or [];q=r.get("indicators",{}).get("quote",[{}])[0]
+  out=[]
+  for i,t in enumerate(ts):
+   p=q.get("close",[None]*len(ts))[i] if i<len(q.get("close",[])) else None
+   if p is not None:out.append({"ts":int(t),"price":float(p)})
+  return out
+ except Exception as e:
+  print("YAHOO INTRADAY",sym,type(e).__name__,str(e)[:120]);return None
+
+def chart_exchange_offexchange(sym):
+ path_map={
+  "SPY":"nyse-spy","QQQ":"nasdaq-qqq","AAPL":"nasdaq-aapl","NVDA":"nasdaq-nvda",
+  "GLD":"nyse-gld","USO":"nyse-uso","IWM":"nyse-iwm","DIA":"nyse-dia",
+  "MSFT":"nasdaq-msft","META":"nasdaq-meta","AMD":"nasdaq-amd","AMZN":"nasdaq-amzn",
+  "TSLA":"nasdaq-tsla","JPM":"nyse-jpm","COIN":"nasdaq-coin","HYG":"nyse-hyg"
+ }
+ slug=path_map.get(sym)
+ if not slug:return None
+ try:
+  html=get("https://chartexchange.com/symbol/"+slug+"/exchange-volume/dark-pool-prints/").text
+  m=re.search(r"Today's Off Exchange & Dark Pool volume is\s+([0-9,]+),\s+which is\s+([0-9.]+)%",html,re.I)
+  m30=re.search(r"average Off Exchange & Dark Pool volume has been\s+([0-9.]+)%",html,re.I)
+  total=re.search(r"Today's Lit volume is\s+([0-9,]+)",html,re.I)
+  if not m:return None
+  return {"offExchangeShares":int(m.group(1).replace(",","")),"offExchangePct":float(m.group(2)),
+          "offExchange30dPct":float(m30.group(1)) if m30 else None,
+          "litShares":int(total.group(1).replace(",","")) if total else None,
+          "source":"ChartExchange public exchange-volume page",
+          "sourceUrl":"https://chartexchange.com/"}
+ except Exception as e:
+  print("CHARTEXCHANGE DP",sym,type(e).__name__,str(e)[:140]);return None
+
 def update_dark_pool_prints(feed):
- prints=[]; sources=[]
+ prints=[];sources=[];assets={}
  try:
   html=get("https://capitolwhale.com/dark-pool-prints").text
   soup=BeautifulSoup(html,"html.parser")
   text=" ".join(soup.stripped_strings)
   def money(pattern):
-   m=re.search(pattern,text,re.I)
-   return _parse_money_token(m.group(1)) if m else None
+   m=re.search(pattern,text,re.I);return _parse_money_token(m.group(1)) if m else None
   def pct(pattern):
-   m=re.search(pattern,text,re.I)
-   return float(m.group(1)) if m else None
+   m=re.search(pattern,text,re.I);return float(m.group(1)) if m else None
   def integer(pattern):
-   m=re.search(pattern,text,re.I)
-   return int(m.group(1).replace(",","")) if m else None
-
+   m=re.search(pattern,text,re.I);return int(m.group(1).replace(",","")) if m else None
   print_count=integer(r'\bPrints\s+([\d,]+)')
   total_premium=money(r'Total premium\s+\$?([\d.,]+[KMB]?)')
   bullish=pct(r'Bullish\s+([\d.]+)%')
   largest=money(r'Largest\s+\$?([\d.,]+[KMB]?)')
   mb=re.search(r'Aggressor imbalance\s+Buy\s+([\d.]+)%\s*Sell\s+([\d.]+)%',text,re.I)
-  buy_pct=float(mb.group(1)) if mb else None
-  sell_pct=float(mb.group(2)) if mb else None
-
-  # The free cockpit exposes the last prints as compact text rows.
+  buy_pct=float(mb.group(1)) if mb else None;sell_pct=float(mb.group(2)) if mb else None
+  top=[]
+  tm=re.search(r'Top tickers by premium(.*?)Aggressor imbalance',text,re.I|re.S)
+  if tm:
+   for mm in re.finditer(r'\b([A-Z][A-Z0-9.\-]{0,6})\s+\$([\d.,]+[KMB]?)',tm.group(1)):
+    top.append({"ticker":mm.group(1),"premium":_parse_money_token(mm.group(2))})
   for raw in soup.stripped_strings:
    p=_parse_capitol_print_line(raw)
    if not p:continue
-   p.update({"timestamp":p.pop("time"),"price":None,
+   # Capitol Whale's compact free print table exposes size/venue and a % displacement,
+   # but not the exact execution price in the free row.
+   p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,
              "notional":None,"side":"UNKNOWN","directionConfidence":None,
              "sideBasis":"Not published per print on free cockpit",
-             "source":"Capitol Whale · free public cockpit","realPrint":True})
-   # The % is the session/reference move shown by the source, NOT aggressor direction.
+             "source":"Capitol Whale · free public view","realPrint":True})
    prints.append(p)
-  prints=prints[:50]
-
-  top=[]
-  top_match=re.search(r'Top tickers by premium(.*?)Aggressor imbalance',text,re.I|re.S)
-  if top_match:
-   for mm in re.finditer(r'\b([A-Z][A-Z0-9.\-]{0,6})\s+\$([\d.,]+[KMB]?)',top_match.group(1)):
-    top.append({"ticker":mm.group(1),"premium":_parse_money_token(mm.group(2))})
-  source_meta={
+  prints=prints[:100]
+  if prints:sources.append("Capitol Whale")
+  for t in sorted({p["ticker"] for p in prints}):
+   series=yahoo_intraday(t,"5m","1d") or []
+   spot=series[-1]["price"] if series else None
+   cs=chart_exchange_offexchange(t) or {}
+   arr=[]
+   for p in [x for x in prints if x["ticker"]==t]:
+    move=Number if False else None
+    mv=float(p.get("sessionMovePct") or 0)
+    approx=spot*(1+mv/100.0) if spot is not None else None
+    p["priceApprox"]=approx
+    if approx is not None:p["notional"]=approx*float(p.get("size") or 0)
+    arr.append(p)
+   assets[t]={"ticker":t,"lastPrice":spot,"priceSeries":series[-90:],"prints":arr,
+             "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
+             "notional":sum(float(x.get("notional") or 0) for x in arr),
+             "dailyOffExchange":cs,
+             "source":"Yahoo Finance + Capitol Whale free print feed + ChartExchange public stats",
+             "note":"El precio de un print es aproximado cuando la vista gratuita solo expone el desplazamiento porcentual; se muestra como referencia visual, no como precio exacto del trade."}
+  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+    "prints":prints,"assets":assets,"sources":sources,
     "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,
-    "largestPrintPremium":largest,"buyPct":buy_pct,"sellPct":sell_pct,
-    "topTickers":top[:12],
-    "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-    "source":"Capitol Whale","sourceUrl":"https://capitolwhale.com/dark-pool-prints",
-    "dataStatus":"REAL TRF PRINTS · PER-PRINT SIDE NOT AVAILABLE IN FREE VIEW",
-    "note":"Los prints son ejecuciones off-exchange reportadas al TRF. El signo de variación mostrado por Capitol Whale es contexto de precio, no una etiqueta BUY/SELL. El imbalance BUY/SELL es agregado."
-  }
-  if print_count or total_premium or prints:
-   feed["darkPoolPrints"]={**source_meta,"prints":prints,"free":True}
-   sources.append("Capitol Whale")
+    "largestPrintPremium":largest,"buyPct":buy_pct,"sellPct":sell_pct,"topTickers":top[:12],
+    "dataStatus":"REAL TRF PRINTS · PRICE APPROXIMATION WHEN FREE ROW OMITS EXACT PRICE",
+    "free":True,"documentedDelay":"Intraday public view; exact timing depends on source.",
+    "note":"FINRA TRF prints are real executions. The free public cockpit does not expose the exact execution price in every compact row, so the chart marker may use an explicitly labelled approximation from the source's relative-price field."}
  except Exception as e:
   print("CAPITOL DARK PRINTS",type(e).__name__,str(e)[:180])
 
- # Keep a free secondary source available if Capitol Whale is unreachable.
- if not feed.get("darkPoolPrints") or not feed["darkPoolPrints"].get("prints"):
-  try:
-   html=get("https://app.sensamarket.com/dark-pool").text
-   soup=BeautifulSoup(html,"html.parser")
-   text=" ".join(soup.stripped_strings)
-   mb=re.search(r'([0-9.]+)%\s*Buy\s+([0-9.]+)%\s*Sell',text,re.I)
-   total=money(r'Total Dark Pool Value\s+\$?([\d.,]+[KMB]?)') if 'money' in locals() else None
-   feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-     "prints":[],"sources":["SensaMarket"],"free":True,
-     "printCount":None,"totalPremium":total,
-     "buyPct":float(mb.group(1)) if mb else None,"sellPct":float(mb.group(2)) if mb else None,
-     "dataStatus":"REAL TRF PRINTS · FREE VIEW DELAYED",
-     "note":"SensaMarket indica que la vista gratuita tiene retraso de 4 horas; BUY/SELL se infiere respecto al NBBO."
-   }
-  except Exception as e:print("SENSA DARK PRINTS",type(e).__name__,str(e)[:160])
+ if not feed.get("darkPoolPrints"):
+  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+    "prints":[],"assets":{},"printCount":None,"totalPremium":None,"buyPct":None,"sellPct":None,
+    "dataStatus":"NO FREE PRINT FEED AVAILABLE",
+    "note":"La fuente gratuita no respondió en esta ejecución. Se mantienen las estadísticas de off-exchange separadas cuando están disponibles."}
+
 
 
 def update_traditional_sentiment(feed):
