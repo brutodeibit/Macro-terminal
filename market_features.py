@@ -74,8 +74,23 @@ def opt(sym):
 def update_options(feed):
  out=[x for s in ("SPY","QQQ","GLD","USO") if (x:=opt(s))]
  if out:feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"Opciones públicas; gamma estimada, no GEX propietario."}
+def finra_access_token():
+ client_id=os.getenv("FINRA_API_CLIENT_ID")
+ client_secret=os.getenv("FINRA_API_CLIENT_SECRET")
+ if client_id and client_secret:
+  r=requests.post(
+   "https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token",
+   params={"grant_type":"client_credentials"},
+   auth=(client_id,client_secret),
+   headers={"User-Agent":"MacroTerminal/6.0","Accept":"application/json"},
+   timeout=T
+  )
+  r.raise_for_status()
+  return r.json().get("access_token")
+ return os.getenv("FINRA_API_TOKEN")
+
 def update_dark_pools(feed):
- token=os.getenv("FINRA_API_TOKEN")
+ token=finra_access_token()
  if not token:return
  out=[]
  for sym in ("SPY","QQQ","HYG","GLD","USO","AAPL","NVDA"):
