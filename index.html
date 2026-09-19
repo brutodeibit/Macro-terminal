@@ -981,7 +981,7 @@
  const score=Number(r.score),valid=Number.isFinite(score),width=valid?Math.max(0,Math.min(100,score)):0;
  const assets=(r.assets||[]).map(a=>`
  <div class="risk-cell">
-  <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${esc(a.name||a.symbol)}</span><span class="risk-badge">${esc(a.marketSignal||'—')}</span></div>
+  <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${esc(a.name||a.symbol)} <em class="text-gray-600">${esc(a.symbol||"")}</em></span><span class="risk-badge">${esc(a.marketSignal||'—')}</span></div>
   <div class="text-lg font-black text-white mt-2">${riskFmt(a.value,a.unit||'',a.name||a.symbol)}</div>
   <div class="grid grid-cols-3 gap-1 mt-2">
    <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1D</div><b class="text-[10px] ${a.change1d>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1d))?(a.change1d>=0?'+':'')+Number(a.change1d).toFixed(2)+'%':'—'}</b></div>
