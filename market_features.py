@@ -661,18 +661,16 @@ def update_bond_curves(feed):
  feed["bondCurvesUpdated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
 def update_markets_rotation(feed):
- sector_cfg=[
-  ("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),
-  ("Consumo discrecional","XLY"),("Consumo básico","XLP"),("Utilities","XLU"),("Materiales","XLB"),
-  ("Comunicación","XLC"),("REITs","XLRE")
- ]
+ sector_cfg=[("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),
+  ("Consumo discrecional","XLY"),("Consumo básico","XLP"),("Utilities","XLU"),("Materiales","XLB"),("Comunicación","XLC"),("REITs","XLRE")]
  style_cfg=[("Growth vs Value","VUG","VTV"),("Cíclicos vs Defensivos","XLY","XLP"),("Small vs Large","IWM","SPY"),("High Beta vs Low Vol","SPHB","SPLV"),("Nasdaq vs S&P","QQQ","SPY")]
  def series(sym):
   r=chart(sym)
   if not r:return None
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:return None
-  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100}
+  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,
+          "p1":q[-1]-q[-2],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
  def rel(a,b,key):
   x=series(a);y=series(b)
   if not x or not y:return None
@@ -681,13 +679,17 @@ def update_markets_rotation(feed):
  for name,sym in sector_cfg:
   x=series(sym)
   if x:
-   sectors.append({"name":name,"symbol":sym,"change1d":x["d1"],"change1w":x["w1"],"change1m":x["m1"],"vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
+   sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],"change1w":x["w1"],"change1m":x["m1"],
+    "pointChange1d":x["p1"],"pointChange1w":x["pw"],"pointChange1m":x["pm"],
+    "vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
  styles=[]
- for name,a,b in style_cfg:
-  styles.append({"name":name,"long":a,"short":b,"change1d":rel(a,b,"d1"),"change1w":rel(a,b,"w1"),"change1m":rel(a,b,"m1")})
+ for name,a1,b1 in style_cfg:
+  styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1")})
  up=sum(x["change1w"]>0 for x in sectors); down=sum(x["change1w"]<0 for x in sectors); neutral=len(sectors)-up-down
  sentiment={"bullishPct":round(up*100/len(sectors),1) if sectors else 0,"neutralPct":round(neutral*100/len(sectors),1) if sectors else 0,"bearishPct":round(down*100/len(sectors),1) if sectors else 0}
- feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"method":"ETF sectorial: cambios 1D/1S/1M y fuerza relativa frente a SPY. Sentimiento tradicional = amplitud sectorial semanal; es un proxy de mercado, no una encuesta."}
+ feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,
+  "method":"ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."}
+
 
 def update_crypto_sentiment(feed):
  try:
@@ -721,14 +723,15 @@ def enrich_feed(feed):
    print(name,type(e).__name__,str(e)[:180])
 def update_risk(feed):
  data=[]
- for n,s in YAHOO.items():
-  m=yahoo(s)
-  if not m:continue
-  v,c1,c5=m; r=chart(s)
+ for n,sym in YAHOO.items():
+  r=chart(sym)
   q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
-  c20=(q[-1]/q[-22]-1)*100 if len(q)>=22 else None
-  data.append({"name":n,"symbol":s,"value":v,"change1d":c1,"change1w":c5,"change5d":c5,"change1m":c20,"role":ROLES.get(n,"Confirmación")})
- if not data:return
+  if len(q)<22:continue
+  last=q[-1]
+  data.append({"name":n,"symbol":sym,"value":last,
+   "change1d":(last/q[-2]-1)*100,"change1w":(last/q[-6]-1)*100,"change1m":(last/q[-22]-1)*100,
+   "pointChange1d":last-q[-2],"pointChange1w":last-q[-6],"pointChange1m":last-q[-22],
+   "role":ROLES.get(n,"Confirmación")})
  by={x["name"]:x for x in data};score=50.0;comp=[]
  def add(n,p,w):
   nonlocal score;score+=p;comp.append((p,n,w))
@@ -749,9 +752,13 @@ def update_risk(feed):
   oil=max(by["BRENT"]["change1w"],by["WTI"]["change1w"]);add("OIL",-2 if oil>6 else -1 if oil<-6 else 0,"shock energético contextual")
  if "TLT" in by and "SPY" in by:add("TLT/SPY",max(-3,min(3,-(by["TLT"]["change1w"]-by["SPY"]["change1w"])*1.5)),"duración vs acciones")
  score=max(0,min(100,score));label="RISK ON" if score>=65 else "RISK OFF" if score<=35 else "NEUTRAL / MIXTO"
- pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp);conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
- why={"SP500":"la bolsa amplia acompaña el apetito por riesgo","NASDAQ":"la beta alta acompaña el régimen","VIX":"la volatilidad bursátil está contenida","VVIX":"la volatilidad de la volatilidad no muestra estrés","SKEW":"el riesgo de cola no muestra tensión extrema","MOVE":"la volatilidad de bonos no muestra estrés significativo","HYG":"el crédito high yield acompaña el apetito por riesgo","LQD":"el crédito investment grade se mantiene estable","DXY":"el dólar actúa como refugio/liquidez","AUDJPY":"el carry confirma apetito por riesgo","COPPER":"el cobre acompaña la demanda cíclica","GOLD":"el oro muestra demanda defensiva","BTC":"cripto acompaña la liquidez/alta beta","ETH":"cripto acompaña la liquidez/alta beta","TLT/SPY":"la duración gana terreno relativo a acciones","OIL":"el petróleo aporta señal de crecimiento/inflación"}
+ pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp)
+ conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
+ why={"SP500":"la bolsa amplia acompaña el apetito por riesgo","NASDAQ":"la beta alta acompaña el régimen","VIX":"la volatilidad bursátil está contenida","VVIX":"la volatilidad de la volatilidad no muestra estrés","SKEW":"el riesgo de cola no muestra tensión extrema","MOVE":"la volatilidad de bonos no muestra estrés significativo","HYG":"el crédito high yield acompaña el régimen","LQD":"el crédito investment grade acompaña el régimen","DXY":"el dólar actúa como refugio/liquidez","AUDJPY":"el carry confirma apetito por riesgo","COPPER":"el cobre acompaña la demanda cíclica","GOLD":"el oro muestra demanda defensiva","BTC":"cripto acompaña liquidez/beta","ETH":"cripto acompaña liquidez/beta","TLT/SPY":"la duración frente a acciones aporta contexto","OIL":"el petróleo aporta contexto de inflación/crecimiento"}
  positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5];negatives=sorted([x for x in comp if x[0]<0])[:5]
- feed["riskOnOff"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"score":round(score,1),"label":label,"confidence":conf,"method":"Composite intermercado: acciones, VIX/VVIX/SKEW, MOVE, crédito HYG/LQD, dólar, carry, materias primas, duración y cripto. El petróleo se trata como señal contextual de inflación/crecimiento.","assets":data,"confirmations":[f"{n}: {why.get(n,w)}." for _,n,w in positives],"tensions":[f"{n}: {why.get(n,w)}." for _,n,w in negatives],"coverage":feed.get("riskOnOff",{}).get("coverage",{})}
+ feed["riskOnOff"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"score":round(score,1),"label":label,"confidence":conf,
+  "method":"Composite intermercado. 1D/1S/1M = retorno del último cierre disponible; pointChange = cambio absoluto en unidades del propio activo.",
+  "assets":data,"confirmations":[f"{n}: {why.get(n,w)}." for _,n,w in positives],"tensions":[f"{n}: {why.get(n,w)}." for _,n,w in negatives],
+  "coverage":{"totalAssets":len(data),"windows":["1D","1S","1M"],"symbols":[x["symbol"] for x in data]}}
 
 
