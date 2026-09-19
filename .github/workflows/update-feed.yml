@@ -40,6 +40,8 @@ jobs:
           FINRA_API_CLIENT_ID: ${{ secrets.FINRA_API_CLIENT_ID }}
           FINRA_API_CLIENT_SECRET: ${{ secrets.FINRA_API_CLIENT_SECRET }}
           FINRA_API_TOKEN: ${{ secrets.FINRA_API_TOKEN }}
+          OPTIONWHALES_API_KEY: ${{ secrets.OPTIONWHALES_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: python update_feed.py
 
       - name: Commit feed changes
