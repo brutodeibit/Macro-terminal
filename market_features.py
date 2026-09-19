@@ -359,99 +359,105 @@ def _norm_dark_print(row, ticker, source):
  }
 
 
-def _collect_print_like_rows(value):
- rows=[]
- if isinstance(value,dict):
-  keys={str(k).lower() for k in value.keys()}
-  if ({'ticker','symbol'} & keys) and ({'size','shares','quantity'} & keys) and ({'price','execution_price','trade_price'} & keys):
-   rows.append(value)
-  for v in value.values(): rows.extend(_collect_print_like_rows(v))
- elif isinstance(value,list):
-  for v in value: rows.extend(_collect_print_like_rows(v))
- return rows
 
-def _scrape_free_print_source(url):
- r=get(url)
- soup=BeautifulSoup(r.text,"html.parser")
- candidates=[]
- for tag in soup.find_all("script"):
-  txt=tag.string or tag.get_text(" ",strip=False)
-  if not txt or len(txt)<40:continue
-  t=txt.strip()
-  if t.startswith("{") and t.endswith("}"):
-   try:candidates.append(json.loads(t))
-   except Exception:pass
-  if any(m in txt.lower() for m in ("darkpool","dark_pool","prints","marketdata")):
-   # Try bounded JSON object fragments embedded in page state.
-   for m in re.finditer(r'(?s)\{.{0,80000}\}',txt):
-    raw=m.group(0)
-    try:candidates.append(json.loads(raw))
-    except Exception:pass
- rows=[]
- for obj in list(candidates):
-  rows.extend(_collect_print_like_rows(obj))
- for line in (x.strip() for x in soup.stripped_strings):
-  m=re.match(r'^([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?)\s+([A-Z][A-Z0-9.\-]{0,7})\s+([0-9][0-9.,]*[KMB]?)\s+([A-Z0-9\-]+)\s+([+\-]?[0-9]+(?:\.[0-9]+)?)%$',line)
-  if m:rows.append({"time":m.group(1),"ticker":m.group(2),"size":m.group(3),"venue":m.group(4),"move":m.group(5)+"%"})
- return rows
+def _parse_money_token(x):
+ if x is None:return None
+ s=str(x).strip().replace("$","").replace(",","")
+ mult=1
+ if s.upper().endswith("K"):mult=1e3;s=s[:-1]
+ elif s.upper().endswith("M"):mult=1e6;s=s[:-1]
+ elif s.upper().endswith("B"):mult=1e9;s=s[:-1]
+ try:return float(s)*mult
+ except Exception:return None
 
+def _parse_share_token(x):
+ if x is None:return None
+ s=str(x).strip().replace(",","")
+ mult=1
+ if s.lower().endswith("k"):mult=1e3;s=s[:-1]
+ elif s.lower().endswith("m"):mult=1e6;s=s[:-1]
+ elif s.lower().endswith("b"):mult=1e9;s=s[:-1]
+ try:return float(s)*mult
+ except Exception:return None
+
+def _parse_capitol_print_line(line):
+ # Example from the public cockpit: 9:35COIN231kUBSS+0.22%
+ m=re.match(r'^(\d{1,2}:\d{2}(?::\d{2})?)([A-Z][A-Z0-9.\-]{0,7})(\d+(?:[.,]\d+)?[KMB]?)([A-Z0-9\-]+)([+\-]\d+(?:\.\d+)?)%$',line.strip())
+ if not m:return None
+ return {"time":m.group(1),"ticker":m.group(2),"size":_parse_share_token(m.group(3)),
+         "venue":m.group(4),"sessionMovePct":float(m.group(5))}
 def update_dark_pool_prints(feed):
- prints=[];sources=[]
+ prints=[]; sources=[]
  try:
-  rows=_scrape_free_print_source("https://capitolwhale.com/dark-pool-prints")
-  seen=set()
-  for row in rows:
-   sym=str(row.get("ticker") or row.get("symbol") or "").upper()
-   if not sym:continue
-   price=num(row.get("price") or row.get("execution_price") or row.get("trade_price"))
-   size=num(row.get("size") or row.get("shares") or row.get("quantity"))
-   notional=num(row.get("notional") or row.get("notional_value") or row.get("premium") or row.get("dollar_value"))
-   if notional is None and price is not None and size is not None:notional=price*size
-   side=str(row.get("side") or row.get("direction") or row.get("aggressor") or "UNKNOWN").upper()
-   if "BUY" in side or side in ("B","ASK","AT_ASK"):side="BUY"
-   elif "SELL" in side or side in ("S","BID","AT_BID"):side="SELL"
-   else:side="UNKNOWN"
-   ts=row.get("timestamp") or row.get("time") or row.get("ts")
-   venue=row.get("venue") or row.get("trf") or row.get("reported_venue") or "TRF"
-   key=(sym,str(ts),round(float(price or 0),4),round(float(size or 0),2))
-   if ts and size and key not in seen:
-    seen.add(key)
-    prints.append({"ticker":sym,"timestamp":ts,"price":price,"size":size,"notional":notional,"side":side,
-      "directionConfidence":None,"venue":venue,"trfId":None,"source":"Capitol Whale · free public view",
-      "realPrint":True,"sideBasis":"provider/NBBO heuristic" if side!="UNKNOWN" else "not reported"})
-  if prints:sources.append("Capitol Whale")
- except Exception as e:print("FREE CAPITOL WHALE",type(e).__name__,str(e)[:180])
+  html=get("https://capitolwhale.com/dark-pool-prints").text
+  soup=BeautifulSoup(html,"html.parser")
+  text=" ".join(soup.stripped_strings)
+  def money(pattern):
+   m=re.search(pattern,text,re.I)
+   return _parse_money_token(m.group(1)) if m else None
+  def pct(pattern):
+   m=re.search(pattern,text,re.I)
+   return float(m.group(1)) if m else None
+  def integer(pattern):
+   m=re.search(pattern,text,re.I)
+   return int(m.group(1).replace(",","")) if m else None
 
- if len(prints)<20:
+  print_count=integer(r'\bPrints\s+([\d,]+)')
+  total_premium=money(r'Total premium\s+\$?([\d.,]+[KMB]?)')
+  bullish=pct(r'Bullish\s+([\d.]+)%')
+  largest=money(r'Largest\s+\$?([\d.,]+[KMB]?)')
+  mb=re.search(r'Aggressor imbalance\s+Buy\s+([\d.]+)%\s*Sell\s+([\d.]+)%',text,re.I)
+  buy_pct=float(mb.group(1)) if mb else None
+  sell_pct=float(mb.group(2)) if mb else None
+
+  # The free cockpit exposes the last prints as compact text rows.
+  for raw in soup.stripped_strings:
+   p=_parse_capitol_print_line(raw)
+   if not p:continue
+   p.update({"timestamp":p.pop("time"),"price":None,
+             "notional":None,"side":"UNKNOWN","directionConfidence":None,
+             "sideBasis":"Not published per print on free cockpit",
+             "source":"Capitol Whale · free public cockpit","realPrint":True})
+   # The % is the session/reference move shown by the source, NOT aggressor direction.
+   prints.append(p)
+  prints=prints[:50]
+
+  top=[]
+  top_match=re.search(r'Top tickers by premium(.*?)Aggressor imbalance',text,re.I|re.S)
+  if top_match:
+   for mm in re.finditer(r'\b([A-Z][A-Z0-9.\-]{0,6})\s+\$([\d.,]+[KMB]?)',top_match.group(1)):
+    top.append({"ticker":mm.group(1),"premium":_parse_money_token(mm.group(2))})
+  source_meta={
+    "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,
+    "largestPrintPremium":largest,"buyPct":buy_pct,"sellPct":sell_pct,
+    "topTickers":top[:12],
+    "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+    "source":"Capitol Whale","sourceUrl":"https://capitolwhale.com/dark-pool-prints",
+    "dataStatus":"REAL TRF PRINTS · PER-PRINT SIDE NOT AVAILABLE IN FREE VIEW",
+    "note":"Los prints son ejecuciones off-exchange reportadas al TRF. El signo de variación mostrado por Capitol Whale es contexto de precio, no una etiqueta BUY/SELL. El imbalance BUY/SELL es agregado."
+  }
+  if print_count or total_premium or prints:
+   feed["darkPoolPrints"]={**source_meta,"prints":prints,"free":True}
+   sources.append("Capitol Whale")
+ except Exception as e:
+  print("CAPITOL DARK PRINTS",type(e).__name__,str(e)[:180])
+
+ # Keep a free secondary source available if Capitol Whale is unreachable.
+ if not feed.get("darkPoolPrints") or not feed["darkPoolPrints"].get("prints"):
   try:
-   rows=_scrape_free_print_source("https://api2.sensamarket.com/dark-pool")
-   for row in rows:
-    sym=str(row.get("ticker") or row.get("symbol") or "").upper()
-    if not sym:continue
-    price=num(row.get("price") or row.get("execution_price") or row.get("trade_price"))
-    size=num(row.get("size") or row.get("shares") or row.get("quantity"))
-    notional=num(row.get("notional") or row.get("value") or row.get("dollar_value") or row.get("premium"))
-    if notional is None and price is not None and size is not None:notional=price*size
-    side=str(row.get("side") or row.get("sentiment") or row.get("direction") or "UNKNOWN").upper()
-    if "BUY" in side:side="BUY"
-    elif "SELL" in side:side="SELL"
-    else:side="UNKNOWN"
-    ts=row.get("timestamp") or row.get("time") or row.get("ts")
-    if ts and size:
-     prints.append({"ticker":sym,"timestamp":ts,"price":price,"size":size,"notional":notional,"side":side,
-       "directionConfidence":None,"venue":row.get("venue") or "TRF","trfId":None,
-       "source":"SensaMarket · free delayed view","realPrint":True,"sideBasis":"NBBO execution-location inference"})
-   if rows:sources.append("SensaMarket")
-  except Exception as e:print("FREE SENSA",type(e).__name__,str(e)[:180])
-
- if prints:
-  prints=sorted(prints,key=lambda x:str(x.get("timestamp") or ""),reverse=True)[:300]
-  feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-    "prints":prints,"sources":list(dict.fromkeys(sources)),
-    "selection":"Public free TRF/off-exchange print pages; individual executions",
-    "dataStatus":"REAL EXECUTIONS · DIRECTION INFERRED","free":True,
-    "documentedDelay":"SensaMarket free view ≈4h; Capitol Whale core view intraday.",
-    "note":"Los prints son ejecuciones off-exchange reales reportadas al TRF. BUY/SELL no identifica al participante institucional; cuando el lado no está disponible se conserva UNKNOWN."}
+   html=get("https://app.sensamarket.com/dark-pool").text
+   soup=BeautifulSoup(html,"html.parser")
+   text=" ".join(soup.stripped_strings)
+   mb=re.search(r'([0-9.]+)%\s*Buy\s+([0-9.]+)%\s*Sell',text,re.I)
+   total=money(r'Total Dark Pool Value\s+\$?([\d.,]+[KMB]?)') if 'money' in locals() else None
+   feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+     "prints":[],"sources":["SensaMarket"],"free":True,
+     "printCount":None,"totalPremium":total,
+     "buyPct":float(mb.group(1)) if mb else None,"sellPct":float(mb.group(2)) if mb else None,
+     "dataStatus":"REAL TRF PRINTS · FREE VIEW DELAYED",
+     "note":"SensaMarket indica que la vista gratuita tiene retraso de 4 horas; BUY/SELL se infiere respecto al NBBO."
+   }
+  except Exception as e:print("SENSA DARK PRINTS",type(e).__name__,str(e)[:160])
 
 
 def update_traditional_sentiment(feed):
