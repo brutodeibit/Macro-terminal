@@ -10,6 +10,7 @@
         body { background-color: #080a0f; color: #d1d5db; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         .card { background-color: #111622; border: 1px solid #1a2333; }
         .sidebar { background-color: #0d111a; border-right: 1px solid #1a2333; }
+        .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
         .nav-item.active { background-color: #1a2333; color: #ffffff; border-left: 3px solid #3b82f6; }
         .badge-hawkish { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
         .badge-dovish { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
@@ -81,19 +82,12 @@
                 </button>
                 <div class="flex items-center gap-2 text-xs bg-gray-900 border border-gray-800 text-gray-400 px-3 py-1.5 rounded-full w-fit">
                     <span id="feedDot" class="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    <span id="feedStatus">Base local · feed opcional</span>
+                    <span id="feedStatus">Feed automático · 15 min</span>
                 </div>
             </div>
         </header>
 
-        <div class="flex border-b border-gray-800 mb-6 gap-6 text-sm font-medium text-gray-400 overflow-x-auto">
-            <button class="tab-btn active pb-3 whitespace-nowrap" onclick="scrollToSection('sec-resumen')">RESUMEN GLOBAL</button>
-            <button class="tab-btn pb-3 whitespace-nowrap" onclick="scrollToSection('sec-risk')">RISK ON/OFF</button>
-            <button class="tab-btn pb-3 whitespace-nowrap" onclick="scrollToSection('sec-tipos')">TIPOS DE INTERÉS</button>
-            <button class="tab-btn pb-3 whitespace-nowrap" onclick="scrollToSection('sec-conferencia')">ANÁLISIS RUEDA DE PRENSA</button>
-            <button class="tab-btn pb-3 whitespace-nowrap" onclick="scrollToSection('sec-bonos')">CURVA DE BONOS</button>
-            <button class="tab-btn pb-3 whitespace-nowrap" onclick="scrollToSection('sec-indicadores')">INDICADORES CLAVE</button>
-        </div>
+        <div id="topTabs" class="flex border-b border-gray-800 mb-6 gap-6 text-sm font-medium text-gray-400 overflow-x-auto"></div>
 
         <div id="mainDashboard" class="space-y-8">
             </div>
@@ -116,7 +110,7 @@
                     posture: '54% Mantener',
                     postureBadge: 'badge-hawkish',
                     postureText: 'Restrictivo',
-                    nextMeeting: '15-16/09/2026 · decisión pendiente',
+                    nextMeeting: '27-28/10/2026',
                     expectations: [
                         { label: 'Bajada -50 pb', value: '1%' },
                         { label: 'Bajada -25 pb', value: '1%' },
@@ -639,38 +633,67 @@
             }
         };
 
-        let currentCountryKey = 'us';
+        let currentCountryKey = '__global';
 
         function renderSidebar() {
             const nav = document.getElementById('countryNav');
             const mobileSelect = document.getElementById('mobileCountrySelect');
-            nav.innerHTML = ''; 
+            nav.innerHTML = '';
             mobileSelect.innerHTML = '';
 
-            for (const key in macroDatabase) {
-                const c = macroDatabase[key];
-                
-                // Botón Sidebar Escritorio
-                const btn = document.createElement('button');
-                btn.className = `w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition nav-item ${key === currentCountryKey ? 'active' : 'text-gray-400 hover:text-white hover:bg-gray-900'}`;
-                btn.onclick = () => switchCountry(key);
-                btn.innerHTML = `<span class="flex items-center gap-2.5"><span>${c.flag}</span><span>${c.name}</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
+            const globalBtn=document.createElement('button');
+            globalBtn.className=`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition nav-item ${currentCountryKey==='__global'?'active':'text-gray-400 hover:text-white hover:bg-gray-900'}`;
+            globalBtn.onclick=()=>switchCountry('__global');
+            globalBtn.innerHTML=`<span class="flex items-center gap-2.5"><span>🌐</span><span>Panel Macro Global</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
+            nav.appendChild(globalBtn);
+
+            const sep=document.createElement('div');
+            sep.className='text-[10px] font-semibold text-gray-600 uppercase tracking-wider px-2 py-3';
+            sep.textContent='Economías';
+            nav.appendChild(sep);
+
+            const mobileGlobal=document.createElement('option');
+            mobileGlobal.value='__global';
+            mobileGlobal.textContent='🌐 Panel Macro Global';
+            mobileGlobal.selected=currentCountryKey==='__global';
+            mobileSelect.appendChild(mobileGlobal);
+
+            Object.entries(macroDatabase).forEach(([key,c])=>{
+                if(!c || key.startsWith('__') || !c.id) return;
+                const btn=document.createElement('button');
+                btn.className=`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition nav-item ${key===currentCountryKey?'active':'text-gray-400 hover:text-white hover:bg-gray-900'}`;
+                btn.onclick=()=>switchCountry(key);
+                btn.innerHTML=`<span class="flex items-center gap-2.5"><span>${c.flag||'🌎'}</span><span>${esc(c.name||key)}</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
                 nav.appendChild(btn);
 
-                // Opción Selector Móvil
-                const opt = document.createElement('option');
-                opt.value = key; 
-                opt.textContent = `${c.flag} ${c.name}`;
-                if (key === currentCountryKey) opt.selected = true;
+                const opt=document.createElement('option');
+                opt.value=key;
+                opt.textContent=`${c.flag||'🌎'} ${c.name||key}`;
+                opt.selected=key===currentCountryKey;
                 mobileSelect.appendChild(opt);
-            }
-            mobileSelect.onchange = (e) => switchCountry(e.target.value);
+            });
+            mobileSelect.onchange=e=>switchCountry(e.target.value);
         }
 
         function switchCountry(key) {
             currentCountryKey = key;
             renderSidebar();
             renderContent();
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+
+        function renderTopTabs(){
+            const el=document.getElementById('topTabs');
+            if(!el) return;
+            const global=currentCountryKey==='__global';
+            const tabs=global?[
+              ['sec-resumen','PANEL GLOBAL'],['sec-risk','RISK ON/OFF'],['sec-fx','DIVISAS / CARRY'],
+              ['sec-cot','COT'],['sec-options','OPCIONES / GAMMA'],['sec-darkpool','DARK POOLS / OTC']
+            ]:[
+              ['sec-tipos','TIPOS'],['sec-conferencia','RUEDA DE PRENSA'],['sec-bonos','CURVA'],
+              ['sec-indicadores','INDICADORES']
+            ];
+            el.innerHTML=tabs.map(([id,label],i)=>`<button class="tab-btn ${i===0?'active':''} pb-3 whitespace-nowrap" onclick="scrollToSection('${id}')">${label}</button>`).join('');
         }
 
         function esc(v){ return String(v ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
@@ -942,10 +965,15 @@
             return `<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Anticipación de inflación hacia PCE</div><div class="text-sm font-bold text-white mt-1">CPI / PPI → PCE subyacente</div><div class="text-xs text-gray-500 mt-1 leading-relaxed">Los datos que se publican antes pueden orientar el sesgo esperado del PCE, pero no sustituyen el dato final.</div><div class="mt-3">${rows}</div></div>`;
         }
 
-        function riskFmt(v, suffix=''){
+        function riskDecimals(name){
+            const n=String(name||'').toUpperCase();
+            if(n==='SKEW') return 0;
+            return 2;
+        }
+        function riskFmt(v, suffix='', name=''){
             if(v===null || v===undefined || v==='') return '—';
             const n=Number(v);
-            return Number.isFinite(n) ? n.toFixed(n>=100?0:2)+suffix : esc(v);
+            return Number.isFinite(n) ? n.toFixed(riskDecimals(name))+suffix : esc(v);
         }
         function riskToneClass(sig){ return sig==='risk-on'?'risk-up':sig==='risk-off'?'risk-down':'risk-neutral'; }
         function renderRiskOnOff(){
@@ -954,7 +982,7 @@
             const valid=Number.isFinite(score);
             const width=valid?Math.max(0,Math.min(100,score)):0;
             const meterColor=valid?(score>=60?'#34d399':score<=40?'#f87171':'#fbbf24'):'#64748b';
-            const assets=(r.assets||[]).map(a=>`<div class="risk-cell"><div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${esc(a.name||a.symbol)}</span><span class="risk-badge ${riskToneClass(a.signal)}">${esc(a.signalLabel||a.signal||'—')}</span></div><div class="text-lg font-black text-white mt-2">${riskFmt(a.value,a.unit||'')}</div><div class="text-[11px] mt-1 ${riskToneClass(a.signal)}">${Number.isFinite(Number(a.change1d))?(Number(a.change1d)>=0?'+':'')+Number(a.change1d).toFixed(2)+'% 1D':''}${Number.isFinite(Number(a.change5d))?' · '+(Number(a.change5d)>=0?'+':'')+Number(a.change5d).toFixed(2)+'% 5D':''}</div><div class="text-[10px] text-gray-600 mt-1">${esc(a.role||'Confirmación')}</div></div>`).join('');
+            const assets=(r.assets||[]).map(a=>`<div class="risk-cell"><div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${esc(a.name||a.symbol)}</span><span class="risk-badge ${riskToneClass(a.signal)}">${esc(a.signalLabel||a.signal||'—')}</span></div><div class="text-lg font-black text-white mt-2">${riskFmt(a.value,a.unit||'',a.name||a.symbol)}</div><div class="text-[11px] mt-1 ${riskToneClass(a.signal)}">${Number.isFinite(Number(a.change1d))?(Number(a.change1d)>=0?'+':'')+Number(a.change1d).toFixed(2)+'% 1D':''}${Number.isFinite(Number(a.change5d))?' · '+(Number(a.change5d)>=0?'+':'')+Number(a.change5d).toFixed(2)+'% 5D':''}</div><div class="text-[10px] text-gray-600 mt-1">${esc(a.role||'Confirmación')}</div></div>`).join('');
             const conf=(r.confirmations||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-emerald-400">•</span><span>${esc(x)}</span></li>`).join('');
             const tens=(r.tensions||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-amber-400">•</span><span>${esc(x)}</span></li>`).join('');
             return `<section id="sec-risk" class="space-y-4">
@@ -976,14 +1004,14 @@
                 </div>
                 <div class="risk-grid">${assets || '<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando la primera sincronización de mercado.</div>'}</div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmaciones</div><ul class="space-y-2 mt-3">${conf||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
-                  <div class="metric rounded-xl p-4 risk-alert"><div class="text-[10px] uppercase tracking-wider text-gray-500">Tensiones / cobertura</div><ul class="space-y-2 mt-3">${tens||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
+                  <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmaciones</div><div class="text-[10px] text-gray-600 mt-1">Señales que apuntan al mismo régimen de mercado.</div><ul class="space-y-2 mt-3">${conf||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
+                  <div class="metric rounded-xl p-4 risk-alert"><div class="text-[10px] uppercase tracking-wider text-gray-500">Tensiones / cobertura</div><div class="text-[10px] text-gray-600 mt-1">Señales que aconsejan no dar por confirmado el régimen.</div><ul class="space-y-2 mt-3">${tens||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
                 </div>
             </section>`;
         }
 
         function renderGlobalSummary(){
-            const entries=Object.values(macroDatabase).map(d=>{
+            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>{
                 const score=macroInterpretation(d).score;
                 return {d,score};
             });
@@ -1047,18 +1075,90 @@
             });
         }
 
-        function renderContent() {
-            const data = macroDatabase[currentCountryKey];
-            const globalSummary = renderGlobalSummary();
-            document.getElementById('countryTitle').innerHTML = `${data.flag} Monitor ${data.name}`;
-            document.getElementById('countrySubtitle').textContent = data.subtitle;
+        function renderCotSection(){
+            const c=macroDatabase.__cot||{updated:'—',markets:[]};
+            const rows=(c.markets||[]).map(m=>{
+                const net=Number(m.netSpec ?? m.net), z=Number(m.z52 ?? m.zScore), ch=Number(m.change1w ?? m.netChange);
+                const netTxt=Number.isFinite(net)?net.toLocaleString('es-ES'):'—';
+                const zTxt=Number.isFinite(z)?z.toFixed(1)+'σ':'—';
+                const chTxt=Number.isFinite(ch)?(ch>=0?'+':'')+ch.toLocaleString('es-ES'):'—';
+                const longV=m.specLong ?? m.long, shortV=m.specShort ?? m.short;
+                const reading=m.interpretation || m.reading || 'Sin lectura';
+                return `<div class="metric rounded-xl p-4"><div class="flex items-center justify-between gap-2"><div><div class="text-sm font-bold text-white">${esc(m.name||'')}</div><div class="text-[10px] text-gray-500">${esc(m.reportDate||'')}</div></div><span class="mini-pill">${esc(reading)}</span></div><div class="grid grid-cols-3 gap-2 mt-3 text-center"><div><div class="text-[9px] text-gray-600">Neto espec.</div><div class="text-sm font-black text-white">${netTxt}</div></div><div><div class="text-[9px] text-gray-600">Cambio 1 sem.</div><div class="text-sm font-black text-white">${chTxt}</div></div><div><div class="text-[9px] text-gray-600">z-score</div><div class="text-sm font-black text-white">${zTxt}</div></div></div><div class="text-[10px] text-gray-500 mt-3">Largos ${esc(longV??'—')} · Cortos ${esc(shortV??'—')} · Fuente CFTC</div></div>`;
+            }).join('');
+            return `<section id="sec-cot" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Posicionamiento institucional</div><h2 class="text-xl font-black text-white mt-1">COT · FUTURES</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Posicionamiento semanal de la CFTC. El z-score mide si el neto está relativamente extremo frente a su propia historia; no es una señal de entrada por sí sola.</p></div><span class="mini-pill">Actualizado ${esc(c.updated||'—')}</span></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">${rows||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando datos CFTC.</div>'}</div></section>`;
+        }
 
+        function renderOptionsSection(){
+            const o=macroDatabase.__options||{updated:'—',markets:[]};
+            const cards=(o.markets||[]).map(m=>{
+              const gp=Number(m.gammaPositive), gn=Number(m.gammaNegative), gt=Number(m.gammaTotal), zg=Number(m.zeroGamma);
+              const pz=(m.positiveZones||[]).slice(0,3).map(x=>`${fmtNum(x.strike,0)} (${fmtCompactMoney(x.gamma)})`).join(' · ');
+              const nz=(m.negativeZones||[]).slice(0,3).map(x=>`${fmtNum(x.strike,0)} (${fmtCompactMoney(x.gamma)})`).join(' · ');
+              return `<div class="metric rounded-xl p-4"><div class="flex items-center justify-between gap-2"><div><div class="text-sm font-bold text-white">${esc(m.name||m.ticker||'')}</div><div class="text-[10px] text-gray-500">${esc(m.expiration||'')}</div></div><span class="mini-pill">${esc(m.reading||'Proxy de opciones')}</span></div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div><div class="text-[9px] text-gray-600">Spot</div><div class="text-sm font-black text-white">${esc(m.spot??'—')}</div></div><div><div class="text-[9px] text-gray-600">P/C OI</div><div class="text-sm font-black text-white">${esc(m.putCallOi??'—')}</div></div><div><div class="text-[9px] text-gray-600">Call OI alto</div><div class="text-sm font-black text-white">${esc(m.topCallStrike??'—')}</div></div><div><div class="text-[9px] text-gray-600">Put OI alto</div><div class="text-sm font-black text-white">${esc(m.topPutStrike??'—')}</div></div></div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-center"><div><div class="text-[9px] text-gray-600">Gamma +</div><div class="text-sm font-black text-emerald-300">${fmtCompactMoney(gp)}</div></div><div><div class="text-[9px] text-gray-600">Gamma −</div><div class="text-sm font-black text-red-300">${fmtCompactMoney(gn)}</div></div><div><div class="text-[9px] text-gray-600">Gamma neta</div><div class="text-sm font-black ${gt>=0?'text-emerald-300':'text-red-300'}">${fmtCompactMoney(gt)}</div></div><div><div class="text-[9px] text-gray-600">Zero Gamma</div><div class="text-sm font-black text-white">${Number.isFinite(zg)?fmtNum(zg,0):'—'}</div></div></div>
+              <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2"><div class="text-[10px] text-emerald-300"><b>Concentraciones +:</b> ${esc(pz||'—')}</div><div class="text-[10px] text-red-300"><b>Concentraciones −:</b> ${esc(nz||'—')}</div></div>
+              <div class="text-[10px] text-gray-500 mt-3">${esc(m.method||'Open Interest + gamma proxy')}.</div></div>`;
+            }).join('');
+            return `<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Mapa de derivados</div><h2 class="text-xl font-black text-white mt-1">OPCIONES · OI + GAMMA + VOLATILIDAD</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Incluye concentración de Open Interest, P/C, gamma positiva/negativa y aproximación de Zero Gamma. El gamma es un <b>proxy</b>: sin conocer la posición real de cada dealer no equivale a un GEX propietario.</p></div><span class="mini-pill">Actualizado ${esc(o.updated||'—')}</span></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${cards||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando primera lectura de cadenas de opciones.</div>'}</div><div class="metric rounded-xl p-4 text-xs text-gray-500">Lectura rápida: spot → strikes con mayor OI → gamma +/− → Zero Gamma → IV/P-C. Una concentración de OI no implica por sí sola soporte o resistencia.</div></section>`;
+        }
+
+        function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
+
+        function fmtPct(v,d=2){ const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }
+        function fmtNum(v,d=2){ const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }
+        function fxBiasLabel(score){ if(score>=2) return 'Muy alcista'; if(score>=0.9) return 'Alcista'; if(score>=0.35) return 'Levemente alcista'; if(score<=-2) return 'Muy bajista'; if(score<=-0.9) return 'Bajista'; if(score<=-0.35) return 'Levemente bajista'; return 'Neutral'; }
+        function fxBiasClass(score){ return score>0.35?'bias-up':score<-0.35?'bias-down':'bias-flat'; }
+        function parseRate(v){ const s=String(v??'').replace(',','.').replace('%','').replace('–','-'); const nums=s.match(/-?\d+(?:\.\d+)?/g); if(!nums) return NaN; return nums.length===2?(Number(nums[0])+Number(nums[1]))/2:Number(nums[0]); }
+        function buildFxComparator(){
+            const fx=macroDatabase.__fx||{currencies:{}};
+            const all=Object.values(macroDatabase).filter(d=>d&&d.id);
+            const rows=all.map(d=>{ const code=d.id==='us'?'USD':d.id==='eu'||d.id==='de'?'EUR':d.id==='uk'?'GBP':d.id==='jp'?'JPY':d.id==='au'?'AUD':d.id==='nz'?'NZD':d.id==='ca'?'CAD':'CHF'; const m=fx.currencies?.[code]||{}; return {id:d.id,code,name:d.name,pol:macroInterpretation(d).score,rate:parseRate(d.rates?.official),y2:parseRate((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield),real:parseRate(d.rates?.real),tr5:Number(m.change5d)||0,tr20:Number(m.change20d)||0}; });
+            const by=Object.fromEntries(rows.map(x=>[x.code,x]));
+            function score(a,b){ const A=by[a],B=by[b]; if(!A||!B) return 0; return 0.95*(A.pol-B.pol)+0.75*((A.y2||0)-(B.y2||0))+0.45*((A.real||0)-(B.real||0))+0.32*(A.tr5-B.tr5)+0.14*(A.tr20-B.tr20); }
+            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); return {...x,score:sc,label:fxBiasLabel(sc)};});
+            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD']; const matrix=codes.map(base=>({base,cols:codes.map(q=>base===q?null:score(base,q))}));
+            return {updated:fx.updated||'—',rows:vsUsd,matrix};
+        }
+        function renderFxComparator(){
+            const fx=buildFxComparator();
+            const rows=fx.rows.map(x=>`<tr class="border-b border-gray-900/70"><td class="py-3 px-3 text-sm font-bold text-white">${x.code}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(x.name||'')}</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.rate,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y2,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr5,2)}</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr20,2)}</td><td class="py-3 px-3 text-sm font-black ${fxBiasClass(x.score)}">${x.label}</td></tr>`).join('');
+            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD'];
+            const heads=codes.map(c=>`<th class="py-2 px-2 text-[10px] text-gray-500">${c}</th>`).join('');
+            const matrix=fx.matrix.map(r=>`<tr><td class="py-2 px-2 text-xs font-bold text-white">${r.base}</td>${r.cols.map(v=>`<td class="py-2 px-2 text-xs ${v===null?'text-gray-700':fxBiasClass(v)}">${v===null?'—':fxBiasLabel(v).replace('Levemente ','L. ')}</td>`).join('')}</tr>`).join('');
+            return `<section id="sec-fx" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Algoritmo personalizado</div><h2 class="text-xl font-black text-white mt-1">DIVISAS · CARRY + TIPOS + TENDENCIA</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Combina postura monetaria, diferencial de tipos, 2Y, tipo real y tendencia de 5/20 sesiones. El carry es un proxy; no sustituye forwards u OIS.</p></div><span class="mini-pill">${esc(fx.updated)}</span></div></div><div class="card rounded-2xl p-4 overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-gray-800"><th class="py-2 px-3 text-left text-[10px] text-gray-500">Moneda</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Nombre</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Tipo</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">2Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">5D</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">20D</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Sesgo vs USD</th></tr></thead><tbody>${rows}</tbody></table></div><div class="metric rounded-xl p-4 overflow-x-auto"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">Matriz de sesgo relativo</div><table class="w-full"><thead><tr><th class="py-2 px-2 text-left text-[10px] text-gray-600">Base \\ Cta.</th>${heads}</tr></thead><tbody>${matrix}</tbody></table></div></section>`;
+        }
+        function renderDarkPoolSection(){
+            const d=macroDatabase.__darkPools||{updated:'—',markets:[]};
+            const cards=(d.markets||[]).map(m=>{ const ats=Number(m.atsShares)||0, otc=Number(m.otcShares)||0, total=Number(m.totalOffExchange)||(ats+otc); const top=(m.topVenues||[]).map(v=>`${esc(v.name||'ATS')}: ${Number(v.shares||0).toLocaleString('es-ES')}`).join(' · '); return `<div class="metric rounded-xl p-4"><div class="flex items-center justify-between gap-2"><div><div class="text-sm font-bold text-white">${esc(m.symbol||'')}</div><div class="text-[10px] text-gray-500">Semana ${esc(m.weekStart||'—')}</div></div><span class="mini-pill">${esc(m.lagLabel||'Retrasado')}</span></div><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-center"><div><div class="text-[9px] text-gray-600">ATS / dark pool</div><div class="text-sm font-black text-white">${ats.toLocaleString('es-ES')}</div></div><div><div class="text-[9px] text-gray-600">OTC no-ATS</div><div class="text-sm font-black text-white">${otc.toLocaleString('es-ES')}</div></div><div><div class="text-[9px] text-gray-600">Total off-exchange</div><div class="text-sm font-black text-white">${total.toLocaleString('es-ES')}</div></div><div><div class="text-[9px] text-gray-600">z-score</div><div class="text-sm font-black text-white">${Number.isFinite(Number(m.zScore))?Number(m.zScore).toFixed(1)+'σ':'—'}</div></div></div><div class="text-[10px] text-gray-500 mt-3">Principales venues: ${top||'—'}</div><div class="text-[10px] text-amber-300 mt-2">${esc(m.note||'FINRA no publica aquí distribución por precio; no se inventan zonas de acumulación.')}</div></div>`; }).join('');
+            return `<section id="sec-darkpool" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Actividad fuera de mercados lit</div><h2 class="text-xl font-black text-white mt-1">DARK POOLS / OTC</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Mide volumen semanal ATS y OTC por ticker. Sirve para detectar actividad anormal fuera de bolsa, pero no sustituye un mapa de prints/precio por strike o nivel.</p></div><span class="mini-pill">${esc(d.updated||'—')}</span></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${cards||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Fuente FINRA disponible cuando el endpoint responde; si no, se mantiene el último dato válido.</div>'}</div></section>`;
+        }
+        function renderGlobalView(){
+            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>({d,score:macroInterpretation(d).score}));
+            const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
+            return `<section id="sec-resumen" class="space-y-5"><div class="glass rounded-2xl p-5"><div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"><div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Monitor Macro Global</div><h2 class="text-xl md:text-2xl font-black text-white mt-1">Panel global</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Contexto intermercado, bancos centrales, divisas, carry, posicionamiento, opciones y actividad fuera de mercado. Las economías se consultan desde el lateral.</p></div><div class="metric rounded-xl px-4 py-3 min-w-[190px]"><div class="text-[10px] text-gray-500 uppercase">Política monetaria agregada</div><div class="text-lg font-black ${biasClass(avg)} mt-1">${dirIcon(avg)} ${avg>1?'Más restrictivo':avg<-1?'Más acomodaticio':'Mixto'}</div></div></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">${entries.map(({d,score})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition"><div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-lg font-black ${biasClass(score)}">${dirIcon(score)}</span></div><div class="mt-3 flex items-center justify-between"><span class="mini-pill">${esc(d.conference?.tone||d.rates?.postureText||'Mixto')}</span><span class="text-xs ${biasClass(score)}">${biasLabel(score)}</span></div><div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official||'—')} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div></button>`).join('')}</div></section>${renderRiskOnOff()}${renderFxComparator()}${renderCotSection()}${renderOptionsSection()}${renderDarkPoolSection()}`;
+        }
+
+        function renderContent() {
+            renderTopTabs();
             const container = document.getElementById('mainDashboard');
+            if(currentCountryKey==='__global'){
+                document.getElementById('countryTitle').innerHTML='🌐 Monitor Macro Global';
+                document.getElementById('countrySubtitle').textContent='Régimen intermercado, divisas, carry, posicionamiento, opciones y actividad fuera de mercado.';
+                container.innerHTML=renderGlobalView();
+                return;
+            }
+            const data = macroDatabase[currentCountryKey];
+            document.getElementById('countryTitle').innerHTML = `${data.flag||'🌎'} Monitor ${esc(data.name||data.id||'Economía')}`;
+            document.getElementById('countrySubtitle').textContent = data.subtitle || 'Política monetaria, curva e indicadores macro.';
 
             const expHtml = (data.rates?.expectations||[]).map(e => `\n                <div class="flex items-center justify-between py-1.5 border-b border-gray-900/80">\n                    <span class="text-xs text-gray-400">${esc(e.label)}</span>\n                    <span class="text-xs font-bold text-white">${esc(e.value)}</span>\n                </div>`).join('');
             const keyPointsHtml = (data.conference?.keyPoints||[]).map(x => `<li class="text-xs md:text-sm text-gray-300 flex gap-2"><span class="text-blue-400">•</span><span>${esc(x)}</span></li>`).join('');
             const watchFactorsHtml = (data.conference?.watchFactors||[]).map(x => `<li class="text-xs text-gray-300 flex gap-2"><span class="text-green-400">•</span><span>${esc(x)}</span></li>`).join('');
-            const tenorsHtml = (data.bonds?.tenors||[]).map(t => `<div class="metric p-3 rounded-xl"><div class="text-[10px] text-gray-500">${esc(t.term)}</div><div class="text-base font-black text-white mt-1">${esc(t.yield)}</div><div class="text-[10px] mt-1 ${String(t.change||'').startsWith('+')?'effect-hawkish':'effect-dovish'}">${esc(t.change||'')}</div></div>`).join('');
+            const bondOrder=['3M','1Y','2Y','5Y','10Y','20Y','30Y'];
+            const bondMap=Object.fromEntries((data.bonds?.tenors||[]).map(x=>[x.term,x]));
+            const tenorsHtml = bondOrder.map(term => { const y=bondMap[term]; const raw=y?.yield; const n=parseFloat(String(raw??'').replace('%','').replace(',','.')); const val=Number.isFinite(n)?n.toFixed(2)+'%':'N/D'; return `<div class="metric p-3 rounded-xl"><div class="text-[10px] text-gray-500">${term}</div><div class="text-base font-black text-white mt-1">${val}</div><div class="text-[10px] mt-1 ${String(y?.change||'').startsWith('+')?'effect-hawkish':'effect-dovish'}">${esc(y?.change||'')}</div></div>`; }).join('');
             const spreadsHtml = (data.bonds?.spreads||[]).map(s => `<div class="metric p-4 rounded-xl"><div class="text-xs font-semibold text-gray-400">${esc(s.label)}</div><div class="text-xl font-black text-white mt-1">${esc(s.value)}</div><div class="text-[10px] text-gray-600 mt-1">${esc(s.desc||'')}</div></div>`).join('');
             const indicatorsHtml = (data.indicators||[]).map(ind => `<tr class="border-b border-gray-900/70 row-hover"><td class="py-3 px-3 text-xs text-gray-500">${esc(ind.cat||'')}</td><td class="py-3 px-3 text-xs font-semibold text-gray-200">${esc(ind.name||'')}</td><td class="py-3 px-3 text-xs text-white">${esc(ind.actual||'')}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(ind.est||'')}</td><td class="py-3 px-3 text-xs ${parseNum(ind.surprise)<0?'effect-dovish':parseNum(ind.surprise)>0?'effect-hawkish':'effect-neutral'}">${esc(ind.surprise||'—')}</td><td class="py-3 px-3 text-xs">${effectForIndicator(ind)}</td><td class="py-3 px-3 text-xs text-gray-500">${esc(ind.date||'')}</td><td class="py-3 px-3 text-xs text-amber-300">${esc(ind.imp||'')}</td></tr>`).join('');
 
@@ -1087,7 +1187,7 @@
                     <div class="metric rounded-xl p-4">
                         <div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmación mercado</div>
                         <div class="text-lg font-black ${mNow.bond>0.12?'effect-hawkish':mNow.bond<-0.12?'effect-dovish':'effect-neutral'} mt-1">2Y ${mNow.bond>0.12?'apoya ↑':mNow.bond<-0.12?'apoya ↓':'sin confirmación →'}</div>
-                        <div class="text-xs text-gray-500 mt-1">El bono a 2 años confirma o contradice la lectura; no domina el cálculo.</div>
+                        <div class="text-xs text-gray-500 mt-1">El 2Y es la referencia del tramo que más refleja expectativas sobre la política de tipos en los próximos ~1–2 años. Si sube con una lectura restrictiva, confirma; si cae, el mercado puede estar descontando menos endurecimiento. Es confirmación, no señal aislada.</div>
                     </div>
                 </div>
 
@@ -1126,7 +1226,6 @@
             `;
 
             container.innerHTML = `
-                ${globalSummary}
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="sec-tipos">
                     <div class="card p-5 rounded-2xl shadow-xl flex flex-col justify-between">
                         <div>
@@ -1284,7 +1383,7 @@
                         <span>Última actualización visible: ${esc(data.updated || 'Datos de referencia')} · Interpretación automática basada en datos disponibles</span>
                         <span>Fuente: <a class="source-link" href="${esc(data.sourceUrl || '#')}" target="_blank" rel="noopener">${esc(data.sourceName || 'fuente oficial')}</a></span>
                     </div>
-                </div>
+            </div>
             `;
         }
 
@@ -1314,6 +1413,10 @@
                         if(Array.isArray(v.indicators) && v.indicators.length) macroDatabase[k].indicators=v.indicators;
                     });
                     if(feed.riskOnOff) macroDatabase.__riskOnOff = feed.riskOnOff;
+                    if(feed.cot) macroDatabase.__cot = feed.cot;
+                    if(feed.options) macroDatabase.__options = feed.options;
+                    if(feed.fx) macroDatabase.__fx = feed.fx;
+                    if(feed.darkPools) macroDatabase.__darkPools = feed.darkPools;
                     setFeedStatus('Feed externo sincronizado', true);
                     renderSidebar();
                     renderContent();
@@ -1338,6 +1441,10 @@
         }
 
         macroDatabase.__riskOnOff = macroDatabase.__riskOnOff || {label:'SIN SINCRONIZAR',score:null,confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
+        macroDatabase.__cot = macroDatabase.__cot || {updated:'—',markets:[]};
+        macroDatabase.__options = macroDatabase.__options || {updated:'—',markets:[]};
+        macroDatabase.__fx = macroDatabase.__fx || {updated:'—',currencies:{}};
+        macroDatabase.__darkPools = macroDatabase.__darkPools || {updated:'—',markets:[]};
 
         // Inicializar al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
