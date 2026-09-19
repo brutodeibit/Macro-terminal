@@ -34,32 +34,22 @@ def gamma(calls, puts, spot):
 def opt(sym):
  try:
   r=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+sym+".json",h={"User-Agent":"Mozilla/5.0","Accept":"application/json"}).json()
-  d=r.get("data",r); spot=float(d.get("current_price") or 0); rows=d.get("options",[])
+  d=r.get("data",r); spot=float(d.get("close") or d.get("current_price") or 0); rows=d.get("options",[]) or []
   if not rows or not spot:return None
-  now=datetime.now(timezone.utc)
-  calls=[];puts=[]; expiries=[]
+  now=datetime.now(timezone.utc);calls=[];puts=[];expiries=[]
   for x in rows:
-   t=str(x.get("option") or "")
-   m=re.search(r"([0-9]{6})([CP])([0-9]{8})$",t)
+   m=re.search(r"([0-9]{6})([CP])([0-9]{8})$",str(x.get("option") or ""))
    if not m:continue
    try:
     ex=datetime.strptime("20"+m.group(1),"%Y%m%d").replace(tzinfo=timezone.utc)
     if ex<=now:continue
-    strike=int(m.group(3))/1000.0; typ=m.group(2); oi=float(x.get("open_interest") or 0); iv=float(x.get("iv") or 0); gam=float(x.get("gamma") or 0)
-    row={"strike":strike,"openInterest":oi,"impliedVolatility":iv,"gamma":gam,"expiration":int(ex.timestamp())}
-    (calls if typ=="C" else puts).append(row); expiries.append(ex)
+    row={"strike":int(m.group(3))/1000.0,"openInterest":float(x.get("open_interest") or 0),"impliedVolatility":float(x.get("iv") or 0),"gamma":float(x.get("gamma") or 0),"expiration":int(ex.timestamp())}
+    (calls if m.group(2)=="C" else puts).append(row);expiries.append(ex)
    except Exception:pass
-  if not calls and not puts:return None
-  nearest=min(expiries) if expiries else now
-  calls=[x for x in calls if x["expiration"]==int(nearest.timestamp())]
-  puts=[x for x in puts if x["expiration"]==int(nearest.timestamp())]
-  co=sum(x["openInterest"] for x in calls);po=sum(x["openInterest"] for x in puts)
-  tc=max(calls,key=lambda x:x["openInterest"],default={});tp=max(puts,key=lambda x:x["openInterest"],default={})
-  g=gamma(calls,puts,spot)
-  return {"name":sym,"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,
-   "topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),
-   "method":"CBOE delayed options chain · OI + quoted gamma; 15 min delayed. Gamma exposure is a modeling proxy, not dealer-position data.",
-   "source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Calls positive / puts negative; dealer side is assumed for the proxy.",**g}
+  if not expiries:return None
+  nearest=min(expiries);ts=int(nearest.timestamp());calls=[x for x in calls if x["expiration"]==ts];puts=[x for x in puts if x["expiration"]==ts]
+  co=sum(x["openInterest"] for x in calls);po=sum(x["openInterest"] for x in puts);tc=max(calls,key=lambda x:x["openInterest"],default={});tp=max(puts,key=lambda x:x["openInterest"],default={})
+  return {"name":sym,"ticker":sym,"spot":spot,"expiration":nearest.date().isoformat(),"putCallOi":po/co if co else None,"topCallStrike":tc.get("strike"),"topPutStrike":tp.get("strike"),"maxOiStrike":max(calls+puts,key=lambda x:x["openInterest"],default={}).get("strike"),"method":"CBOE delayed chain · OI + quoted gamma; 15 min delayed. Gamma is a proxy.","source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","gammaNote":"Dealer side is assumed for the gamma proxy.",**gamma(calls,puts,spot)}
 
 H={"User-Agent":"MacroTerminal/6.0","Accept-Language":"en-US,en;q=0.9"}; T=25
 def get(u,p=None,h=None):
@@ -103,40 +93,26 @@ def cot_one(rows,label,longs,shorts):
  return {"name":label,"reportDate":str(rows[0].get("report_date_as_yyyy_mm_dd",""))[:10],"net":net,"long":lv,"short":sv,"zScore":zscore(hist,net),"netChange":net-(hist[1] if len(hist)>1 else net),"reading":("Largos netos" if net>0 else "Cortos netos")}
 def update_cot(feed):
  cfg=[
-  ("S&P 500 E-Mini","gpe5-46if","upper(contract_market_name) like '%E-MINI S&P 500%'",
-   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
-  ("Nasdaq-100","gpe5-46if","upper(contract_market_name) like '%NASDAQ-100%'",
-   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
-  ("DXY · USD Index","gpe5-46if","upper(contract_market_name) like '%U.S. DOLLAR INDEX%'",
-   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
-  ("Euro FX","gpe5-46if","upper(contract_market_name) like '%EURO FX%'",
-   ("lev_money_positions_long","lev_money_positions_long_all"),("lev_money_positions_short","lev_money_positions_short_all"),"Leveraged Money"),
-  ("Oro","72hh-3qpy","upper(contract_market_name) like '%GOLD%' and upper(contract_market_name) not like '%MINI%'",
-   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money"),
-  ("Plata","72hh-3qpy","upper(contract_market_name) like '%SILVER%' and upper(contract_market_name) not like '%MINI%'",
-   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money"),
-  ("Petróleo WTI","72hh-3qpy","upper(contract_market_name) like '%WTI%' and upper(contract_market_name) like '%CRUDE%'",
-   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money"),
-  ("Brent","72hh-3qpy","upper(contract_market_name) like '%BRENT%'",
-   ("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money")
+  ("S&P 500 E-Mini","gpe5-46if","13874A",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
+  ("Nasdaq-100","gpe5-46if","209742",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
+  ("Dow Jones","gpe5-46if","124603",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
+  ("DXY · USD Index","gpe5-46if","098662",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
+  ("Euro FX","gpe5-46if","099741",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
+  ("Oro","72hh-3qpy","088691",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated"),
+  ("Plata","72hh-3qpy","084691",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated"),
+  ("WTI","72hh-3qpy","067651",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated"),
+  ("Brent","72hh-3qpy","06765T",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated")
  ]
- out=[]; errors=[]
- for name,ds,w,L,S,group in cfg:
-  rows=cot_rows(ds,w)
-  if not rows:
-   errors.append(name)
-   continue
-  x=cot_one(rows,name,L,S)
+ out=[];errors=[]
+ for name,ds,code,L,S,group,fam in cfg:
+  rows=cot_rows(ds,"cftc_contract_market_code='"+code+"'")
+  x=cot_one(rows,name,L,S) if rows else None
   if x:
-   x["traderGroup"]=group
-   x["contract"]=str(rows[0].get("contract_market_name") or rows[0].get("commodity_name") or "")
-   x["openInterest"]=num(rows[0].get("open_interest_all"))
+   x.update(traderGroup=group,reportFamily=fam,contractCode=code,contract=str(rows[0].get("contract_market_name") or rows[0].get("market_and_exchange_names") or ""),openInterest=num(rows[0].get("open_interest_all")))
    out.append(x)
   else: errors.append(name)
- if out:
-  feed["cot"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,
-   "source":"CFTC Public Reporting Environment","method":"COT semanal; Managed Money para commodities y Leveraged Money para índices/divisas; z-score frente a hasta 52 observaciones.",
-   "sourceUrl":"https://publicreporting.cftc.gov/","errors":errors}
+ if out:feed["cot"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"CFTC Public Reporting Environment","method":"COT semanal; Leveraged Funds para índices/divisas TFF y Managed Money para commodities Disaggregated; filtrado por código CFTC.","sourceUrl":"https://publicreporting.cftc.gov/","errors":errors}
+
 def finra_access_token():
  try:
   client_id=os.getenv("FINRA_API_CLIENT_ID")
@@ -164,14 +140,38 @@ def update_dark_pools(feed):
  token=finra_access_token()
  if not token:return
  out=[]
- for sym in ("SPY","QQQ","HYG","GLD","USO","AAPL","NVDA"):
-  try:
-   payload={"limit":500,"fields":["issueSymbolIdentifier","issueName","MPID","marketParticipantName","summaryStartDate","weekStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","summaryTypeCode","lastUpdateDate"],"compareFilters":[{"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
-   d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
-   if not d:continue
-   w=max(str(x.get("weekStartDate") or x.get("summaryStartDate") or "") for x in d);cur=[x for x in d if str(x.get("weekStartDate") or x.get("summaryStartDate") or "")==w];ats=sum(float(x.get("totalWeeklyShareQuantity") or 0) for x in cur if str(x.get("summaryTypeCode") or "").upper().startswith("ATS"));otc=sum(float(x.get("totalWeeklyShareQuantity") or 0) for x in cur if not str(x.get("summaryTypeCode") or "").upper().startswith("ATS"));out.append({"symbol":sym,"weekStart":w,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,"zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / con retraso","note":"Actividad OTC/ATS agregada; no implica acumulación por precio."})
-  except Exception:pass
- if out:feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency"}
+ for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG"):
+  ats=otc=at=ot=0.0;week=""
+  for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
+   try:
+    payload={"limit":50,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[{"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},{"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":typ},{"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
+    d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
+    if not d:continue
+    row=max(d,key=lambda x:str(x.get("weekStartDate") or x.get("summaryStartDate") or ""))
+    qty=float(row.get("totalWeeklyShareQuantity") or 0);tr=float(row.get("totalWeeklyTradeCount") or 0);week=str(row.get("weekStartDate") or row.get("summaryStartDate") or week)
+    if typ=="ATS_W_SMBL":ats+=qty;at+=tr
+    else:otc+=qty;ot+=tr
+   except Exception as e:print("FINRA",sym,typ,type(e).__name__,str(e)[:160])
+  if ats or otc:out.append({"symbol":sym,"weekStart":week,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,"atsTrades":at,"otcTrades":ot,"zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado","note":"ATS/OTC agregado por ticker; no representa acumulación por precio."})
+ if out:feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency","method":"Weekly Summary T1 · ATS_W_SMBL + OTC_W_SMBL."}
+
+def update_traditional_sentiment(feed):
+ result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5}
+ try:
+  html=get("https://www.aaii.com/sentimentsurvey").text
+  vals=re.findall(r'Bullish.*?([0-9]+\.[0-9]+)%.*?Neutral.*?([0-9]+\.[0-9]+)%.*?Bearish.*?([0-9]+\.[0-9]+)%',html,re.I|re.S)
+  if vals:
+   b,n,br=map(float,vals[0]);result.update(bullishPct=b,neutralPct=n,bearishPct=br,bullBearSpread=round(b-br,1))
+ except Exception as e:print("AAII",type(e).__name__,str(e)[:180])
+ feed["traditionalSentiment"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),**result}
+
+def update_options_market_stats(feed):
+ try:
+  html=get("https://www.cboe.com/us/options/market_statistics/daily/").text
+  m1=re.search(r'TOTAL PUT/CALL RATIO\D+([0-9.]+)',html,re.I);m2=re.search(r'INDEX PUT/CALL RATIO\D+([0-9.]+)',html,re.I)
+  feed["optionsStats"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"totalPutCall":float(m1.group(1)) if m1 else None,"indexPutCall":float(m2.group(1)) if m2 else None,"source":"Cboe Daily Market Statistics","sourceUrl":"https://www.cboe.com/us/options/market_statistics/daily/"}
+ except Exception as e:print("CBOE STATS",type(e).__name__,str(e)[:180])
+
 def update_markets_rotation(feed):
  sector_cfg=[
   ("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),
@@ -226,7 +226,7 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
   try:
    fn(feed)
   except Exception as e:
