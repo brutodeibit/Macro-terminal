@@ -315,11 +315,19 @@ def update_dark_pools(feed):
           "zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado",
           "note":"FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."}
    arr=old_hist.get(sym,[])
-   arr=[h for h in arr if h.get("weekStart")!=found["weekStart"]];arr.append(found);arr=sorted(arr,key=lambda x:x.get("weekStart",""))
-   arr=arr[-12:]; hist_vals=[x.get("totalOffExchange") for x in arr]
+   # Evitar referencia circular: un snapshot no puede contener su propio history.
+   clean_hist=[]
+   for h in arr:
+    if not isinstance(h,dict): continue
+    clean_hist.append({k:v for k,v in h.items() if k not in ("history","zScore")})
+   snapshot={k:v for k,v in found.items() if k not in ("history","zScore")}
+   clean_hist=[h for h in clean_hist if h.get("weekStart")!=found["weekStart"]]
+   clean_hist.append(snapshot)
+   clean_hist=sorted(clean_hist,key=lambda x:x.get("weekStart",""))[-12:]
+   hist_vals=[x.get("totalOffExchange") for x in clean_hist]
    found["zScore"]=zscore(hist_vals,found["totalOffExchange"])
-   old_hist[sym]=arr
-   found["history"]=arr
+   found["history"]=clean_hist
+   old_hist[sym]=clean_hist
    out.append(found)
  if out:
   feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":old_hist,
