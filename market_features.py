@@ -2,6 +2,20 @@ from __future__ import annotations
 import math, os, re, requests
 from datetime import datetime, timezone
 
+def gamma(calls, puts, spot):
+ vals=[]
+ for x in calls:
+  oi=x.get("openInterest",0) or 0; g=x.get("gamma",0) or 0
+  vals.append((x.get("strike",0), oi*g))
+ for x in puts:
+  oi=x.get("openInterest",0) or 0; g=x.get("gamma",0) or 0
+  vals.append((x.get("strike",0), -oi*g))
+ net=sum(v for _,v in vals)
+ pos=sum(v for _,v in vals if v>0)
+ neg=sum(v for _,v in vals if v<0)
+ zero=min((k for k,_ in vals), key=lambda k:abs(k-spot)) if vals else None
+ return {"gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"zeroGamma":zero}
+
 def opt(sym):
  try:
   r=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+sym+".json",h={"User-Agent":"Mozilla/5.0","Accept":"application/json"}).json()
