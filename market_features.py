@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json, math, os, re, requests
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 
 def _norm_pdf(x):
@@ -477,88 +478,130 @@ def chart_exchange_offexchange(sym):
  except Exception as e:
   print("CHARTEXCHANGE DP",sym,type(e).__name__,str(e)[:140]);return None
 
+
+def _nested_print_rows(obj):
+ rows=[]
+ if isinstance(obj,dict):
+  keys={str(k).lower() for k in obj}
+  if ({'ticker','symbol'} & keys) and ({'size','shares','quantity','trade_size'} & keys) and ({'price','execution_price','trade_price','last_price'} & keys):
+   rows.append(obj)
+  for v in obj.values(): rows.extend(_nested_print_rows(v))
+ elif isinstance(obj,list):
+  for v in obj: rows.extend(_nested_print_rows(v))
+ return rows
+
+def _capitol_structured_rows(soup):
+ out=[]
+ for tag in soup.find_all("script"):
+  txt=tag.string or tag.get_text("",strip=False)
+  if not txt:continue
+  if tag.get("id")=="__NEXT_DATA__":
+   try: out.extend(_nested_print_rows(json.loads(txt)))
+   except Exception: pass
+  # Look for compact JSON state blocks with obvious print keys.
+  if "dark" in txt.lower() and ("price" in txt.lower()) and ("size" in txt.lower()):
+   for raw in re.findall(r'(?s)\{[^{}]{0,12000}\}',txt):
+    try: out.extend(_nested_print_rows(json.loads(raw)))
+    except Exception: pass
+ return out
+
+def _time_to_session_ts(ts_text, series):
+ if not ts_text or not series:return None
+ m=re.match(r'^(\d{1,2}):(\d{2})(?::(\d{2}))?$',str(ts_text).strip())
+ if not m:return None
+ hh,mm,ss=int(m.group(1)),int(m.group(2)),int(m.group(3) or 0)
+ try:
+  ny=ZoneInfo("America/New_York")
+  session=datetime.fromtimestamp(series[-1]["ts"],tz=timezone.utc).astimezone(ny).date()
+  target=datetime(session.year,session.month,session.day,hh,mm,ss,tzinfo=ny).timestamp()
+  return target
+ except Exception:return None
+
 def update_dark_pool_prints(feed):
  prints=[]; sources=[]; assets={}
  universe={
-  "SPY":{"label":"SPY","proxyFor":"S&P 500 E-Mini"},
-  "QQQ":{"label":"QQQ","proxyFor":"Nasdaq-100"},
-  "DIA":{"label":"DIA","proxyFor":"Dow Jones"},
-  "UUP":{"label":"UUP","proxyFor":"DXY / USD Index"},
-  "FXE":{"label":"FXE","proxyFor":"Euro FX"},
-  "GLD":{"label":"GLD","proxyFor":"Gold"},
-  "SLV":{"label":"SLV","proxyFor":"Silver"},
-  "USO":{"label":"USO","proxyFor":"WTI"},
-  "BNO":{"label":"BNO","proxyFor":"Brent"},
-  "AAPL":{"label":"AAPL","proxyFor":"Equity"},
-  "NVDA":{"label":"NVDA","proxyFor":"Equity"},
-  "IWM":{"label":"IWM","proxyFor":"Small Caps"}
+  "SPY":{"label":"SPY","proxyFor":"S&P 500 E-Mini"},"QQQ":{"label":"QQQ","proxyFor":"Nasdaq-100"},"DIA":{"label":"DIA","proxyFor":"Dow Jones"},
+  "UUP":{"label":"UUP","proxyFor":"DXY / USD Index"},"FXE":{"label":"FXE","proxyFor":"Euro FX"},"GLD":{"label":"GLD","proxyFor":"Gold"},"SLV":{"label":"SLV","proxyFor":"Silver"},
+  "USO":{"label":"USO","proxyFor":"WTI"},"BNO":{"label":"BNO","proxyFor":"Brent"},"AAPL":{"label":"AAPL","proxyFor":"Equity"},"NVDA":{"label":"NVDA","proxyFor":"Equity"},"IWM":{"label":"IWM","proxyFor":"Small Caps"}
  }
-
  try:
   html=get("https://capitolwhale.com/dark-pool-prints").text
-  soup=BeautifulSoup(html,"html.parser")
-  text=" ".join(soup.stripped_strings)
+  soup=BeautifulSoup(html,"html.parser"); text=" ".join(soup.stripped_strings)
   def money(pattern):
    m=re.search(pattern,text,re.I);return _parse_money_token(m.group(1)) if m else None
   def pct(pattern):
    m=re.search(pattern,text,re.I);return float(m.group(1)) if m else None
   def integer(pattern):
    m=re.search(pattern,text,re.I);return int(m.group(1).replace(",","")) if m else None
-  print_count=integer(r'\bPrints\s+([\d,]+)')
-  total_premium=money(r'Total premium\s+\$?([\d.,]+[KMB]?)')
-  bullish=pct(r'Bullish\s+([\d.]+)%')
-  largest=money(r'Largest\s+\$?([\d.,]+[KMB]?)')
+
+  print_count=integer(r'\bPrints\s+([\d,]+)'); total_premium=money(r'Total premium\s+\$?([\d.,]+[KMB]?)')
+  bullish=pct(r'Bullish\s+([\d.]+)%'); largest=money(r'Largest\s+\$?([\d.,]+[KMB]?)')
   mb=re.search(r'Aggressor imbalance\s+Buy\s+([\d.]+)%\s*Sell\s+([\d.]+)%',text,re.I)
-  buy_pct=float(mb.group(1)) if mb else None;sell_pct=float(mb.group(2)) if mb else None
-  top=[]
-  tm=re.search(r'Top tickers by premium(.*?)Aggressor imbalance',text,re.I|re.S)
-  if tm:
-   for mm in re.finditer(r'\b([A-Z][A-Z0-9.\-]{0,6})\s+\$([\d.,]+[KMB]?)',tm.group(1)):
-    top.append({"ticker":mm.group(1),"premium":_parse_money_token(mm.group(2))})
+  buy_pct=float(mb.group(1)) if mb else None; sell_pct=float(mb.group(2)) if mb else None
+
+  structured=_capitol_structured_rows(soup); structured_count=0
+  for row in structured:
+   sym=str(row.get("ticker") or row.get("symbol") or "").upper()
+   if sym not in universe:continue
+   p=_norm_dark_print(row,sym,"Capitol Whale · structured free data")
+   if not p.get("timestamp") or not p.get("size"):continue
+   p["sourceMode"]="EXACT_STRUCTURED"; prints.append(p);structured_count+=1
+
+  # Server-rendered compact rows remain useful fallback when structured data is not exposed.
+  seen={(x["ticker"],str(x.get("timestamp")),round(float(x.get("size") or 0),2)) for x in prints}
   for raw in soup.stripped_strings:
    p=_parse_capitol_print_line(raw)
    if not p:continue
-   p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,"notional":None,
-             "side":"UNKNOWN","directionConfidence":None,
-             "sideBasis":"Not published per print on free cockpit",
-             "source":"Capitol Whale · free public view","realPrint":True})
-   prints.append(p)
-  prints=prints[:100]
+   if p["ticker"] not in universe:continue
+   key=(p["ticker"],str(p["time"]),round(float(p.get("size") or 0),2))
+   if key in seen:continue
+   p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,"notional":None,"side":"UNKNOWN","directionConfidence":None,
+             "sideBasis":"No individual side in free compact row","source":"Capitol Whale · free public view","realPrint":True,"sourceMode":"COMPACT"})
+   prints.append(p);seen.add(key)
+  prints=prints[-300:]
   if prints:sources.append("Capitol Whale")
  except Exception as e:
   print("CAPITOL DARK PRINTS",type(e).__name__,str(e)[:180])
-  print_count=total_premium=bullish=largest=buy_pct=sell_pct=None;top=[]
+  print_count=total_premium=bullish=largest=buy_pct=sell_pct=None;structured_count=0
 
- # Keep every selected asset visible even when the public print list did not contain it.
  for t,meta in universe.items():
   try:
    series=yahoo_intraday(t,"5m","1d") or []
    spot=series[-1]["price"] if series else None
+   # Enrich every visible print with exact structured price when available; otherwise
+   # use the market price nearest to the reported print time and label it as an approximation.
+   arr=[]
+   for p in prints:
+    if p["ticker"]!=t:continue
+    if p.get("price") is None:
+     target=_time_to_session_ts(p.get("timestamp"),series)
+     if target and series:
+      nearest=min(series,key=lambda z:abs(float(z["ts"])-target))
+      p["priceApprox"]=nearest["price"];p["approxTs"]=nearest["ts"]
+      p["priceBasis"]="Yahoo 5m close nearest to print timestamp"
+    else:
+      p["priceBasis"]="Provider exact execution price"
+    if p.get("price") is not None and p.get("notional") is None and p.get("size"):p["notional"]=float(p["price"])*float(p["size"])
+    if p.get("priceApprox") is not None and p.get("notional") is None and p.get("size"):p["notional"]=float(p["priceApprox"])*float(p["size"])
+    arr.append(p)
    cs=chart_exchange_offexchange(t) or {}
-   arr=[x for x in prints if x["ticker"]==t]
-   # ChartExchange supplies authoritative daily off-exchange volume share; it does not
-   # identify institutions or side per print.
    venue_map={}
    for p in arr:
-    venue=str(p.get("venue") or "TRF")
-    z=venue_map.setdefault(venue,{"venue":venue,"prints":0,"shares":0,"notional":0})
+    venue=str(p.get("venue") or "TRF"); z=venue_map.setdefault(venue,{"venue":venue,"prints":0,"shares":0,"notional":0})
     z["prints"]+=1;z["shares"]+=float(p.get("size") or 0);z["notional"]+=float(p.get("notional") or 0)
    assets[t]={"ticker":t,"label":meta.get("label",t),"proxyFor":meta.get("proxyFor"),"lastPrice":spot,"priceSeries":series[-90:],"prints":arr,
      "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
      "notional":sum(float(x.get("notional") or 0) for x in arr),
      "dailyOffExchange":cs,"venueClusters":sorted(venue_map.values(),key=lambda x:x["shares"],reverse=True)[:8],
-     "source":"Yahoo Finance + Capitol Whale free print feed + ChartExchange public stats",
-     "note":"El print público identifica tamaño/venue, pero no la cartera o institución final. El precio individual puede no estar expuesto por la vista gratuita."}
-  except Exception as e:
-   print("DARK ASSET",t,type(e).__name__,str(e)[:140])
+     "source":"Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
+     "note":"Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."}
+  except Exception as e:print("DARK ASSET",t,type(e).__name__,str(e)[:140])
 
- feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-   "prints":prints,"assets":assets,"sources":sources,
-   "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,"largestPrintPremium":largest,
-   "buyPct":buy_pct,"sellPct":sell_pct,"topTickers":top[:12],
-   "dataStatus":"REAL TRF PRINTS · VENUE/MPID VISIBLE; PARTICIPANT NOT IDENTIFIED",
-   "free":True,"documentedDelay":"Intraday public view; exact timing depends on source.",
-   "note":"Los prints son ejecuciones off-exchange reportadas al TRF. El verde/rojo agregado es una clasificación de flujo; un print individual no permite saber qué cartera lo originó. Venue/MPID se muestra para agrupar actividad, no como identidad de fondo."}
+ feed["darkPoolPrints"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"prints":prints,"assets":assets,"sources":sources,
+   "printCount":print_count,"totalPremium":total_premium,"bullishPct":bullish,"largestPrintPremium":largest,"buyPct":buy_pct,"sellPct":sell_pct,
+   "topTickers":[],"structuredPrints":structured_count,"dataStatus":"REAL TRF PRINTS · EXACT PRICE WHEN PUBLIC STRUCTURED DATA IS EXPOSED; OTHERWISE 5M PRICE OVERLAY",
+   "free":True,"documentedDelay":"Capitol Whale free core view is intraday; SensaMarket free view is ~4h delayed.",
+   "note":"BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."}
 
 
 def update_traditional_sentiment(feed):
