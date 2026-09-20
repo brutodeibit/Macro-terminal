@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "20/09/2026 20:54 UTC",
+  "updated": "20/09/2026 21:13 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,51 +1400,12 @@
     }
   },
   "riskOnOff": {
-    "updated": "20/09/2026 20:53 UTC",
-    "score": 76.6,
+    "updated": "20/09/2026 21:12 UTC",
+    "score": 65.3,
     "label": "RISK ON",
-    "confidence": 64,
+    "confidence": 61,
     "method": "Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.",
     "assets": [
-      {
-        "name": "SP500",
-        "symbol": "^GSPC",
-        "value": 7650.5,
-        "change1d": 0.16680590599797984,
-        "change1w": -0.08462841074782235,
-        "change1m": -0.7457204172091614,
-        "pointChange1d": 12.740234375,
-        "pointChange1w": -6.47998046875,
-        "pointChange1m": -57.47998046875,
-        "role": "Acciones / apetito de riesgo",
-        "marketSignal": "NEUTRO →"
-      },
-      {
-        "name": "NASDAQ",
-        "symbol": "^IXIC",
-        "value": 26522.5390625,
-        "change1d": 0.3945684550763495,
-        "change1w": 0.7196282948968902,
-        "change1m": 0.7270842942167288,
-        "pointChange1d": 104.23828125,
-        "pointChange1w": 189.5,
-        "pointChange1m": 191.44921875000364,
-        "role": "Growth / beta alta",
-        "marketSignal": "FAVORECE RISK-ON ↑"
-      },
-      {
-        "name": "VIX",
-        "symbol": "^VIX",
-        "value": 14.8100004196167,
-        "change1d": -4.080305556271013,
-        "change1w": -6.5025235040980345,
-        "change1m": -7.495314129354924,
-        "pointChange1d": -0.6299991607666016,
-        "pointChange1w": -1.0299997329711914,
-        "pointChange1m": -1.1999998092651367,
-        "role": "Volatilidad bursátil",
-        "marketSignal": "CALMA / RISK-ON ↑"
-      },
       {
         "name": "VVIX",
         "symbol": "^VVIX",
@@ -1578,39 +1539,39 @@
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 111.30000305175781,
-        "change1d": 0.1872323639275697,
-        "change1w": 1.4335630372593444,
-        "change1m": -1.594986282077826,
-        "pointChange1d": 0.20800018310545454,
-        "pointChange1w": 1.5730056762695312,
-        "pointChange1m": -1.8039932250976562,
+        "value": 111.3270034790039,
+        "change1d": 0.21153692820663483,
+        "change1w": 1.4581699506825752,
+        "change1m": -1.5711140687742375,
+        "pointChange1d": 0.2350006103515767,
+        "pointChange1w": 1.600006103515625,
+        "pointChange1m": -1.7769927978515625,
         "role": "Carry / apetito de riesgo",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 81067.390625,
-        "change1d": -0.20470457960257704,
-        "change1w": 7.214259876192353,
-        "change1m": 4.377400115415764,
-        "pointChange1d": -166.2890625,
-        "pointChange1w": 5454.8828125,
-        "pointChange1m": 3399.8203125,
+        "value": 80676.34375,
+        "change1d": -0.6860897347553796,
+        "change1w": 6.697087669750412,
+        "change1m": 3.8739121429884005,
+        "pointChange1d": -557.3359375,
+        "pointChange1w": 5063.8359375,
+        "pointChange1m": 3008.7734374999854,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2632.590087890625,
-        "change1d": 0.02383929753289049,
-        "change1w": 9.733001854139655,
-        "change1m": 8.87745273896272,
-        "pointChange1d": 0.62744140625,
-        "pointChange1w": 233.503173828125,
-        "pointChange1m": 214.65136718749955,
+        "value": 2616.070068359375,
+        "change1d": -0.6038299269265246,
+        "change1w": 9.044405728904836,
+        "change1m": 8.194225352354433,
+        "pointChange1d": -15.892578125,
+        "pointChange1w": 216.983154296875,
+        "pointChange1m": 198.13134765625,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
@@ -1642,30 +1603,27 @@
       }
     ],
     "confirmations": [
-      "VIX: la volatilidad bursátil está contenida.",
       "ETH: cripto acompaña la liquidez/alta beta.",
       "COPPER: el cobre acompaña la demanda cíclica.",
       "BTC: cripto acompaña la liquidez/alta beta.",
-      "VVIX: la volatilidad de la volatilidad no muestra estrés."
+      "VVIX: la volatilidad de la volatilidad no muestra estrés.",
+      "AUDJPY: el carry confirma apetito por riesgo."
     ],
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
       "DXY: el dólar actúa como refugio/liquidez.",
       "TLT/SPY: la duración gana terreno relativo a acciones.",
-      "SP500: la bolsa amplia acompaña el apetito por riesgo.",
-      "GOLD: el oro muestra demanda defensiva."
+      "GOLD: el oro muestra demanda defensiva.",
+      "HYG: el crédito high yield acompaña el apetito por riesgo."
     ],
     "coverage": {
-      "totalAssets": 18,
+      "totalAssets": 15,
       "windows": [
         "1D",
         "1S",
         "1M"
       ],
       "symbols": [
-        "^GSPC",
-        "^IXIC",
-        "^VIX",
         "^VVIX",
         "^SKEW",
         "^MOVE",
@@ -1685,7 +1643,7 @@
     }
   },
   "automation": {
-    "updatedAt": "20/09/2026 20:54 UTC",
+    "updatedAt": "20/09/2026 21:13 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1696,7 +1654,7 @@
     ]
   },
   "fx": {
-    "updated": "20/09/2026 20:53 UTC",
+    "updated": "20/09/2026 21:12 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1707,35 +1665,35 @@
       },
       "EUR": {
         "pair": "EURUSD=X",
-        "last": 1.1486331224441528,
-        "change1d": 0.08959355998374718,
-        "change1w": -0.9280980067546851,
-        "change15d": -0.8855914184666025,
-        "change1m": -1.7241010020733416
+        "last": 1.1490291357040405,
+        "change1d": 0.12410136360878621,
+        "change1w": -0.893941071781279,
+        "change15d": -0.8514198285330954,
+        "change1m": -1.6902185043722873
       },
       "GBP": {
         "pair": "GBPUSD=X",
-        "last": 1.3389748334884644,
-        "change1d": 0.23766893819938684,
-        "change1w": -1.0055763015556662,
-        "change15d": -1.112697683087438,
-        "change1m": -1.8598437010976188
+        "last": 1.3388851881027222,
+        "change1d": 0.23095794985732443,
+        "change1w": -1.0122040536812649,
+        "change15d": -1.1193182633548848,
+        "change1m": -1.866414259369642
       },
       "JPY": {
         "pair": "USDJPY=X",
-        "last": 156.85499572753906,
-        "change1d": -0.46499877346422025,
-        "change1w": -2.2362862693869,
-        "change15d": 2.0403182654826657,
-        "change1m": 1.2764109023759351
+        "last": 156.79299926757812,
+        "change1d": -0.42529028827988924,
+        "change1w": -2.1958776882074593,
+        "change15d": 2.079036531727685,
+        "change1m": 1.3154311006826735
       },
       "AUD": {
         "pair": "AUDUSD=X",
-        "last": 0.7121492624282837,
-        "change1d": 0.08424482684241674,
-        "change1w": -0.42657483285991615,
-        "change15d": -0.5794789124978439,
-        "change1m": 0.029411348560981487
+        "last": 0.7115411758422852,
+        "change1d": -0.0012146266174961617,
+        "change1w": -0.5115981100863976,
+        "change15d": -0.664371628724425,
+        "change1m": -0.05600128395230053
       },
       "NZD": {
         "pair": "NZDUSD=X",
@@ -1747,25 +1705,25 @@
       },
       "CAD": {
         "pair": "USDCAD=X",
-        "last": 1.3976999521255493,
-        "change1d": 0.0950671588084262,
-        "change1w": -0.7932442282529095,
-        "change15d": -0.5604657525552392,
-        "change1m": -1.4193028158560939
+        "last": 1.398210048675537,
+        "change1d": 0.05860642809755179,
+        "change1w": -0.8300291519875769,
+        "change15d": -0.5971657227938687,
+        "change1m": -1.4563162223385495
       },
       "CHF": {
         "pair": "USDCHF=X",
-        "last": 0.8218100070953369,
-        "change1d": 0.37217496110683035,
-        "change1w": -0.6318537771347499,
-        "change15d": -1.603534775726878,
-        "change1m": -2.77892616967379
+        "last": 0.8225399851799011,
+        "change1d": 0.2836798974506505,
+        "change1w": -0.7212406758487333,
+        "change15d": -1.6937847764085134,
+        "change1m": -2.8702202194068827
       }
     },
     "method": "Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "20/09/2026 20:53 UTC",
+    "updated": "20/09/2026 21:12 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -2295,7 +2253,7 @@
     "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."
   },
   "darkPools": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:12 UTC",
     "markets": [
       {
         "symbol": "SPY",
@@ -2853,7 +2811,7 @@
     "dataStatus": "REAL AGGREGATED FINRA DATA · DELAYED"
   },
   "rotation": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:13 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -3023,15 +2981,15 @@
         "name": "Cíclicos vs Defensivos",
         "long": "XLY",
         "short": "XLP",
-        "change1d": 0.5032507424000854,
-        "change1w": -1.0129661621661068,
+        "change1d": null,
+        "change1w": null,
         "change1m": -2.053204840175759
       },
       {
         "name": "Small vs Large",
         "long": "IWM",
         "short": "SPY",
-        "change1d": -0.34663384649016304,
+        "change1d": null,
         "change1w": -1.3178915959116688,
         "change1m": -4.881537762445854
       },
@@ -3060,28 +3018,28 @@
     "method": "ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."
   },
   "cryptoSentiment": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:13 UTC",
     "fearGreed": {
       "value": 71.0,
       "classification": "Greed",
       "previous": 71.0
     },
     "btc": {
-      "change1d": -0.21034032701375827,
-      "change1w": 7.208205157029557,
-      "change1m": 4.371505602452919,
-      "last": 81062.8125
+      "change1d": -0.7027950133445038,
+      "change1w": 6.6791404902524665,
+      "change1m": 3.856439840912529,
+      "last": 80662.7734375
     },
     "eth": {
-      "change1d": -0.01909926600008882,
-      "change1w": 9.685895309291247,
-      "change1m": 8.830713467059415,
-      "last": 2631.4599609375
+      "change1d": -0.6577883680739305,
+      "change1w": 8.985209623615752,
+      "change1m": 8.135490778005416,
+      "last": 2614.64990234375
     },
     "source": "Alternative.me Fear & Greed + Yahoo Finance"
   },
   "bondMarket": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:13 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -3138,17 +3096,17 @@
     "sourceUrl": "https://www.aaii.com/sentimentsurvey",
     "bullBearSpread": -24.5,
     "history": [],
-    "updated": "20/09/2026 20:54 UTC"
+    "updated": "20/09/2026 21:13 UTC"
   },
   "optionsStats": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:13 UTC",
     "totalPutCall": 0.81,
     "indexPutCall": 0.98,
     "source": "Cboe Daily Market Statistics",
     "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   },
   "darkPoolPrints": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:12 UTC",
     "prints": [],
     "assets": {
       "SPY": {
@@ -7039,7 +6997,7 @@
     "note": "BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."
   },
   "darkFlowRadar": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:12 UTC",
     "source": "SquawkFlow",
     "sourceUrl": "https://squawkflow.com/dark-pool-flow",
     "dataStatus": "MODELED · NOT PRINTS",
@@ -7113,7 +7071,7 @@
     "note": "Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."
   },
   "squawkFlow": {
-    "updated": "20/09/2026 20:54 UTC",
+    "updated": "20/09/2026 21:13 UTC",
     "spxGex": {
       "data": {
         "symbol": "SPX",
@@ -7196,7 +7154,7 @@
             "netGex": 0.0
           }
         ],
-        "timestamp": 1789937659346,
+        "timestamp": 1789938762976,
         "asOfDate": "2026-09-18",
         "oiSettleDate": "2026-09-17",
         "contractsAnalyzed": 19535,
@@ -7224,8 +7182,8 @@
         }
       },
       "meta": {
-        "cached_at": "2026-09-20T20:54:19Z",
-        "next_update": "2026-09-20T20:54:44Z"
+        "cached_at": "2026-09-20T21:12:59Z",
+        "next_update": "2026-09-20T21:13:24Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -7319,7 +7277,7 @@
           "openInterest": 1856,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937530830,
+          "timestamp": 1789938491722,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7346,7 +7304,7 @@
           "openInterest": 0,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937546064,
+          "timestamp": 1789938511142,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7373,7 +7331,7 @@
           "openInterest": 11612,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789937546063,
+          "timestamp": 1789938511141,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
@@ -7400,7 +7358,7 @@
           "openInterest": 3744,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937530829,
+          "timestamp": 1789938491721,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7427,7 +7385,7 @@
           "openInterest": 0,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789937546064,
+          "timestamp": 1789938511142,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7454,7 +7412,7 @@
           "openInterest": 7243,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937546063,
+          "timestamp": 1789938511141,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "block_trade",
@@ -7481,7 +7439,7 @@
           "openInterest": 3205,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937532678,
+          "timestamp": 1789938490073,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7508,7 +7466,7 @@
           "openInterest": 4628,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789937532665,
+          "timestamp": 1789938490059,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7535,7 +7493,7 @@
           "openInterest": 7095,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789937627205,
+          "timestamp": 1789938579797,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
@@ -7562,7 +7520,7 @@
           "openInterest": 1838,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937530829,
+          "timestamp": 1789938491721,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7589,7 +7547,7 @@
           "openInterest": 3482,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789937530829,
+          "timestamp": 1789938491721,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7616,7 +7574,7 @@
           "openInterest": 0,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789937593217,
+          "timestamp": 1789938562188,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7634,8 +7592,8 @@
         }
       ],
       "meta": {
-        "cached_at": "2026-09-20T20:54:19Z",
-        "next_update": "2026-09-20T20:54:44Z"
+        "cached_at": "2026-09-20T21:13:06Z",
+        "next_update": "2026-09-20T21:13:31Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -8014,6 +7972,6 @@
     ],
     "source": "CNN Fear & Greed Index",
     "sourceUrl": "https://www.cnn.com/markets/fear-and-greed",
-    "updated": "20/09/2026 20:54 UTC"
+    "updated": "20/09/2026 21:13 UTC"
   }
 }
