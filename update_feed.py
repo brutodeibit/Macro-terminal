@@ -134,8 +134,7 @@ def update_us(feed):
   if name not in by:inds.append(row)
  # BLS one request for all series
  try:
-  ids=[v[0] for v in BLS.values()]; j=get('https://api.bls.gov/publicAPI/v2/timeseries/data/',method='post')
-  # The public endpoint requires JSON body, so retry correctly.
+  # The public endpoint requires a JSON body.
   j=requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/',json={'seriesid':ids,'startyear':str(datetime.now().year-1),'endyear':str(datetime.now().year)},headers={**HEADERS,'Content-Type':'application/json'},timeout=TIMEOUT).json()
   for name,(sid,cat,sign,imp,unit) in BLS.items():
    rows=next((x['data'] for x in j.get('Results',{}).get('series',[]) if x.get('seriesID')==sid),[])
