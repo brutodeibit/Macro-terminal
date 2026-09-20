@@ -624,28 +624,27 @@ def update_traditional_fear_greed(feed):
     result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     feed["traditionalFearGreed"]=result
 
+def update_traditional_fear_greed(feed):
+    result={"score":None,"rating":"—","timestamp":None,"previous_close":None,"previous_1_week":None,"previous_1_month":None,"previous_1_year":None,"history":[],"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed"}
+    try:
+        headers={"User-Agent":"Mozilla/5.0","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
+        d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
+        fg=d.get("fear_and_greed",{})
+        result.update({k:fg.get(k) for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year")})
+        hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
+        result["history"]=[{"date":datetime.fromtimestamp(float(x.get("x",0))/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":float(x.get("y"))} for x in hist if x.get("x") is not None and x.get("y") is not None][-90:]
+    except Exception as e: print("CNN F&G",type(e).__name__,str(e)[:180])
+    result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    feed["traditionalFearGreed"]=result
+
 def update_traditional_sentiment(feed):
     result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5,"history":[]}
     try:
         html=get("https://www.aaii.com/sentimentsurvey").text
-        vals=re.findall(r'Bullish\\D+([0-9]+\\.[0-9]+)%.*?Neutral\\D+([0-9]+\\.[0-9]+)%.*?Bearish\\D+([0-9]+\\.[0-9]+)%',html,re.I|re.S)
+        vals=re.findall(r'Bullish.*?([0-9]+\.[0-9]+)%.*?Neutral.*?([0-9]+\.[0-9]+)%.*?Bearish.*?([0-9]+\.[0-9]+)%',html,re.I|re.S)
         if vals:
-            bb,nn,br=map(float,vals[0]);result.update(bullishPct=bb,neutralPct=nn,bearishPct=br,bullBearSpread=round(bb-br,1))
-        hist_html=get("https://www.aaii.com/sentimentsurvey/sent_results?adv=yes").text
-        soup=BeautifulSoup(hist_html,"html.parser")
-        rows=[]
-        for tr in soup.find_all("tr"):
-            txt=" ".join(tr.stripped_strings)
-            m=re.search(r'([A-Z][a-z]{2}\\s+\\d{1,2})\\s+([0-9]+\\.[0-9]+)%\\s+([0-9]+\\.[0-9]+)%\\s+([0-9]+\\.[0-9]+)%',txt)
-            if m:
-                rows.append({"date":m.group(1),"bullishPct":float(m.group(2)),"neutralPct":float(m.group(3)),"bearishPct":float(m.group(4))})
-        if rows:
-            result["history"]=rows[:12]
-            latest=rows[0]
-            result.update(bullishPct=latest["bullishPct"],neutralPct=latest["neutralPct"],bearishPct=latest["bearishPct"],bullBearSpread=round(latest["bullishPct"]-latest["bearishPct"],1),week=latest["date"])
-            if len(rows)>1:
-                result.update(previousBullishPct=rows[1]["bullishPct"],previousNeutralPct=rows[1]["neutralPct"],previousBearishPct=rows[1]["bearishPct"])
-    except Exception as e:print("AAII",type(e).__name__,str(e)[:180])
+            bb,nn,br=map(float,vals[0]); result.update(bullishPct=bb,neutralPct=nn,bearishPct=br,bullBearSpread=round(bb-br,1))
+    except Exception as e: print("AAII",type(e).__name__,str(e)[:180])
     result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     feed["traditionalSentiment"]=result
 
