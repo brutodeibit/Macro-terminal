@@ -284,57 +284,67 @@ def update_options(feed):
   feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","publication":"Último snapshot de cadena pública disponible en la actualización; el mercado de opciones puede estar cerrado.","note":"Cadena retrasada; GEX/DEX/Vanna/Charm son proxies basados en datos públicos y supuestos de posicionamiento. Se conserva historial intradía."}
 
 def update_dark_pools(feed):
- token=finra_access_token()
- if not token:return
- out=[]; old=feed.get("darkPools",{}) if isinstance(feed.get("darkPools"),dict) else {}
- old_hist=dict(old.get("history") or {})
- for sym in ("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG"):
-  ats=otc=at=ot=0.0; last=""; week=None; ok=False
-  for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
-   try:
-    payload={"limit":60,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","initialPublishedDate","lastReportedDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[
-      {"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},
-      {"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":typ},
-      {"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
-    d=post("https://api.finra.org/data/group/OTCMarket/name/weeklySummary",payload,{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}).json()
-    rows=[x for x in (d if isinstance(d,list) else []) if x.get("weekStartDate")]
-    rows=sorted(rows,key=lambda x:str(x.get("weekStartDate")),reverse=True)
-    if not rows:continue
-    if week is None:week=rows[0].get("weekStartDate")
-    target=[x for x in rows if x.get("weekStartDate")==week]
-    qty=sum(float(row.get("totalWeeklyShareQuantity") or 0) for row in target)
-    tr=sum(float(row.get("totalWeeklyTradeCount") or 0) for row in target)
-    lu=max(str(row.get("lastUpdateDate") or "") for row in target)
-    ok=True
-    if typ=="ATS_W_SMBL":ats+=qty;at+=tr
-    else:otc+=qty;ot+=tr
-    last=max(last,lu)
-   except Exception as e:print("FINRA",sym,typ,type(e).__name__,str(e)[:160])
-  if ok and week and (ats or otc):
-   found={"symbol":sym,"weekStart":str(week)[:10],"initialPublishedDate":str(max([x.get("initialPublishedDate") or "" for x in target]) or "")[:10],"lastReportedDate":str(max([x.get("lastReportedDate") or "" for x in target]) or "")[:10],"lastUpdateDate":last,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,
-          "atsTrades":at,"otcTrades":ot,"avgSharesPerTrade":(ats+otc)/(at+ot) if (at+ot) else None,
-          "zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado",
-          "note":"FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."}
-   arr=old_hist.get(sym,[])
-   # Evitar referencia circular: un snapshot no puede contener su propio history.
-   clean_hist=[]
-   for h in arr:
-    if not isinstance(h,dict): continue
-    clean_hist.append({k:v for k,v in h.items() if k not in ("history","zScore")})
-   snapshot={k:v for k,v in found.items() if k not in ("history","zScore")}
-   clean_hist=[h for h in clean_hist if h.get("weekStart")!=found["weekStart"]]
-   clean_hist.append(snapshot)
-   clean_hist=sorted(clean_hist,key=lambda x:x.get("weekStart",""))[-12:]
-   hist_vals=[x.get("totalOffExchange") for x in clean_hist]
-   found["zScore"]=zscore(hist_vals,found["totalOffExchange"])
-   found["history"]=clean_hist
-   old_hist[sym]=clean_hist
-   out.append(found)
- if out:
-  feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":old_hist,
-    "source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency",
-    "method":"Weekly Summary production dataset · última semana disponible por ticker; historial rodante de 12 semanas.",
-    "coverage":"Rolling 12 months in FINRA weeklySummary."}
+    token=finra_access_token()
+    if not token:return
+    auth={"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}
+    try:
+        part=post("https://api.finra.org/partitions/group/otcmarket/name/weeklySummary",{},auth).json()
+        vals=[]
+        for x in part.get("availablePartitions",[]) if isinstance(part,dict) else []:
+            p=(x.get("partitions") or []) if isinstance(x,dict) else []
+            vals += [str(v)[:10] for v in p]
+        weeks=sorted(set(v for v in vals if re.match(r"^20\\d\\d-\\d\\d-\\d\\d$",v)),reverse=True)[:8]
+    except Exception as e:
+        print("FINRA PARTITIONS",type(e).__name__,str(e)[:160]); weeks=[]
+    if not weeks:
+        # Fallback: recent Mondays, because FINRA requires weekStartDate to be a Monday.
+        today=datetime.now(timezone.utc).date()
+        monday=today-timedelta(days=today.weekday())
+        weeks=[str(monday-timedelta(days=7*i)) for i in range(8)]
+    symbols=("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG")
+    out=[]; old=feed.get("darkPools",{}) if isinstance(feed.get("darkPools"),dict) else {}; old_hist=dict(old.get("history") or {})
+    for sym in symbols:
+        found=None
+        for week in weeks:
+            try:
+                payload={"limit":1000,"fields":["issueSymbolIdentifier","issueName","MPID","marketParticipantName","weekStartDate","summaryStartDate","initialPublishedDate","lastReportedDate","lastUpdateDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","tierIdentifier","summaryTypeCode"],
+                         "compareFilters":[
+                           {"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},
+                           {"compareType":"equal","fieldName":"weekStartDate","fieldValue":week},
+                           {"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":"ATS_W_SMBL"},
+                           {"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
+                ats=post("https://api.finra.org/data/group/otcmarket/name/weeklySummary",payload,auth).json()
+                payload["compareFilters"][2]["fieldValue"]="OTC_W_SMBL"
+                otc=post("https://api.finra.org/data/group/otcmarket/name/weeklySummary",payload,auth).json()
+                ats=ats if isinstance(ats,list) else []; otc=otc if isinstance(otc,list) else []
+                if not ats and not otc: continue
+                rows=ats+otc
+                found={"symbol":sym,"weekStart":week,
+                       "initialPublishedDate":max([str(x.get("initialPublishedDate") or "") for x in rows])[:10],
+                       "lastReportedDate":max([str(x.get("lastReportedDate") or "") for x in rows])[:10],
+                       "lastUpdateDate":max([str(x.get("lastUpdateDate") or "") for x in rows])[:10],
+                       "atsShares":sum(float(x.get("totalWeeklyShareQuantity") or 0) for x in ats),
+                       "otcShares":sum(float(x.get("totalWeeklyShareQuantity") or 0) for x in otc),
+                       "atsTrades":sum(float(x.get("totalWeeklyTradeCount") or 0) for x in ats),
+                       "otcTrades":sum(float(x.get("totalWeeklyTradeCount") or 0) for x in otc)}
+                found["totalOffExchange"]=found["atsShares"]+found["otcShares"]
+                found["avgSharesPerTrade"]=found["totalOffExchange"]/max(found["atsTrades"]+found["otcTrades"],1)
+                found["lagLabel"]="FINRA · T1 · publicación con retraso"
+                found["note"]="ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
+                break
+            except Exception as e:
+                print("FINRA",sym,week,type(e).__name__,str(e)[:120])
+        if found:
+            hist=[h for h in old_hist.get(sym,[]) if isinstance(h,dict) and h.get("weekStart")!=found["weekStart"]]
+            hist.append(found); hist=sorted(hist,key=lambda x:x.get("weekStart",""))[-12:]
+            vals=[h.get("totalOffExchange") for h in hist if h.get("totalOffExchange") is not None]
+            found["zScore"]=zscore(vals,found["totalOffExchange"])
+            found["history"]=hist; old_hist[sym]=hist; out.append(found)
+    if out:
+        feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":old_hist,
+                           "source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency",
+                           "method":"Weekly Summary production dataset · rolling 12 months; se consulta la partición semanal más reciente disponible.","coverage":"T1 · ATS_W_SMBL + OTC_W_SMBL",
+                           "dataStatus":"REAL AGGREGATED FINRA DATA · DELAYED"}
 
 def update_dark_flow_radar(feed):
  try:
