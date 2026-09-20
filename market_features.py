@@ -262,7 +262,7 @@ def update_options(feed):
   for p in (m.get("profiles") or []):
    for zone in (p.get("topGexStrikes") or []):
     pass
- for sym in ("SPY","QQQ","DIA","GLD","SLV","USO","BNO","UUP","FXE","AAPL","NVDA","IWM"):
+ for sym in ("SPY","QQQ","QQQM","TQQQ","DIA","IWM","GLD","IAU","GDX","SLV","USO","BNO","UUP","FXE","AAPL","NVDA"):
   try:
    x=opt(sym)
    if x:out.append(x)
@@ -281,7 +281,7 @@ def update_options(feed):
          "expectedMove":(m.get("profiles") or [{}])[0].get("expectedMove")}
    arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10] and abs(float(h.get("spot") or 0)-float(snap.get("spot") or 0))<0.0001)]
    arr.append(snap);hist[m["ticker"]]=arr[-64:]
-  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","note":"Cadena retrasada; GEX/DEX/Vanna/Charm son proxies basados en datos públicos y supuestos de posicionamiento. Se conserva historial intradía."}
+  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","publication":"Último snapshot de cadena pública disponible en la actualización; el mercado de opciones puede estar cerrado.","note":"Cadena retrasada; GEX/DEX/Vanna/Charm son proxies basados en datos públicos y supuestos de posicionamiento. Se conserva historial intradía."}
 
 def update_dark_pools(feed):
  token=finra_access_token()
@@ -292,7 +292,7 @@ def update_dark_pools(feed):
   ats=otc=at=ot=0.0; last=""; week=None; ok=False
   for typ in ("ATS_W_SMBL","OTC_W_SMBL"):
    try:
-    payload={"limit":60,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[
+    payload={"limit":60,"fields":["issueSymbolIdentifier","issueName","weekStartDate","summaryStartDate","initialPublishedDate","lastReportedDate","totalWeeklyTradeCount","totalWeeklyShareQuantity","lastUpdateDate","tierIdentifier","summaryTypeCode"],"compareFilters":[
       {"compareType":"equal","fieldName":"tierIdentifier","fieldValue":"T1"},
       {"compareType":"equal","fieldName":"summaryTypeCode","fieldValue":typ},
       {"compareType":"equal","fieldName":"issueSymbolIdentifier","fieldValue":sym}]}
@@ -311,7 +311,7 @@ def update_dark_pools(feed):
     last=max(last,lu)
    except Exception as e:print("FINRA",sym,typ,type(e).__name__,str(e)[:160])
   if ok and week and (ats or otc):
-   found={"symbol":sym,"weekStart":str(week)[:10],"lastUpdateDate":last,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,
+   found={"symbol":sym,"weekStart":str(week)[:10],"initialPublishedDate":str(max([x.get("initialPublishedDate") or "" for x in target]) or "")[:10],"lastReportedDate":str(max([x.get("lastReportedDate") or "" for x in target]) or "")[:10],"lastUpdateDate":last,"atsShares":ats,"otcShares":otc,"totalOffExchange":ats+otc,
           "atsTrades":at,"otcTrades":ot,"avgSharesPerTrade":(ats+otc)/(at+ot) if (at+ot) else None,
           "zScore":None,"topVenues":[],"lagLabel":"FINRA · semanal / retrasado",
           "note":"FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."}
@@ -604,15 +604,50 @@ def update_dark_pool_prints(feed):
    "note":"BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."}
 
 
+def update_traditional_fear_greed(feed):
+    result={"score":None,"rating":"—","timestamp":None,"previous_close":None,"previous_1_week":None,"previous_1_month":None,"previous_1_year":None,"history":[],"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed"}
+    try:
+        headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
+        d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
+        fg=d.get("fear_and_greed",{})
+        result.update({k:fg.get(k) for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year")})
+        hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
+        result["history"]=[{"date":datetime.fromtimestamp(float(x.get("x",0))/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":float(x.get("y"))} for x in hist if x.get("x") is not None and x.get("y") is not None][-90:]
+        result["components"]={}
+        for k,v in d.items():
+            if k.startswith("market_") or k in ("stock_price_strength","stock_price_breadth","put_call_options","junk_bond_demand","safe_haven_demand"):
+                if isinstance(v,dict):
+                    val=v.get("score",v.get("value"))
+                    if val is not None: result["components"][k]=val
+    except Exception as e:
+        print("CNN F&G",type(e).__name__,str(e)[:180])
+    result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    feed["traditionalFearGreed"]=result
+
 def update_traditional_sentiment(feed):
- result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5}
- try:
-  html=get("https://www.aaii.com/sentimentsurvey").text
-  vals=re.findall(r'Bullish.*?([0-9]+\.[0-9]+)%.*?Neutral.*?([0-9]+\.[0-9]+)%.*?Bearish.*?([0-9]+\.[0-9]+)%',html,re.I|re.S)
-  if vals:
-   b,n,br=map(float,vals[0]);result.update(bullishPct=b,neutralPct=n,bearishPct=br,bullBearSpread=round(b-br,1))
- except Exception as e:print("AAII",type(e).__name__,str(e)[:180])
- feed["traditionalSentiment"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),**result}
+    result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5,"history":[]}
+    try:
+        html=get("https://www.aaii.com/sentimentsurvey").text
+        vals=re.findall(r'Bullish\\D+([0-9]+\\.[0-9]+)%.*?Neutral\\D+([0-9]+\\.[0-9]+)%.*?Bearish\\D+([0-9]+\\.[0-9]+)%',html,re.I|re.S)
+        if vals:
+            bb,nn,br=map(float,vals[0]);result.update(bullishPct=bb,neutralPct=nn,bearishPct=br,bullBearSpread=round(bb-br,1))
+        hist_html=get("https://www.aaii.com/sentimentsurvey/sent_results?adv=yes").text
+        soup=BeautifulSoup(hist_html,"html.parser")
+        rows=[]
+        for tr in soup.find_all("tr"):
+            txt=" ".join(tr.stripped_strings)
+            m=re.search(r'([A-Z][a-z]{2}\\s+\\d{1,2})\\s+([0-9]+\\.[0-9]+)%\\s+([0-9]+\\.[0-9]+)%\\s+([0-9]+\\.[0-9]+)%',txt)
+            if m:
+                rows.append({"date":m.group(1),"bullishPct":float(m.group(2)),"neutralPct":float(m.group(3)),"bearishPct":float(m.group(4))})
+        if rows:
+            result["history"]=rows[:12]
+            latest=rows[0]
+            result.update(bullishPct=latest["bullishPct"],neutralPct=latest["neutralPct"],bearishPct=latest["bearishPct"],bullBearSpread=round(latest["bullishPct"]-latest["bearishPct"],1),week=latest["date"])
+            if len(rows)>1:
+                result.update(previousBullishPct=rows[1]["bullishPct"],previousNeutralPct=rows[1]["neutralPct"],previousBearishPct=rows[1]["bearishPct"])
+    except Exception as e:print("AAII",type(e).__name__,str(e)[:180])
+    result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    feed["traditionalSentiment"]=result
 
 def update_options_market_stats(feed):
  try:
@@ -716,7 +751,7 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats),("TRAD_FG",update_traditional_fear_greed)):
   try:
    fn(feed)
   except Exception as e:
