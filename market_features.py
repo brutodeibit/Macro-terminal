@@ -335,11 +335,18 @@ def update_dark_pools(feed):
             except Exception as e:
                 print("FINRA",sym,week,type(e).__name__,str(e)[:120])
         if found:
-            hist=[h for h in old_hist.get(sym,[]) if isinstance(h,dict) and h.get("weekStart")!=found["weekStart"]]
-            hist.append(found); hist=sorted(hist,key=lambda x:x.get("weekStart",""))[-12:]
+            hist=[]
+            for h in old_hist.get(sym,[]):
+                if isinstance(h,dict) and h.get("weekStart")!=found["weekStart"]:
+                    hist.append({k:v for k,v in h.items() if k!="history"})
+            snapshot={k:v for k,v in found.items() if k not in ("history","zScore")}
+            hist.append(snapshot)
+            hist=sorted(hist,key=lambda x:x.get("weekStart",""))[-12:]
             vals=[h.get("totalOffExchange") for h in hist if h.get("totalOffExchange") is not None]
             found["zScore"]=zscore(vals,found["totalOffExchange"])
-            found["history"]=hist; old_hist[sym]=hist; out.append(found)
+            found["history"]=[{k:v for k,v in h.items() if k!="history"} for h in hist]
+            old_hist[sym]=found["history"]
+            out.append(found)
     if out:
         feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":old_hist,
                            "source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency",
