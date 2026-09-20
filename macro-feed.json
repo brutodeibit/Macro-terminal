@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "20/09/2026 17:28 UTC",
+  "updated": "20/09/2026 17:41 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,7 +1400,7 @@
     }
   },
   "riskOnOff": {
-    "updated": "20/09/2026 17:26 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "score": 77.3,
     "label": "RISK ON",
     "confidence": 64,
@@ -1591,26 +1591,26 @@
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 81243.703125,
-        "change1d": 0.012339016942930492,
-        "change1w": 7.447438889957136,
-        "change1m": 4.604409276756338,
-        "pointChange1d": 10.0234375,
-        "pointChange1w": 5631.1953125,
-        "pointChange1m": 3576.1328125,
+        "value": 81322.1328125,
+        "change1d": 0.1088872562960086,
+        "change1w": 7.551164701689883,
+        "change1m": 4.705390532104525,
+        "pointChange1d": 88.453125,
+        "pointChange1w": 5709.625,
+        "pointChange1m": 3654.5625,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2629.989990234375,
-        "change1d": -0.07495000936411644,
-        "change1w": 9.624623218876005,
-        "change1m": 8.769919093300537,
-        "pointChange1d": -1.97265625,
-        "pointChange1w": 230.903076171875,
-        "pointChange1m": 212.05126953125,
+        "value": 2633.60009765625,
+        "change1d": 0.06221407336697293,
+        "change1w": 9.775101611330816,
+        "change1m": 8.919224259348123,
+        "pointChange1d": 1.637451171875,
+        "pointChange1w": 234.51318359375,
+        "pointChange1m": 215.661376953125,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
@@ -1685,7 +1685,7 @@
     }
   },
   "automation": {
-    "updatedAt": "20/09/2026 17:28 UTC",
+    "updatedAt": "20/09/2026 17:41 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1696,7 +1696,7 @@
     ]
   },
   "fx": {
-    "updated": "20/09/2026 17:26 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1765,7 +1765,7 @@
     "method": "Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -1826,6 +1826,21 @@
         "contractCode": "098662",
         "contract": "USD INDEX",
         "openInterest": 43744.0
+      },
+      {
+        "name": "Euro FX",
+        "reportDate": "2026-09-15",
+        "net": -28156.0,
+        "long": 103260.0,
+        "short": 131416.0,
+        "zScore": -1.1007775530931276,
+        "netChange": 5129.0,
+        "reading": "Cortos netos",
+        "traderGroup": "Leveraged Funds",
+        "reportFamily": "TFF",
+        "contractCode": "099741",
+        "contract": "EURO FX",
+        "openInterest": 920035.0
       },
       {
         "name": "Oro",
@@ -1891,9 +1906,7 @@
     "source": "CFTC Public Reporting Environment",
     "method": "COT semanal; Leveraged Funds para índices/divisas TFF y Managed Money para commodities Disaggregated; filtrado por código CFTC.",
     "sourceUrl": "https://publicreporting.cftc.gov/",
-    "errors": [
-      "Euro FX"
-    ]
+    "errors": []
   },
   "options": {
     "updated": "19/09/2026 20:30 UTC",
@@ -2282,7 +2295,7 @@
     "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."
   },
   "darkPools": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "markets": [
       {
         "symbol": "SPY",
@@ -2622,7 +2635,7 @@
     "coverage": "Rolling 12 months in FINRA weeklySummary."
   },
   "rotation": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:41 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -2829,28 +2842,28 @@
     "method": "ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."
   },
   "cryptoSentiment": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:41 UTC",
     "fearGreed": {
       "value": 71.0,
       "classification": "Greed",
       "previous": 71.0
     },
     "btc": {
-      "change1d": -0.09747150172760843,
-      "change1w": 7.329464856849799,
-      "change1m": 4.489556804043349,
-      "last": 81154.5
+      "change1d": 0.12877586661397267,
+      "change1w": 7.5725318676091335,
+      "change1m": 4.726192328703793,
+      "last": 81338.2890625
     },
     "eth": {
-      "change1d": -0.40056513049140374,
-      "change1w": 9.267401131208363,
-      "change1m": 8.41548213896437,
-      "last": 2621.419921875
+      "change1d": 0.0420758963459944,
+      "change1w": 9.753008651973305,
+      "change1m": 8.89730355092253,
+      "last": 2633.070068359375
     },
     "source": "Alternative.me Fear & Greed + Yahoo Finance"
   },
   "bondMarket": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:41 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -2896,7 +2909,7 @@
     "method": "ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."
   },
   "traditionalSentiment": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:41 UTC",
     "bullishPct": 28.8,
     "neutralPct": 17.9,
     "bearishPct": 53.3,
@@ -2909,14 +2922,14 @@
     "bullBearSpread": -24.5
   },
   "optionsStats": {
-    "updated": "20/09/2026 17:28 UTC",
+    "updated": "20/09/2026 17:41 UTC",
     "totalPutCall": 0.81,
     "indexPutCall": 0.98,
     "source": "Cboe Daily Market Statistics",
     "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   },
   "darkPoolPrints": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "prints": [],
     "assets": {
       "SPY": {
@@ -3246,7 +3259,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 50069125,
+          "offExchangePct": 70.81,
+          "offExchange30dPct": 47.38,
+          "litShares": 20643410,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -6800,7 +6820,7 @@
     "note": "BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."
   },
   "darkFlowRadar": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "source": "SquawkFlow",
     "sourceUrl": "https://squawkflow.com/dark-pool-flow",
     "dataStatus": "MODELED · NOT PRINTS",
@@ -6874,7 +6894,7 @@
     "note": "Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."
   },
   "squawkFlow": {
-    "updated": "20/09/2026 17:27 UTC",
+    "updated": "20/09/2026 17:40 UTC",
     "spxGex": {
       "data": {
         "symbol": "SPX",
@@ -6957,7 +6977,7 @@
             "netGex": 0.0
           }
         ],
-        "timestamp": 1789925231621,
+        "timestamp": 1789926031078,
         "asOfDate": "2026-09-18",
         "oiSettleDate": "2026-09-17",
         "contractsAnalyzed": 19535,
@@ -6985,8 +7005,8 @@
         }
       },
       "meta": {
-        "cached_at": "2026-09-20T17:27:35Z",
-        "next_update": "2026-09-20T17:28:00Z"
+        "cached_at": "2026-09-20T17:40:50Z",
+        "next_update": "2026-09-20T17:41:15Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -7080,7 +7100,7 @@
           "openInterest": 1856,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925097951,
+          "timestamp": 1789925762803,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7107,7 +7127,7 @@
           "openInterest": 0,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925111751,
+          "timestamp": 1789925769651,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7134,7 +7154,7 @@
           "openInterest": 11612,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789925111750,
+          "timestamp": 1789925769651,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
@@ -7161,7 +7181,7 @@
           "openInterest": 3744,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925097950,
+          "timestamp": 1789925762802,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7188,7 +7208,7 @@
           "openInterest": 0,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789925111751,
+          "timestamp": 1789925769651,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7215,7 +7235,7 @@
           "openInterest": 7243,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925111750,
+          "timestamp": 1789925769651,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "block_trade",
@@ -7242,7 +7262,7 @@
           "openInterest": 3205,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925096250,
+          "timestamp": 1789925764476,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7269,7 +7289,7 @@
           "openInterest": 4628,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789925096237,
+          "timestamp": 1789925764462,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7296,7 +7316,7 @@
           "openInterest": 7095,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789925033473,
+          "timestamp": 1789925699263,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
@@ -7323,7 +7343,7 @@
           "openInterest": 1838,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925097950,
+          "timestamp": 1789925762802,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7350,7 +7370,7 @@
           "openInterest": 3482,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789925097950,
+          "timestamp": 1789925762802,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7377,7 +7397,7 @@
           "openInterest": 0,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789924997551,
+          "timestamp": 1789925667269,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7395,8 +7415,8 @@
         }
       ],
       "meta": {
-        "cached_at": "2026-09-20T17:27:35Z",
-        "next_update": "2026-09-20T17:28:00Z"
+        "cached_at": "2026-09-20T17:40:59Z",
+        "next_update": "2026-09-20T17:41:24Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
