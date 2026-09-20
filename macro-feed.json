@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "20/09/2026 19:25 UTC",
+  "updated": "20/09/2026 19:53 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,8 +1400,8 @@
     }
   },
   "riskOnOff": {
-    "updated": "20/09/2026 19:25 UTC",
-    "score": 76.8,
+    "updated": "20/09/2026 19:52 UTC",
+    "score": 76.7,
     "label": "RISK ON",
     "confidence": 64,
     "method": "Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.",
@@ -1578,39 +1578,39 @@
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 111.41400146484375,
-        "change1d": 0.2898485830452824,
-        "change1w": 1.5374558036820307,
-        "change1m": -1.4941954905598132,
-        "pointChange1d": 0.32199859619140625,
-        "pointChange1w": 1.6870040893554688,
-        "pointChange1m": -1.6899948120117188,
+        "value": 111.36699676513672,
+        "change1d": 0.24753707682227954,
+        "change1w": 1.494617941686971,
+        "change1m": -1.535754322479399,
+        "pointChange1d": 0.2749938964843892,
+        "pointChange1w": 1.6399993896484375,
+        "pointChange1m": -1.73699951171875,
         "role": "Carry / apetito de riesgo",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 81060.0,
-        "change1d": -0.21380256091824146,
-        "change1w": 7.204485534335681,
-        "change1m": 4.36788439995015,
-        "pointChange1d": -173.6796875,
-        "pointChange1w": 5447.4921875,
-        "pointChange1m": 3392.4296875,
+        "value": 81247.8203125,
+        "change1d": 0.017407342686426297,
+        "change1w": 7.452884004289562,
+        "change1m": 4.609710314864568,
+        "pointChange1d": 14.140625,
+        "pointChange1w": 5635.3125,
+        "pointChange1m": 3580.25,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2627.64990234375,
-        "change1d": -0.1638603855714127,
-        "change1w": 9.527082447138714,
-        "change1m": 8.67313881220455,
-        "pointChange1d": -4.312744140625,
-        "pointChange1w": 228.56298828125045,
-        "pointChange1m": 209.711181640625,
+        "value": 2636.4599609375,
+        "change1d": 0.17087303496241546,
+        "change1w": 9.894307933723168,
+        "change1m": 9.037501172520624,
+        "pointChange1d": 4.497314453125,
+        "pointChange1w": 237.37304687500045,
+        "pointChange1m": 218.521240234375,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
@@ -1685,7 +1685,7 @@
     }
   },
   "automation": {
-    "updatedAt": "20/09/2026 19:25 UTC",
+    "updatedAt": "20/09/2026 19:53 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1696,7 +1696,7 @@
     ]
   },
   "fx": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:52 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1715,11 +1715,11 @@
       },
       "GBP": {
         "pair": "GBPUSD=X",
-        "last": 1.3392797708511353,
-        "change1d": 0.26049700758636885,
-        "change1w": -0.9830313681284397,
-        "change15d": -1.0901771454223663,
-        "change1m": -1.8374933180393072
+        "last": 1.3388135433197021,
+        "change1d": 0.2255945136956372,
+        "change1w": -1.0175009672816482,
+        "change15d": -1.1246094451909716,
+        "change1m": -1.8716654635205554
       },
       "JPY": {
         "pair": "USDJPY=X",
@@ -1765,7 +1765,7 @@
     "method": "Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:52 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -2295,22 +2295,23 @@
     "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers."
   },
   "darkPools": {
-    "updated": "20/09/2026 18:33 UTC",
+    "updated": "20/09/2026 19:52 UTC",
     "markets": [
       {
         "symbol": "SPY",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-05-22",
-        "atsShares": 109203433.0,
-        "otcShares": 103359136.0,
-        "totalOffExchange": 212562569.0,
-        "atsTrades": 297798.0,
-        "otcTrades": 514312.0,
-        "avgSharesPerTrade": 261.7411052689907,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-09-04",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 34618304.0,
+        "otcShares": 33609925.853299,
+        "atsTrades": 418859.0,
+        "otcTrades": 709777.0,
+        "totalOffExchange": 68228229.85329899,
+        "avgSharesPerTrade": 60.45193477197165,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "SPY",
@@ -2325,23 +2326,39 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "SPY",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-09-04",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 34618304.0,
+            "otcShares": 33609925.853299,
+            "atsTrades": 418859.0,
+            "otcTrades": 709777.0,
+            "totalOffExchange": 68228229.85329899,
+            "avgSharesPerTrade": 60.45193477197165,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       },
       {
         "symbol": "QQQ",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-04-29",
-        "atsShares": 41868165.0,
-        "otcShares": 60971860.0,
-        "totalOffExchange": 102840025.0,
-        "atsTrades": 137365.0,
-        "otcTrades": 456336.0,
-        "avgSharesPerTrade": 173.2185477201487,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-09-04",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 23079435.0,
+        "otcShares": 33506203.483641,
+        "atsTrades": 281463.0,
+        "otcTrades": 1440053.0,
+        "totalOffExchange": 56585638.483641,
+        "avgSharesPerTrade": 32.86965586357664,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "QQQ",
@@ -2356,23 +2373,39 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "QQQ",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-09-04",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 23079435.0,
+            "otcShares": 33506203.483641,
+            "atsTrades": 281463.0,
+            "otcTrades": 1440053.0,
+            "totalOffExchange": 56585638.483641,
+            "avgSharesPerTrade": 32.86965586357664,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       },
       {
         "symbol": "GLD",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-04-12",
-        "atsShares": 3823006.0,
-        "otcShares": 7995017.0,
-        "totalOffExchange": 11818023.0,
-        "atsTrades": 33309.0,
-        "otcTrades": 64558.0,
-        "avgSharesPerTrade": 120.75595450969172,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-09-04",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 8595771.0,
+        "otcShares": 22379739.718801,
+        "atsTrades": 149745.0,
+        "otcTrades": 406264.0,
+        "totalOffExchange": 30975510.718801,
+        "avgSharesPerTrade": 55.71044842583663,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "GLD",
@@ -2387,23 +2420,39 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "GLD",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-09-04",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 8595771.0,
+            "otcShares": 22379739.718801,
+            "atsTrades": 149745.0,
+            "otcTrades": 406264.0,
+            "totalOffExchange": 30975510.718801,
+            "avgSharesPerTrade": 55.71044842583663,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       },
       {
         "symbol": "USO",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-01-02",
-        "atsShares": 1358831.0,
-        "otcShares": 4186442.0,
-        "totalOffExchange": 5545273.0,
-        "atsTrades": 9035.0,
-        "otcTrades": 20942.0,
-        "avgSharesPerTrade": 184.98425459518964,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-09-04",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 2595757.0,
+        "otcShares": 5376793.871656,
+        "atsTrades": 24596.0,
+        "otcTrades": 41359.0,
+        "totalOffExchange": 7972550.871656,
+        "avgSharesPerTrade": 120.87864258442877,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "USO",
@@ -2418,23 +2467,39 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "USO",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-09-04",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 2595757.0,
+            "otcShares": 5376793.871656,
+            "atsTrades": 24596.0,
+            "otcTrades": 41359.0,
+            "totalOffExchange": 7972550.871656,
+            "avgSharesPerTrade": 120.87864258442877,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       },
       {
         "symbol": "AAPL",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-04-29",
-        "atsShares": 25688175.0,
-        "otcShares": 120701644.0,
-        "totalOffExchange": 146389819.0,
-        "atsTrades": 251846.0,
-        "otcTrades": 1295824.0,
-        "avgSharesPerTrade": 94.58723048195029,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-09-04",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 23056992.0,
+        "otcShares": 53164898.781815,
+        "atsTrades": 467801.0,
+        "otcTrades": 1766230.0,
+        "totalOffExchange": 76221890.78181499,
+        "avgSharesPerTrade": 34.1185466011058,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "AAPL",
@@ -2449,23 +2514,39 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "AAPL",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-09-04",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 23056992.0,
+            "otcShares": 53164898.781815,
+            "atsTrades": 467801.0,
+            "otcTrades": 1766230.0,
+            "totalOffExchange": 76221890.78181499,
+            "avgSharesPerTrade": 34.1185466011058,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       },
       {
         "symbol": "NVDA",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-04-29",
-        "atsShares": 20961636.0,
-        "otcShares": 102253026.0,
-        "totalOffExchange": 123214662.0,
-        "atsTrades": 313986.0,
-        "otcTrades": 1120995.0,
-        "avgSharesPerTrade": 85.86501284686,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-09-04",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 107467410.0,
+        "otcShares": 350665324.705761,
+        "atsTrades": 1364935.0,
+        "otcTrades": 7418418.0,
+        "totalOffExchange": 458132734.705761,
+        "avgSharesPerTrade": 52.15920784531386,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "NVDA",
@@ -2480,23 +2561,39 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "NVDA",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-09-04",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 107467410.0,
+            "otcShares": 350665324.705761,
+            "atsTrades": 1364935.0,
+            "otcTrades": 7418418.0,
+            "totalOffExchange": 458132734.705761,
+            "avgSharesPerTrade": 52.15920784531386,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       },
       {
         "symbol": "HYG",
-        "weekStart": "2023-12-11",
-        "lastUpdateDate": "2024-04-12",
-        "atsShares": 35946561.0,
-        "otcShares": 44286709.0,
-        "totalOffExchange": 80233270.0,
-        "atsTrades": 100471.0,
-        "otcTrades": 18561.0,
-        "avgSharesPerTrade": 674.0479030848848,
+        "weekStart": "2026-08-24",
+        "initialPublishedDate": "2026-09-14",
+        "lastReportedDate": "2026-08-31",
+        "lastUpdateDate": "2026-09-14",
+        "atsShares": 34171497.0,
+        "otcShares": 24927098.035101,
+        "atsTrades": 71000.0,
+        "otcTrades": 15330.0,
+        "totalOffExchange": 59098595.035101,
+        "avgSharesPerTrade": 684.5661419564577,
+        "lagLabel": "FINRA · T1 · publicación con retraso",
+        "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio.",
         "zScore": null,
-        "topVenues": [],
-        "lagLabel": "FINRA · semanal / retrasado",
-        "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio.",
         "history": [
           {
             "symbol": "HYG",
@@ -2511,6 +2608,21 @@
             "topVenues": [],
             "lagLabel": "FINRA · semanal / retrasado",
             "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+          },
+          {
+            "symbol": "HYG",
+            "weekStart": "2026-08-24",
+            "initialPublishedDate": "2026-09-14",
+            "lastReportedDate": "2026-08-31",
+            "lastUpdateDate": "2026-09-14",
+            "atsShares": 34171497.0,
+            "otcShares": 24927098.035101,
+            "atsTrades": 71000.0,
+            "otcTrades": 15330.0,
+            "totalOffExchange": 59098595.035101,
+            "avgSharesPerTrade": 684.5661419564577,
+            "lagLabel": "FINRA · T1 · publicación con retraso",
+            "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
           }
         ]
       }
@@ -2530,6 +2642,21 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "SPY",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-09-04",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 34618304.0,
+          "otcShares": 33609925.853299,
+          "atsTrades": 418859.0,
+          "otcTrades": 709777.0,
+          "totalOffExchange": 68228229.85329899,
+          "avgSharesPerTrade": 60.45193477197165,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ],
       "QQQ": [
@@ -2546,6 +2673,21 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "QQQ",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-09-04",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 23079435.0,
+          "otcShares": 33506203.483641,
+          "atsTrades": 281463.0,
+          "otcTrades": 1440053.0,
+          "totalOffExchange": 56585638.483641,
+          "avgSharesPerTrade": 32.86965586357664,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ],
       "GLD": [
@@ -2562,6 +2704,21 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "GLD",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-09-04",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 8595771.0,
+          "otcShares": 22379739.718801,
+          "atsTrades": 149745.0,
+          "otcTrades": 406264.0,
+          "totalOffExchange": 30975510.718801,
+          "avgSharesPerTrade": 55.71044842583663,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ],
       "USO": [
@@ -2578,6 +2735,21 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "USO",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-09-04",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 2595757.0,
+          "otcShares": 5376793.871656,
+          "atsTrades": 24596.0,
+          "otcTrades": 41359.0,
+          "totalOffExchange": 7972550.871656,
+          "avgSharesPerTrade": 120.87864258442877,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ],
       "AAPL": [
@@ -2594,6 +2766,21 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "AAPL",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-09-04",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 23056992.0,
+          "otcShares": 53164898.781815,
+          "atsTrades": 467801.0,
+          "otcTrades": 1766230.0,
+          "totalOffExchange": 76221890.78181499,
+          "avgSharesPerTrade": 34.1185466011058,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ],
       "NVDA": [
@@ -2610,6 +2797,21 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "NVDA",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-09-04",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 107467410.0,
+          "otcShares": 350665324.705761,
+          "atsTrades": 1364935.0,
+          "otcTrades": 7418418.0,
+          "totalOffExchange": 458132734.705761,
+          "avgSharesPerTrade": 52.15920784531386,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ],
       "HYG": [
@@ -2626,16 +2828,32 @@
           "topVenues": [],
           "lagLabel": "FINRA · semanal / retrasado",
           "note": "FINRA ATS/OTC agregado por ticker. No publica aquí la dirección compradora/vendedora ni una secuencia de prints por precio."
+        },
+        {
+          "symbol": "HYG",
+          "weekStart": "2026-08-24",
+          "initialPublishedDate": "2026-09-14",
+          "lastReportedDate": "2026-08-31",
+          "lastUpdateDate": "2026-09-14",
+          "atsShares": 34171497.0,
+          "otcShares": 24927098.035101,
+          "atsTrades": 71000.0,
+          "otcTrades": 15330.0,
+          "totalOffExchange": 59098595.035101,
+          "avgSharesPerTrade": 684.5661419564577,
+          "lagLabel": "FINRA · T1 · publicación con retraso",
+          "note": "ATS + OTC agregado. No identifica comprador/vendedor ni demuestra acumulación por precio."
         }
       ]
     },
     "source": "FINRA OTC Transparency",
     "sourceUrl": "https://www.finra.org/filing-reporting/otc-transparency",
-    "method": "Weekly Summary production dataset · última semana disponible por ticker; historial rodante de 12 semanas.",
-    "coverage": "Rolling 12 months in FINRA weeklySummary."
+    "method": "Weekly Summary production dataset · rolling 12 months; se consulta la partición semanal más reciente disponible.",
+    "coverage": "T1 · ATS_W_SMBL + OTC_W_SMBL",
+    "dataStatus": "REAL AGGREGATED FINRA DATA · DELAYED"
   },
   "rotation": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:53 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -2842,28 +3060,28 @@
     "method": "ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."
   },
   "cryptoSentiment": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:53 UTC",
     "fearGreed": {
       "value": 71.0,
       "classification": "Greed",
       "previous": 71.0
     },
     "btc": {
-      "change1d": -0.22695904975528203,
-      "change1w": 7.190350968098969,
-      "change1m": 4.354123830439605,
-      "last": 81049.3125
+      "change1d": 0.01810940678372841,
+      "change1w": 7.453638261113582,
+      "change1m": 4.610444614260967,
+      "last": 81248.390625
     },
     "eth": {
-      "change1d": -0.16348006992984443,
-      "change1w": 9.527499679443462,
-      "change1m": 8.673552791497707,
-      "last": 2627.659912109375
+      "change1d": 0.17391556009502818,
+      "change1w": 9.897645792161324,
+      "change1m": 9.0408130068659,
+      "last": 2636.5400390625
     },
     "source": "Alternative.me Fear & Greed + Yahoo Finance"
   },
   "bondMarket": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:53 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -2920,17 +3138,17 @@
     "sourceUrl": "https://www.aaii.com/sentimentsurvey",
     "bullBearSpread": -24.5,
     "history": [],
-    "updated": "20/09/2026 19:25 UTC"
+    "updated": "20/09/2026 19:53 UTC"
   },
   "optionsStats": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:53 UTC",
     "totalPutCall": 0.81,
     "indexPutCall": 0.98,
     "source": "Cboe Daily Market Statistics",
     "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   },
   "darkPoolPrints": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:52 UTC",
     "prints": [],
     "assets": {
       "SPY": {
@@ -6821,81 +7039,81 @@
     "note": "BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."
   },
   "darkFlowRadar": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:52 UTC",
     "source": "SquawkFlow",
     "sourceUrl": "https://squawkflow.com/dark-pool-flow",
     "dataStatus": "MODELED · NOT PRINTS",
-    "trackedNotional": "$851.9M",
-    "buySideEstimate": 41.0,
+    "trackedNotional": "$764.0M",
+    "buySideEstimate": 38.0,
     "largestModeled": "$50.0M",
     "dix": 52.4,
     "dixDate": null,
     "signals": [
       {
-        "symbol": "NVDA",
-        "price": "$ 222.63",
-        "shares": "225K",
+        "symbol": "NFLX",
+        "price": "$ 71.96",
+        "shares": "306K",
+        "notional": "$22.0M"
+      },
+      {
+        "symbol": "COIN",
+        "price": "$ 194.83",
+        "shares": "238K",
+        "notional": "$46.2M"
+      },
+      {
+        "symbol": "GOOGL",
+        "price": "$ 351.25",
+        "shares": "143K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "AAPL",
-        "price": "$ 334.38",
-        "shares": "149K",
+        "symbol": "MA",
+        "price": "$ 566.93",
+        "shares": "88K",
         "notional": "$50.0M"
-      },
-      {
-        "symbol": "BAC",
-        "price": "$ 57.83",
-        "shares": "80K",
-        "notional": "$4.6M"
       },
       {
         "symbol": "V",
-        "price": "$ 368.86",
+        "price": "$ 369.18",
         "shares": "136K",
         "notional": "$50.0M"
       },
       {
         "symbol": "NVDA",
-        "price": "$ 222.56",
-        "shares": "225K",
-        "notional": "$50.0M"
+        "price": "$ 222.46",
+        "shares": "50K",
+        "notional": "$11.0M"
       },
       {
-        "symbol": "AMD",
-        "price": "$ 558.49",
-        "shares": "90K",
-        "notional": "$50.0M"
+        "symbol": "BAC",
+        "price": "$ 57.70",
+        "shares": "472K",
+        "notional": "$27.2M"
       },
       {
-        "symbol": "MA",
-        "price": "$ 567.32",
-        "shares": "88K",
+        "symbol": "TSLA",
+        "price": "$ 363.84",
+        "shares": "137K",
         "notional": "$50.0M"
-      },
-      {
-        "symbol": "JPM",
-        "price": "$ 349.41",
-        "shares": "143K",
-        "notional": "$50.0M"
-      },
-      {
-        "symbol": "QQQ",
-        "price": "$ 721.84",
-        "shares": "54K",
-        "notional": "$39.0M"
       },
       {
         "symbol": "META",
-        "price": "$ 669.50",
-        "shares": "75K",
-        "notional": "$50.0M"
+        "price": "$ 668.50",
+        "shares": "35K",
+        "notional": "$23.2M"
+      },
+      {
+        "symbol": "JPM",
+        "price": "$ 349.10",
+        "shares": "25K",
+        "notional": "$8.8M"
       }
     ],
     "note": "Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."
   },
   "squawkFlow": {
-    "updated": "20/09/2026 19:25 UTC",
+    "updated": "20/09/2026 19:52 UTC",
     "spxGex": {
       "data": {
         "symbol": "SPX",
@@ -6978,7 +7196,7 @@
             "netGex": 0.0
           }
         ],
-        "timestamp": 1789932334793,
+        "timestamp": 1789933976346,
         "asOfDate": "2026-09-18",
         "oiSettleDate": "2026-09-17",
         "contractsAnalyzed": 19535,
@@ -7006,8 +7224,8 @@
         }
       },
       "meta": {
-        "cached_at": "2026-09-20T19:25:34Z",
-        "next_update": "2026-09-20T19:25:59Z"
+        "cached_at": "2026-09-20T19:52:58Z",
+        "next_update": "2026-09-20T19:53:23Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -7101,7 +7319,7 @@
           "openInterest": 1856,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932178640,
+          "timestamp": 1789933625814,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7128,7 +7346,7 @@
           "openInterest": 0,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932175500,
+          "timestamp": 1789933644819,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7155,7 +7373,7 @@
           "openInterest": 11612,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789932175499,
+          "timestamp": 1789933644818,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
@@ -7182,7 +7400,7 @@
           "openInterest": 3744,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932178639,
+          "timestamp": 1789933625813,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7209,7 +7427,7 @@
           "openInterest": 0,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789932175500,
+          "timestamp": 1789933644819,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7236,7 +7454,7 @@
           "openInterest": 7243,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932175499,
+          "timestamp": 1789933644818,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "block_trade",
@@ -7263,7 +7481,7 @@
           "openInterest": 3205,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932180705,
+          "timestamp": 1789933622537,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7290,7 +7508,7 @@
           "openInterest": 4628,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789932180691,
+          "timestamp": 1789933622523,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
@@ -7317,7 +7535,7 @@
           "openInterest": 7095,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789932108812,
+          "timestamp": 1789933551075,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
@@ -7344,7 +7562,7 @@
           "openInterest": 1838,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932178639,
+          "timestamp": 1789933625813,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7371,7 +7589,7 @@
           "openInterest": 3482,
           "side": "buy",
           "size": "block",
-          "timestamp": 1789932178639,
+          "timestamp": 1789933625813,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7398,7 +7616,7 @@
           "openInterest": 0,
           "side": "sell",
           "size": "block",
-          "timestamp": 1789932075386,
+          "timestamp": 1789933701497,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
@@ -7416,8 +7634,8 @@
         }
       ],
       "meta": {
-        "cached_at": "2026-09-20T19:25:37Z",
-        "next_update": "2026-09-20T19:26:02Z"
+        "cached_at": "2026-09-20T19:52:58Z",
+        "next_update": "2026-09-20T19:53:23Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -7796,6 +8014,6 @@
     ],
     "source": "CNN Fear & Greed Index",
     "sourceUrl": "https://www.cnn.com/markets/fear-and-greed",
-    "updated": "20/09/2026 19:25 UTC"
+    "updated": "20/09/2026 19:53 UTC"
   }
 }
