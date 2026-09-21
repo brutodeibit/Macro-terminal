@@ -744,19 +744,46 @@ def update_markets_rotation(feed):
 
 def update_crypto_sentiment(feed):
  try:
-  fg=get("https://api.alternative.me/fng/",{"limit":"2","format":"json"}).json().get("data",[])
+  fg=get("https://pro-api.coinmarketcap.com/public-api/v3/fear-and-greed/historical",{"start":"1","limit":"120","convert":"USD"}).json().get("data",[])
+  if isinstance(fg,dict): fg=fg.get("data") or []
+  fg=fg if isinstance(fg,list) else []
   fg_now=fg[0] if fg else {}
   fg_prev=fg[1] if len(fg)>1 else {}
  except Exception as e:
-  print("CRYPTO FNG",type(e).__name__,str(e)[:180]); fg_now={}; fg_prev={}
+  print("CMC CRYPTO FNG",type(e).__name__,str(e)[:180]); fg=[]; fg_now={}; fg_prev={}
  btc=chart("BTC-USD"); eth=chart("ETH-USD")
- def ret(r,n):
+ def ret(r):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
   if len(q)<22:return None
   return {"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"last":q[-1]}
- feed["cryptoSentiment"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"fearGreed": {"value":num(fg_now.get("value")),"classification":fg_now.get("value_classification"),"previous":num(fg_prev.get("value"))},"btc":ret(btc,0),"eth":ret(eth,0),"source":"Alternative.me Fear & Greed + Yahoo Finance"}
-
-def update_bond_market(feed):
+ fng_by_date={}
+ hist_fng=[]
+ for item in fg:
+  try:
+   ts=item.get("timestamp"); val=num(item.get("value"))
+   if ts is None or val is None:continue
+   dt=datetime.fromisoformat(str(ts).replace("Z","+00:00"))
+   day=dt.astimezone(timezone.utc).strftime("%Y-%m-%d")
+   fng_by_date[day]=val
+   hist_fng.append({"date":day,"value":val,"classification":item.get("value_classification")})
+  except Exception:pass
+ btc_history=[]
+ try:
+  stamps=btc.get("timestamp",[]) if btc else []
+  q=btc.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if btc else []
+  for stamp,val in list(zip(stamps,q))[-120:]:
+   if val is None:continue
+   day=datetime.fromtimestamp(float(stamp),tz=timezone.utc).strftime("%Y-%m-%d")
+   btc_history.append({"date":day,"price":float(val),"fearGreed":fng_by_date.get(day)})
+ except Exception as e: print("CRYPTO BTC HISTORY",type(e).__name__,str(e)[:120])
+ feed["cryptoSentiment"]={
+  "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+  "fearGreed":{"value":num(fg_now.get("value")),"classification":fg_now.get("value_classification"),"previous":num(fg_prev.get("value")),"history":hist_fng[:90]},
+  "btc":ret(btc),"eth":ret(eth),"btcHistory":btc_history,
+  "source":"CoinMarketCap Fear & Greed + Yahoo Finance",
+  "sourceUrl":"https://coinmarketcap.com/charts/",
+  "dataStatus":"REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
+}def update_bond_market(feed):
  out=[]
  for name,sym in (("Treasuries largos","TLT"),("Treasuries intermedios","IEF"),("Treasuries cortos","SHY"),("High Yield","HYG"),("Investment Grade","LQD")):
   r=chart(sym)
