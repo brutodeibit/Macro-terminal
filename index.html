@@ -710,9 +710,32 @@
             return 0;
         }
 
-        function biasLabel(score){ return score>0 ? 'Alcista / firme' : score<0 ? 'Bajista / débil' : 'Mixto / neutral'; }
-        function biasClass(score){ return score>0 ? 'bias-up' : score<0 ? 'bias-down' : 'bias-flat'; }
-        function dirIcon(score){ return score>0 ? '↑' : score<0 ? '↓' : '→'; }
+        function policyBias(score){
+            if(score>=2.6) return {label:'Claramente restrictivo',short:'Restrictivo ↑↑',icon:'↑↑',cls:'bias-down'};
+            if(score>=0.9) return {label:'Moderadamente restrictivo',short:'Restrictivo ↑',icon:'↑',cls:'bias-down'};
+            if(score<=-2.6) return {label:'Claramente acomodaticio',short:'Acomodaticio ↓↓',icon:'↓↓',cls:'bias-up'};
+            if(score<=-0.9) return {label:'Moderadamente acomodaticio',short:'Acomodaticio ↓',icon:'↓',cls:'bias-up'};
+            return {label:'Mixto / neutral',short:'Neutral →',icon:'→',cls:'bias-flat'};
+        }
+        function biasLabel(score){ return policyBias(score).label; }
+        function biasClass(score){ return policyBias(score).cls; }
+        function dirIcon(score){ return policyBias(score).icon; }
+        function expectationLabel(data){
+            const ex=data?.rates?.expectations||[];
+            let up=0,hold=0,down=0;
+            ex.forEach(e=>{
+                const v=parseNum(e.value); if(!Number.isFinite(v)) return;
+                const l=String(e.label||'').toLowerCase();
+                if(l.includes('subida')) up+=v;
+                else if(l.includes('bajada')) down+=v;
+                else if(l.includes('mantener')||l.includes('hold')) hold+=v;
+            });
+            if(up===0 && down===0 && hold===0) return {label:'Sin pricing claro',cls:'bias-flat'};
+            if(up>down+8) return {label:'Más probabilidad de subida',cls:'bias-down'};
+            if(down>up+8) return {label:'Más probabilidad de bajada',cls:'bias-up'};
+            if(hold>=Math.max(up,down)) return {label:'Más probabilidad de mantener',cls:'bias-flat'};
+            return {label:'Pricing mixto',cls:'bias-flat'};
+        }
 
         const indicatorCatalog = {
             us: {
@@ -1172,11 +1195,45 @@ function renderMeetingHistory(data){
             return '<section id="sec-sentiment" class="space-y-4"><div class="grid grid-cols-1 xl:grid-cols-2 gap-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Mercado tradicional · CNN</div><h2 class="text-xl font-black text-white mt-1">FEAR & GREED</h2><div class="relative mt-4"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg)"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><div class="text-3xl font-black text-white">'+(Number.isFinite(v)?v.toFixed(0):'—')+'</div><div class="text-xs text-gray-400 uppercase">'+esc(fg.rating||'—')+'</div></div></div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]"><div>Anterior<br><b class="text-white">'+fmtNum(fg.previous_close,0)+'</b></div><div>1 semana<br><b class="text-white">'+fmtNum(fg.previous_1_week,0)+'</b></div><div>1 mes<br><b class="text-white">'+fmtNum(fg.previous_1_month,0)+'</b></div><div>1 año<br><b class="text-white">'+fmtNum(fg.previous_1_year,0)+'</b></div></div><div class="mt-4 h-16 flex items-end gap-[2px]">'+histBars+'</div><div class="flex justify-between text-[9px] text-gray-600 mt-1"><span>Histórico reciente</span><span>'+esc(fg.updated||'—')+'</span></div><p class="text-[10px] text-gray-500 mt-3">Mide el estado emocional del mercado mediante varios componentes. No se mezcla con el Fear & Greed cripto.</p></div><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Sentimiento de inversores · AAII</div><h2 class="text-xl font-black text-white mt-1">ENCUESTA SEMANAL</h2><div class="grid grid-cols-3 gap-3 mt-5 text-center"><div class="metric p-4"><div class="text-[10px] text-gray-500">ALCISTAS</div><div class="text-2xl font-black risk-up">'+fmtPct(aaii.bullishPct,1)+'</div></div><div class="metric p-4"><div class="text-[10px] text-gray-500">NEUTRALES</div><div class="text-2xl font-black risk-neutral">'+fmtPct(aaii.neutralPct,1)+'</div></div><div class="metric p-4"><div class="text-[10px] text-gray-500">BAJISTAS</div><div class="text-2xl font-black risk-down">'+fmtPct(aaii.bearishPct,1)+'</div></div></div><div class="metric p-3 mt-4"><div class="text-[10px] text-gray-500">Diferencial alcistas − bajistas</div><div class="text-xl font-black '+(Number(aaii.bullBearSpread)>=0?'risk-up':'risk-down')+'">'+fmtPct(aaii.bullBearSpread,1)+'</div></div><p class="text-[10px] text-gray-500 mt-3">Encuesta de sentimiento distinta del indicador CNN. Sirve para contextualizar posicionamiento de inversores, no como señal aislada.</p></div></div><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Cripto · separado</div><h2 class="text-xl font-black text-white mt-1">CRYPTO FEAR & GREED</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4"><div class="metric rounded-xl p-4"><div class="text-[10px] text-gray-500">ÍNDICE</div><div class="text-3xl font-black text-white">'+(crypto.value??'—')+'</div><div class="text-sm text-gray-300 mt-1">'+esc(crLabel)+'</div><div class="text-[10px] text-gray-500 mt-1">Anterior '+(crypto.previous??'—')+'</div></div>'+cr+'</div><p class="text-[10px] text-gray-500 mt-3">Fuente independiente de la lectura de sentimiento tradicional.</p></div><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">Renta fija</div><h2 class="text-xl font-black text-white mt-1">BONOS · RETORNO DE MERCADO</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">'+br+'</div></div></section>';
         }
         function renderGlobalView(){
-            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>({d,score:macroInterpretation(d).score}));
+            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>{
+                const score=macroInterpretation(d).score;
+                return {d,score,bias:policyBias(score),expect:expectationLabel(d)};
+            });
             const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
-            return `<section id="sec-resumen" class="space-y-5"><div class="glass rounded-2xl p-5"><div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"><div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Monitor Macro Global</div><h2 class="text-xl md:text-2xl font-black text-white mt-1">Panel global</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Contexto intermercado, bancos centrales, divisas, carry, posicionamiento, opciones y actividad fuera de mercado. Las economías se consultan desde el lateral.</p></div><div class="metric rounded-xl px-4 py-3 min-w-[190px]"><div class="text-[10px] text-gray-500 uppercase">Política monetaria agregada</div><div class="text-lg font-black ${biasClass(avg)} mt-1">${dirIcon(avg)} ${avg>1?'Más restrictivo':avg<-1?'Más acomodaticio':'Mixto'}</div></div></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">${entries.map(({d,score})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition"><div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-lg font-black ${biasClass(score)}">${dirIcon(score)}</span></div><div class="mt-3 flex items-center justify-between"><span class="mini-pill">${esc(d.conference?.tone||d.rates?.postureText||'Mixto')}</span><span class="text-xs ${biasClass(score)}">${biasLabel(score)}</span></div><div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official||'—')} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div></button>`).join('')}</div></section>${renderRiskOnOff()}${renderFxComparator()}${renderCotSection()}${renderOptionsSection()}${renderDarkPoolSection()}${renderRotationSection()}${renderCryptoBondSection()}`;
+            const avgBias=policyBias(avg);
+            return `<section id="sec-resumen" class="space-y-5">
+                <div class="glass rounded-2xl p-5">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Monitor Macro Global</div>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1">Panel Global</h2>
+                            <p class="text-sm text-gray-400 mt-1 max-w-5xl">Todo el contexto global está aquí: Risk On/Off, sentimiento tradicional y cripto, divisas/carry, COT, opciones, Dark Pools y rotación. Las economías se abren desde el lateral.</p>
+                        </div>
+                        <div class="metric rounded-xl px-4 py-3 min-w-[235px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo monetario agregado</div><div class="text-lg font-black ${avgBias.cls} mt-1">${avgBias.icon} ${avgBias.label}</div><div class="text-[10px] text-gray-500 mt-1">No es una etiqueta de bolsa alcista/bajista.</div></div>
+                    </div>
+                </div>
+                <div class="metric rounded-xl p-4">
+                    <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Leyenda · sesgo de política monetaria</div>
+                    <div class="flex flex-wrap gap-2 text-[10px]">
+                        <span class="mini-pill">↑↑ Claramente restrictivo · mayor presión para subir o mantener tipos altos</span>
+                        <span class="mini-pill">↑ Moderadamente restrictivo · presión hacia tipos más altos</span>
+                        <span class="mini-pill">→ Mixto / neutral · señales enfrentadas o sin dirección clara</span>
+                        <span class="mini-pill">↓ Moderadamente acomodaticio · presión hacia recortes</span>
+                        <span class="mini-pill">↓↓ Claramente acomodaticio · mayor presión hacia recortes</span>
+                    </div>
+                    <div class="text-[10px] text-gray-500 mt-2">Debajo de cada economía se separa este sesgo estructural del pricing de la próxima reunión: subida, mantener o bajada.</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    ${entries.map(({d,bias,expect})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
+                        <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-xs font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
+                        <div class="mt-3 space-y-2">
+                            <div class="mini-pill w-fit">Postura actual: ${esc(d.rates?.postureText||'Sin clasificar')}</div>
+                            <div class="text-xs ${expect.cls}">Próxima reunión: ${expect.label}</div>
+                        </div>
+                        <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official||'—')} · 2Y ${fmtNum((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield,2)} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div>
+                    </button>`).join('')}
+                </div>
+            </section>${renderRiskOnOff()}${renderFxComparator()}${renderCotSection()}${renderOptionsSection()}${renderDarkPoolSection()}${renderRotationSection()}${renderCryptoBondSection()}`;
         }
-
         function renderContent() {
             renderTopTabs();
             const container = document.getElementById('mainDashboard');
