@@ -783,7 +783,9 @@ def update_crypto_sentiment(feed):
   "source":"CoinMarketCap Fear & Greed + Yahoo Finance",
   "sourceUrl":"https://coinmarketcap.com/charts/",
   "dataStatus":"REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
-}def update_bond_market(feed):
+}
+
+def update_bond_market(feed):
  out=[]
  for name,sym in (("Treasuries largos","TLT"),("Treasuries intermedios","IEF"),("Treasuries cortos","SHY"),("High Yield","HYG"),("Investment Grade","LQD")):
   r=chart(sym)
