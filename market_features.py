@@ -799,7 +799,13 @@ def update_crypto_sentiment(feed):
   for stamp,val in list(zip(stamps,q))[-120:]:
    if val is None:continue
    day=datetime.fromtimestamp(float(stamp),tz=timezone.utc).strftime("%Y-%m-%d")
-   btc_history.append({"date":day,"price":float(val),"fearGreed":fng_by_date.get(day)})
+   fg_value=fng_by_date.get(day)
+   # El índice se publica una vez al día. Si el proveedor ya tiene el valor de hoy,
+   # úsalo también para el último punto aunque la serie histórica aún no lo haya incluido.
+   today_utc=datetime.now(timezone.utc).strftime("%Y-%m-%d")
+   if fg_value is None and day==today_utc and fg_now.get("value") is not None:
+    fg_value=num(fg_now.get("value"))
+   btc_history.append({"date":day,"price":float(val),"fearGreed":fg_value})
  except Exception as e:print("CRYPTO BTC HISTORY",type(e).__name__,str(e)[:120])
  if not btc_history:btc_history=list(previous.get("btcHistory") or [])
  feed["cryptoSentiment"]={
