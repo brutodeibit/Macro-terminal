@@ -787,6 +787,18 @@ def update_crypto_sentiment(feed):
  if not hist_fng:
   hist_fng=list(prior_fg.get("history") or [])
   fng_by_date={x.get("date"):num(x.get("value")) for x in hist_fng if x.get("date") and num(x.get("value")) is not None}
+ # Normaliza el histórico a orden cronológico. Algunos feeds devuelven los días más recientes primero.
+ hist_fng=sorted(hist_fng,key=lambda x:str(x.get("date") or ""))
+ fng_by_date={x.get("date"):num(x.get("value")) for x in hist_fng if x.get("date") and num(x.get("value")) is not None}
+ # El proveedor actual puede traer el valor de hoy aunque aún no aparezca en su histórico.
+ today_utc=datetime.now(timezone.utc).strftime("%Y-%m-%d")
+ if fg_now.get("value") is not None:
+  current_value=num(fg_now.get("value"))
+  if current_value is not None:
+   fng_by_date[today_utc]=current_value
+   if not any(x.get("date")==today_utc for x in hist_fng):
+    hist_fng.append({"date":today_utc,"value":current_value,"classification":fg_now.get("value_classification")})
+    hist_fng=sorted(hist_fng,key=lambda x:str(x.get("date") or ""))
  btc=chart("BTC-USD");eth=chart("ETH-USD")
  def ret(r):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
@@ -810,7 +822,7 @@ def update_crypto_sentiment(feed):
  if not btc_history:btc_history=list(previous.get("btcHistory") or [])
  feed["cryptoSentiment"]={
   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-  "fearGreed":{"value":num(fg_now.get("value")) if cmc_ok else prior_fg.get("value"),"classification":fg_now.get("value_classification") if cmc_ok else prior_fg.get("classification"),"previous":num(fg_prev.get("value")) if cmc_ok else prior_fg.get("previous"),"history":hist_fng[-90:]},
+  "fearGreed":{"value":num(fg_now.get("value")) if cmc_ok else prior_fg.get("value"),"classification":fg_now.get("value_classification") if cmc_ok else prior_fg.get("classification"),"previous":num(fg_prev.get("value")) if cmc_ok else prior_fg.get("previous"),"history":hist_fng[-120:]},
   "btc":ret(btc) or previous.get("btc"),"eth":ret(eth) or previous.get("eth"),"btcHistory":btc_history,
   "source":"CoinMarketCap Fear & Greed + Yahoo Finance","sourceUrl":"https://coinmarketcap.com/charts/",
   "sourceStatus":"REAL / DAILY" if cmc_ok else "UNAVAILABLE · last valid CMC snapshot retained",
