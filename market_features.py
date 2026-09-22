@@ -21,24 +21,40 @@ def _vanna_proxy(spot,strike,iv,t):
   return _norm_pdf(d1)*(-d2/sig)
  except Exception:return None
 
+def _max_pain(calls,puts):
+ """Strike with the lowest aggregate holder payoff at expiration from public OI."""
+ strikes=sorted({float(x.get("strike") or 0) for x in calls+puts if float(x.get("strike") or 0)>0})
+ if not strikes:return None
+ losses=[]
+ for settlement in strikes:
+  call_loss=sum(max(0.0,settlement-float(x.get("strike") or 0))*float(x.get("openInterest") or 0) for x in calls)
+  put_loss=sum(max(0.0,float(x.get("strike") or 0)-settlement)*float(x.get("openInterest") or 0) for x in puts)
+  losses.append((settlement,call_loss+put_loss))
+ return min(losses,key=lambda x:x[1])[0] if losses else None
+
 def _option_gex(calls,puts,spot):
  scale=float(spot or 0)**2*0.01*100.0
- vals=[]; posZones=[]; negZones=[]; callWall=None; putWall=None
+ by_strike={}; posZones=[]; negZones=[]; callWall=None; putWall=None
  for x in calls:
+  strike=float(x.get("strike") or 0)
   v=float(x.get("openInterest",0) or 0)*float(x.get("gamma",0) or 0)*scale
-  vals.append((float(x.get("strike") or 0),v)); posZones.append({"strike":x.get("strike"),"gamma":v})
+  by_strike[strike]=by_strike.get(strike,0.0)+v
+  posZones.append({"strike":x.get("strike"),"gamma":v})
   if callWall is None or v>callWall["gamma"]: callWall={"strike":x.get("strike"),"gamma":v}
  for x in puts:
+  strike=float(x.get("strike") or 0)
   v=-float(x.get("openInterest",0) or 0)*float(x.get("gamma",0) or 0)*scale
-  vals.append((float(x.get("strike") or 0),v)); negZones.append({"strike":x.get("strike"),"gamma":v})
+  by_strike[strike]=by_strike.get(strike,0.0)+v
+  negZones.append({"strike":x.get("strike"),"gamma":v})
   if putWall is None or abs(v)>abs(putWall["gamma"]): putWall={"strike":x.get("strike"),"gamma":v}
+ vals=sorted(by_strike.items())
  net=sum(v for _,v in vals); pos=sum(v for _,v in vals if v>0); neg=sum(v for _,v in vals if v<0)
- agg=sorted(vals,key=lambda z:z[0]); cum=0.0; prev_k=None; prev_cum=0.0; flip=None
- for k,v in agg:
+ # Public-chain gamma-flip proxy: the strike where cumulative signed GEX crosses zero.
+ cum=0.0; prev_k=None; prev_cum=None; flip=None
+ for k,v in vals:
   nxt=cum+v
-  if cum*nxt<0 and prev_k is not None:
-   den=nxt-cum
-   flip=prev_k+((0-cum)/den)*(k-prev_k) if den else k
+  if prev_k is not None and ((cum<0 and nxt>=0) or (cum>0 and nxt<=0)):
+   flip=prev_k+(0-cum)*(k-prev_k)/(nxt-cum) if nxt!=cum else k
    break
   prev_k,prev_cum=k,cum
   cum=nxt
@@ -46,7 +62,7 @@ def _option_gex(calls,puts,spot):
  effect="Los hedges modelados pueden reforzar el movimiento" if net<0 else "Los hedges modelados pueden amortiguar el movimiento" if net>0 else "Sin sesgo de gamma agregado"
  return {
   "gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"gammaTotal":net,
-  "gammaRegime":regime,"gammaEffect":effect,"zeroGamma":flip,
+  "gammaRegime":regime,"gammaEffect":effect,"gammaFlip":flip,"zeroGamma":flip,
   "callWall":callWall.get("strike") if callWall else None,
   "putWall":putWall.get("strike") if putWall else None,
   "positiveZones":sorted(posZones,key=lambda x:x["gamma"],reverse=True)[:8],
@@ -65,6 +81,7 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  iv_atm=sum(ivs)/len(ivs) if ivs else None
  if iv_atm and iv_atm>3:iv_atm/=100.0
  expected=spot*iv_atm*math.sqrt(max(ex,0)/365.0) if iv_atm else None
+ max_pain=_max_pain(calls,puts)
  dex=None;vanna=None;charm_vals=[];total_oi=co+po;gex_by=[]
  for x in rows:
   oi=float(x.get("openInterest",0) or 0); delta=x.get("delta"); gamma=float(x.get("gamma",0) or 0)
@@ -95,9 +112,14 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   "callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,
   "totalVolume":cv+pv,"totalOpenInterest":total_oi,
   "ivAtm":iv_atm*100 if iv_atm else None,"expectedMove":expected,
+  "expectedMovePct":(expected/spot*100) if expected and spot else None,
+  "maxPain":max_pain,"maxPainDistance":(max_pain-spot) if max_pain is not None else None,
+  "maxPainDistancePct":((max_pain-spot)/spot*100) if max_pain is not None and spot else None,
   "dexProxy":dex,"vannaProxy":vanna,"charm":charm,
   "oiChange":oi_delta,"largestOiChange":largest_oi_change,
   **gp,
+  "gammaFlipDistance":(gp.get("gammaFlip")-spot) if gp.get("gammaFlip") is not None else None,
+  "gammaFlipDistancePct":((gp.get("gammaFlip")-spot)/spot*100) if gp.get("gammaFlip") is not None and spot else None,
   "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:10]
  }
 
@@ -146,7 +168,7 @@ def opt(sym):
    for typ,key in (("C","calls"),("P","puts")):
     for x in chain.get(key,[]) or []:
      K=num(x.get("strike"));oi=num(x.get("openInterest")) or 0;vol=num(x.get("volume")) or 0;iv=num(x.get("impliedVolatility")) or 0
-     if not K or iv<=0:continue
+     if not K:continue
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
      delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv,0.04,typ)
      rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"type":typ,"expiration":ex})
@@ -160,7 +182,8 @@ def opt(sym):
    rr=[x for x in all_raw if x["expiration"]==ex]
    coi=sum(x["openInterest"] for x in rr if x["type"]=="C");poi=sum(x["openInterest"] for x in rr if x["type"]=="P")
    cv=sum(x["volume"] for x in rr if x["type"]=="C");pv=sum(x["volume"] for x in rr if x["type"]=="P")
-   p["putCallOi"]=poi/coi if coi else None;p["putCallVol"]=pv/cv if cv else None
+   p["putCallOi"]=poi/coi if coi else None;p["putCallVolume"]=pv/cv if cv else None
+   p["putCallVol"]=p["putCallVolume"]  # compatibility with existing saved snapshots
    p["totalVolume"]=cv+pv
   monthly_exp=monthly[0] if monthly else selected[-1]
   return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,
@@ -255,33 +278,33 @@ def finra_access_token():
   return None
 
 def update_options(feed):
+ previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
+ previous_markets=previous.get("markets",[])
  out=[]
- previous=feed.get("options",{}).get("markets",[]) if isinstance(feed.get("options"),dict) else []
- prev_map={}
- for m in previous:
-  for p in (m.get("profiles") or []):
-   for zone in (p.get("topGexStrikes") or []):
-    pass
  for sym in ("SPY","QQQ","QQQM","TQQQ","DIA","IWM","GLD","IAU","GDX","SLV","USO","BNO","UUP","FXE","AAPL","NVDA"):
   try:
    x=opt(sym)
    if x:out.append(x)
   except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:180])
- if out:
-  hist=dict(feed.get("options",{}).get("history") or {}) if isinstance(feed.get("options"),dict) else {}
-  stamp=datetime.now(timezone.utc).isoformat()
-  for m in out:
-   arr=hist.get(m["ticker"],[])
-   snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),
-         "gammaNet":(m.get("profiles") or [{}])[0].get("gammaNet"),
-         "zeroGamma":(m.get("profiles") or [{}])[0].get("zeroGamma"),
-         "callWall":(m.get("profiles") or [{}])[0].get("callWall"),
-         "putWall":(m.get("profiles") or [{}])[0].get("putWall"),
-         "ivAtm":(m.get("profiles") or [{}])[0].get("ivAtm"),
-         "expectedMove":(m.get("profiles") or [{}])[0].get("expectedMove")}
-   arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10] and abs(float(h.get("spot") or 0)-float(snap.get("spot") or 0))<0.0001)]
-   arr.append(snap);hist[m["ticker"]]=arr[-64:]
-  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Cboe Global Markets","sourceUrl":"https://www.cboe.com/delayed_quotes/","publication":"Último snapshot de cadena pública disponible en la actualización; el mercado de opciones puede estar cerrado.","note":"Cadena retrasada; GEX/DEX/Vanna/Charm son proxies basados en datos públicos y supuestos de posicionamiento. Se conserva historial intradía."}
+ if not out:
+  # Never erase a valid option snapshot merely because Yahoo blocks one refresh.
+  if previous_markets:
+   previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained"
+   previous["updatedAttempt"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+   feed["options"]=previous
+  return
+ hist=dict(previous.get("history") or {})
+ stamp=datetime.now(timezone.utc).isoformat()
+ for m in out:
+  p=(m.get("profiles") or [{}])[0]
+  arr=hist.get(m["ticker"],[])
+  snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),
+        "gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),
+        "maxPain":p.get("maxPain"),"callWall":p.get("callWall"),"putWall":p.get("putWall"),
+        "ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove")}
+  arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10] and abs(float(h.get("spot") or 0)-float(snap.get("spot") or 0))<0.0001)]
+  arr.append(snap);hist[m["ticker"]]=arr[-64:]
+ feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/SPY/options/","sourceStatus":"REAL / DELAYED · public chain snapshot","publication":"Último snapshot de cadena pública disponible en la actualización; el mercado de opciones puede estar cerrado.","note":"Max Pain usa OI público. GEX/Gamma Flip/DEX/Vanna/Charm son proxies calculados con OI/IV y Black-Scholes; no son posicionamiento observado de dealers."}
 
 def update_dark_pools(feed):
     token=finra_access_token()
@@ -622,37 +645,26 @@ def update_dark_pool_prints(feed):
 
 
 def update_traditional_fear_greed(feed):
-    result={"score":None,"rating":"—","timestamp":None,"previous_close":None,"previous_1_week":None,"previous_1_month":None,"previous_1_year":None,"history":[],"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed"}
-    try:
-        headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
-        d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
-        fg=d.get("fear_and_greed",{})
-        result.update({k:fg.get(k) for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year")})
-        hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
-        result["history"]=[{"date":datetime.fromtimestamp(float(x.get("x",0))/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":float(x.get("y"))} for x in hist if x.get("x") is not None and x.get("y") is not None][-90:]
-        result["components"]={}
-        for k,v in d.items():
-            if k.startswith("market_") or k in ("stock_price_strength","stock_price_breadth","put_call_options","junk_bond_demand","safe_haven_demand"):
-                if isinstance(v,dict):
-                    val=v.get("score",v.get("value"))
-                    if val is not None: result["components"][k]=val
-    except Exception as e:
-        print("CNN F&G",type(e).__name__,str(e)[:180])
-    result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-    feed["traditionalFearGreed"]=result
-
-def update_traditional_fear_greed(feed):
-    result={"score":None,"rating":"—","timestamp":None,"previous_close":None,"previous_1_week":None,"previous_1_month":None,"previous_1_year":None,"history":[],"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed"}
-    try:
-        headers={"User-Agent":"Mozilla/5.0","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
-        d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
-        fg=d.get("fear_and_greed",{})
-        result.update({k:fg.get(k) for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year")})
-        hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
-        result["history"]=[{"date":datetime.fromtimestamp(float(x.get("x",0))/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":float(x.get("y"))} for x in hist if x.get("x") is not None and x.get("y") is not None][-90:]
-    except Exception as e: print("CNN F&G",type(e).__name__,str(e)[:180])
-    result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-    feed["traditionalFearGreed"]=result
+ previous=feed.get("traditionalFearGreed",{}) if isinstance(feed.get("traditionalFearGreed"),dict) else {}
+ result={**previous,"score":previous.get("score"),"rating":previous.get("rating","—"),"timestamp":previous.get("timestamp"),"previous_close":previous.get("previous_close"),"previous_1_week":previous.get("previous_1_week"),"previous_1_month":previous.get("previous_1_month"),"previous_1_year":previous.get("previous_1_year"),"history":previous.get("history",[]),"components":previous.get("components",{}),"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed","sourceStatus":"UNAVAILABLE · last valid snapshot retained"}
+ try:
+  headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
+  d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
+  fg=d.get("fear_and_greed",{})
+  result.update({k:fg.get(k) for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year")})
+  hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
+  result["history"]=[{"date":datetime.fromtimestamp(float(x.get("x",0))/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":float(x.get("y"))} for x in hist if x.get("x") is not None and x.get("y") is not None][-90:]
+  result["components"]={}
+  for k,v in d.items():
+   if k.startswith("market_") or k in ("stock_price_strength","stock_price_breadth","put_call_options","junk_bond_demand","safe_haven_demand"):
+    if isinstance(v,dict):
+     val=v.get("score",v.get("value"))
+     if val is not None:result["components"][k]=val
+  result["sourceStatus"]="REAL / DAILY"
+ except Exception as e:
+  print("CNN F&G",type(e).__name__,str(e)[:180])
+ result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+ feed["traditionalFearGreed"]=result
 
 def update_traditional_sentiment(feed):
     result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5,"history":[]}
@@ -742,31 +754,44 @@ def update_markets_rotation(feed):
   "method":"ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."}
 
 
+def _cmc_day(timestamp):
+ if timestamp is None:return None
+ try:
+  # CMC can return Unix seconds/milliseconds or an ISO timestamp.
+  if isinstance(timestamp,(int,float)) or re.fullmatch(r"\d+(?:\.\d+)?",str(timestamp).strip()):
+   raw=float(timestamp)
+   if raw>10_000_000_000:raw/=1000.0
+   return datetime.fromtimestamp(raw,tz=timezone.utc).strftime("%Y-%m-%d")
+  return datetime.fromisoformat(str(timestamp).replace("Z","+00:00")).astimezone(timezone.utc).strftime("%Y-%m-%d")
+ except (TypeError,ValueError,OverflowError):return None
+
 def update_crypto_sentiment(feed):
+ previous=feed.get("cryptoSentiment",{}) if isinstance(feed.get("cryptoSentiment"),dict) else {}
+ fg=[]; cmc_ok=False
  try:
   fg=get("https://pro-api.coinmarketcap.com/public-api/v3/fear-and-greed/historical",{"start":"1","limit":"120","convert":"USD"}).json().get("data",[])
-  if isinstance(fg,dict): fg=fg.get("data") or []
+  if isinstance(fg,dict):fg=fg.get("data") or []
   fg=fg if isinstance(fg,list) else []
-  fg_now=fg[0] if fg else {}
-  fg_prev=fg[1] if len(fg)>1 else {}
- except Exception as e:
-  print("CMC CRYPTO FNG",type(e).__name__,str(e)[:180]); fg=[]; fg_now={}; fg_prev={}
- btc=chart("BTC-USD"); eth=chart("ETH-USD")
+  cmc_ok=bool(fg)
+ except Exception as e:print("CMC CRYPTO FNG",type(e).__name__,str(e)[:180])
+ prior_fg=previous.get("fearGreed",{}) if isinstance(previous.get("fearGreed"),dict) else {}
+ fg_now=fg[0] if fg else {}
+ fg_prev=fg[1] if len(fg)>1 else {}
+ fng_by_date={};hist_fng=[]
+ for item in fg:
+  day=_cmc_day(item.get("timestamp"))
+  val=num(item.get("value"))
+  if day is None or val is None:continue
+  fng_by_date[day]=val
+  hist_fng.append({"date":day,"value":val,"classification":item.get("value_classification")})
+ if not hist_fng:
+  hist_fng=list(prior_fg.get("history") or [])
+  fng_by_date={x.get("date"):num(x.get("value")) for x in hist_fng if x.get("date") and num(x.get("value")) is not None}
+ btc=chart("BTC-USD");eth=chart("ETH-USD")
  def ret(r):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
   if len(q)<22:return None
   return {"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"last":q[-1]}
- fng_by_date={}
- hist_fng=[]
- for item in fg:
-  try:
-   ts=item.get("timestamp"); val=num(item.get("value"))
-   if ts is None or val is None:continue
-   dt=datetime.fromisoformat(str(ts).replace("Z","+00:00"))
-   day=dt.astimezone(timezone.utc).strftime("%Y-%m-%d")
-   fng_by_date[day]=val
-   hist_fng.append({"date":day,"value":val,"classification":item.get("value_classification")})
-  except Exception:pass
  btc_history=[]
  try:
   stamps=btc.get("timestamp",[]) if btc else []
@@ -775,13 +800,14 @@ def update_crypto_sentiment(feed):
    if val is None:continue
    day=datetime.fromtimestamp(float(stamp),tz=timezone.utc).strftime("%Y-%m-%d")
    btc_history.append({"date":day,"price":float(val),"fearGreed":fng_by_date.get(day)})
- except Exception as e: print("CRYPTO BTC HISTORY",type(e).__name__,str(e)[:120])
+ except Exception as e:print("CRYPTO BTC HISTORY",type(e).__name__,str(e)[:120])
+ if not btc_history:btc_history=list(previous.get("btcHistory") or [])
  feed["cryptoSentiment"]={
   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-  "fearGreed":{"value":num(fg_now.get("value")),"classification":fg_now.get("value_classification"),"previous":num(fg_prev.get("value")),"history":hist_fng[:90]},
-  "btc":ret(btc),"eth":ret(eth),"btcHistory":btc_history,
-  "source":"CoinMarketCap Fear & Greed + Yahoo Finance",
-  "sourceUrl":"https://coinmarketcap.com/charts/",
+  "fearGreed":{"value":num(fg_now.get("value")) if cmc_ok else prior_fg.get("value"),"classification":fg_now.get("value_classification") if cmc_ok else prior_fg.get("classification"),"previous":num(fg_prev.get("value")) if cmc_ok else prior_fg.get("previous"),"history":hist_fng[-90:]},
+  "btc":ret(btc) or previous.get("btc"),"eth":ret(eth) or previous.get("eth"),"btcHistory":btc_history,
+  "source":"CoinMarketCap Fear & Greed + Yahoo Finance","sourceUrl":"https://coinmarketcap.com/charts/",
+  "sourceStatus":"REAL / DAILY" if cmc_ok else "UNAVAILABLE · last valid CMC snapshot retained",
   "dataStatus":"REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
 }
 
