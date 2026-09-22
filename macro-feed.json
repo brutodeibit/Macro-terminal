@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "22/09/2026 21:30 UTC",
+  "updated": "22/09/2026 21:45 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,25 +1400,12 @@
     }
   },
   "riskOnOff": {
-    "updated": "22/09/2026 21:29 UTC",
-    "score": 90.4,
+    "updated": "22/09/2026 21:44 UTC",
+    "score": 82.3,
     "label": "RISK ON",
     "confidence": 75,
     "method": "Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.",
     "assets": [
-      {
-        "name": "SP500",
-        "symbol": "^GSPC",
-        "value": 7764.64013671875,
-        "change1d": -0.0007734824557181774,
-        "change1w": 2.3585094211189483,
-        "change1m": 1.1762531406855237,
-        "pointChange1d": -0.06005859375,
-        "pointChange1w": 178.91015625,
-        "pointChange1m": 90.27001953124909,
-        "role": "Acciones / apetito de riesgo",
-        "marketSignal": "FAVORECE RISK-ON ↑"
-      },
       {
         "name": "NASDAQ",
         "symbol": "^IXIC",
@@ -1565,52 +1552,52 @@
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.54499816894531,
-        "change1d": 0.11450548981388753,
-        "change1w": 0.8981401197811101,
-        "change1m": 1.7661893353114078,
-        "pointChange1d": 0.11499786376953125,
-        "pointChange1w": 0.8949966430664062,
-        "pointChange1m": 1.7449951171874858,
+        "value": 100.54100036621094,
+        "change1d": 0.11052480404047937,
+        "change1w": 0.8941282756534941,
+        "change1m": 1.7621429763935215,
+        "pointChange1d": 0.11100006103514204,
+        "pointChange1w": 0.890998840332017,
+        "pointChange1m": 1.7409973144531392,
         "role": "Dólar / liquidez",
         "marketSignal": "ESTRÉS / RISK-OFF ↑"
       },
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 111.93099975585938,
-        "change1d": -0.08212855083051807,
-        "change1w": 1.1714173585255505,
-        "change1m": -1.6846869836626976,
-        "pointChange1d": -0.09200286865234375,
-        "pointChange1w": 1.2959976196289205,
-        "pointChange1m": -1.917999267578125,
+        "value": 111.90599822998047,
+        "change1d": -0.10444675806756676,
+        "change1w": 1.1488191523555624,
+        "change1m": -1.706647234603298,
+        "pointChange1d": -0.11700439453125,
+        "pointChange1w": 1.27099609375,
+        "pointChange1m": -1.9430007934570312,
         "role": "Carry / apetito de riesgo",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 86242.453125,
-        "change1d": -0.4162226426236204,
-        "change1w": 12.877216981368411,
-        "change1m": 11.419139768970776,
-        "pointChange1d": -360.4609375,
-        "pointChange1w": 9838.6796875,
-        "pointChange1m": 8838.828125,
+        "value": 86208.3515625,
+        "change1d": -0.45559956529320766,
+        "change1w": 12.832583632823269,
+        "change1m": 11.375082966075546,
+        "pointChange1d": -394.5625,
+        "pointChange1w": 9804.578125,
+        "pointChange1m": 8804.7265625,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2749.31005859375,
-        "change1d": -0.978156440664224,
-        "change1w": 12.349415350099058,
-        "change1m": 13.709250313096977,
-        "pointChange1d": -27.158203125,
-        "pointChange1w": 302.203369140625,
-        "pointChange1m": 331.468017578125,
+        "value": 2747.6201171875,
+        "change1d": -1.03902302536647,
+        "change1w": 12.280356595385445,
+        "change1m": 13.639355697254318,
+        "pointChange1d": -28.84814453125,
+        "pointChange1w": 300.513427734375,
+        "pointChange1m": 329.778076171875,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
@@ -1643,10 +1630,10 @@
     ],
     "confirmations": [
       "VIX: la volatilidad bursátil está contenida.",
-      "SP500: la bolsa amplia acompaña el apetito por riesgo.",
       "NASDAQ: la beta alta acompaña el régimen.",
       "ETH: cripto acompaña la liquidez/alta beta.",
-      "COPPER: el cobre acompaña la demanda cíclica."
+      "COPPER: el cobre acompaña la demanda cíclica.",
+      "BTC: cripto acompaña la liquidez/alta beta."
     ],
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
@@ -1655,14 +1642,13 @@
       "OIL: el petróleo aporta señal de crecimiento/inflación."
     ],
     "coverage": {
-      "totalAssets": 18,
+      "totalAssets": 17,
       "windows": [
         "1D",
         "1S",
         "1M"
       ],
       "symbols": [
-        "^GSPC",
         "^IXIC",
         "^VIX",
         "^VVIX",
@@ -1684,7 +1670,7 @@
     }
   },
   "automation": {
-    "updatedAt": "22/09/2026 21:30 UTC",
+    "updatedAt": "22/09/2026 21:45 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1695,7 +1681,7 @@
     ]
   },
   "fx": {
-    "updated": "22/09/2026 21:29 UTC",
+    "updated": "22/09/2026 21:44 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1714,57 +1700,57 @@
       },
       "GBP": {
         "pair": "GBPUSD=X",
-        "last": 1.3341338634490967,
-        "change1d": -0.22106179022515215,
-        "change1w": -0.9805832501279643,
-        "change15d": -1.287436750765536,
-        "change1m": -2.1773027570264336
+        "last": 1.3347749710083008,
+        "change1d": -0.17311380442838198,
+        "change1w": -0.9330002464088216,
+        "change15d": -1.24000120308827,
+        "change1m": -2.1302948274757427
       },
       "JPY": {
         "pair": "USDJPY=X",
-        "last": 157.41299438476562,
-        "change1d": -0.02795410020133282,
-        "change1w": -1.3827804062556792,
-        "change15d": 1.7372498536710301,
-        "change1m": 1.084594663475158
+        "last": 157.3560028076172,
+        "change1d": 0.008261149279065183,
+        "change1w": -1.3460746401680268,
+        "change15d": 1.772826008788786,
+        "change1m": 1.1204071132442373
       },
       "AUD": {
         "pair": "AUDUSD=X",
-        "last": 0.7114399671554565,
-        "change1d": -0.06459473980292563,
-        "change1w": -0.15580602893879858,
-        "change15d": -0.45752412903746764,
-        "change1m": -0.5648799724820242
+        "last": 0.7117437720298767,
+        "change1d": -0.021919511186530016,
+        "change1w": -0.1131697501080775,
+        "change15d": -0.4150166923209686,
+        "change1m": -0.5224183797299387
       },
       "NZD": {
         "pair": "NZDUSD=X",
-        "last": 0.5730330348014832,
-        "change1d": 0.32777493115045964,
-        "change1w": -0.36446014567627083,
-        "change15d": -2.803286201429822,
-        "change1m": -3.9504993197837623
+        "last": 0.5731644630432129,
+        "change1d": 0.3507856517460439,
+        "change1w": -0.34160819295877554,
+        "change15d": -2.7809936067264784,
+        "change1m": -3.9284698446457433
       },
       "CAD": {
         "pair": "USDCAD=X",
-        "last": 1.4057999849319458,
-        "change1d": -0.17957678697975155,
-        "change1w": -0.962364145161354,
-        "change15d": -1.179634937696572,
-        "change1m": -1.5692685201892598
+        "last": 1.4058799743652344,
+        "change1d": -0.18527696315002729,
+        "change1w": -0.9681088616060984,
+        "change15d": -1.185392016758846,
+        "change1m": -1.5750477692400011
       },
       "CHF": {
         "pair": "USDCHF=X",
-        "last": 0.8196899890899658,
-        "change1d": 0.13523602473330953,
-        "change1w": -0.07618446318697902,
-        "change15d": -0.98435416600271,
-        "change1m": -2.205736062750474
+        "last": 0.8198599815368652,
+        "change1d": 0.11452544413194099,
+        "change1w": -0.09693888949411367,
+        "change15d": -1.0052969342342788,
+        "change1m": -2.2269321288141075
       }
     },
     "method": "Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:44 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -2293,10 +2279,10 @@
     "sourceUrl": "https://www.cboe.com/delayed_quotes/",
     "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers.",
     "sourceStatus": "UNAVAILABLE · last valid snapshot retained",
-    "updatedAttempt": "22/09/2026 21:30 UTC"
+    "updatedAttempt": "22/09/2026 21:44 UTC"
   },
   "darkPools": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "markets": [
       {
         "symbol": "SPY",
@@ -3064,7 +3050,7 @@
     "dataStatus": "REAL AGGREGATED FINRA DATA · DELAYED"
   },
   "rotation": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -3271,7 +3257,7 @@
     "method": "ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."
   },
   "cryptoSentiment": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "fearGreed": {
       "value": 79.0,
       "classification": "Greed",
@@ -3880,16 +3866,16 @@
       ]
     },
     "btc": {
-      "change1d": -0.40277224360865116,
-      "change1w": 12.892462874307897,
-      "change1m": 11.434188725011275,
-      "last": 86254.1015625
+      "change1d": -0.45051168799982166,
+      "change1w": 12.838350690917078,
+      "change1m": 11.38077552892387,
+      "last": 86212.7578125
     },
     "eth": {
-      "change1d": -0.9461051980696467,
-      "change1w": 12.38578044124774,
-      "change1m": 13.746055553597781,
-      "last": 2750.199951171875
+      "change1d": -1.0127313339102884,
+      "change1w": 12.310186944503275,
+      "change1m": 13.66954710167061,
+      "last": 2748.35009765625
     },
     "btcHistory": [
       {
@@ -4354,7 +4340,7 @@
       },
       {
         "date": "2026-09-22",
-        "price": 86254.1015625,
+        "price": 86212.7578125,
         "fearGreed": 79.0
       }
     ],
@@ -4364,7 +4350,7 @@
     "dataStatus": "REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
   },
   "bondMarket": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -4421,17 +4407,17 @@
     "sourceUrl": "https://www.aaii.com/sentimentsurvey",
     "bullBearSpread": -24.5,
     "history": [],
-    "updated": "22/09/2026 21:30 UTC"
+    "updated": "22/09/2026 21:45 UTC"
   },
   "optionsStats": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "totalPutCall": 0.74,
     "indexPutCall": 0.8,
     "source": "Cboe Daily Market Statistics",
     "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   },
   "darkPoolPrints": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "prints": [],
     "assets": {
       "SPY": {
@@ -4762,10 +4748,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 13975772,
-          "offExchangePct": 40.44,
+          "offExchangeShares": 13976616,
+          "offExchangePct": 40.43,
           "offExchange30dPct": 47.24,
-          "litShares": 20579260,
+          "litShares": 20594639,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -5101,10 +5087,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 15542401,
-          "offExchangePct": 39.48,
-          "offExchange30dPct": 39.97,
-          "litShares": 23824526,
+          "offExchangeShares": 15547474,
+          "offExchangePct": 39.43,
+          "offExchange30dPct": 39.96,
+          "litShares": 23879039,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -5440,10 +5426,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 1576492,
+          "offExchangeShares": 1577017,
           "offExchangePct": 46.87,
           "offExchange30dPct": 43.59,
-          "litShares": 1787117,
+          "litShares": 1787611,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -6323,10 +6309,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 2446953,
+          "offExchangeShares": 2449258,
           "offExchangePct": 37.85,
           "offExchange30dPct": 38.2,
-          "litShares": 4017339,
+          "litShares": 4021537,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -6994,10 +6980,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 3652832,
-          "offExchangePct": 43.56,
+          "offExchangeShares": 3655706,
+          "offExchangePct": 43.57,
           "offExchange30dPct": 46.92,
-          "litShares": 4733348,
+          "litShares": 4733863,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -7665,10 +7651,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 18485394,
+          "offExchangeShares": 18487403,
           "offExchangePct": 45.55,
           "offExchange30dPct": 45.9,
-          "litShares": 22097256,
+          "litShares": 22097951,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -8004,10 +7990,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 46562152,
-          "offExchangePct": 49.79,
+          "offExchangeShares": 46581393,
+          "offExchangePct": 49.78,
           "offExchange30dPct": 49.28,
-          "litShares": 46956564,
+          "litShares": 46984507,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -8343,10 +8329,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 10565108,
-          "offExchangePct": 41.16,
+          "offExchangeShares": 10581955,
+          "offExchangePct": 41.19,
           "offExchange30dPct": 38.84,
-          "litShares": 15102382,
+          "litShares": 15110898,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -8370,7 +8356,7 @@
     "note": "BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."
   },
   "darkFlowRadar": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "source": "SquawkFlow",
     "sourceUrl": "https://squawkflow.com/dark-pool-flow",
     "dataStatus": "MODELED · NOT PRINTS",
@@ -8444,7 +8430,7 @@
     "note": "Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."
   },
   "squawkFlow": {
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "spxGex": {
       "data": {
         "symbol": "SPX",
@@ -8527,7 +8513,7 @@
             "netGex": 0.0
           }
         ],
-        "timestamp": 1790112603866,
+        "timestamp": 1790113506083,
         "asOfDate": "2026-09-22",
         "oiSettleDate": "2026-09-21",
         "contractsAnalyzed": 19544,
@@ -8568,8 +8554,8 @@
         }
       },
       "meta": {
-        "cached_at": "2026-09-22T21:30:22Z",
-        "next_update": "2026-09-22T21:30:47Z"
+        "cached_at": "2026-09-22T21:45:11Z",
+        "next_update": "2026-09-22T21:45:36Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -8670,11 +8656,11 @@
           "openInterest": 7584,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790112436158,
+          "timestamp": 1790113450055,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.85,
+          "underlyingPrice": 746.74,
           "bid": 0.39,
           "ask": 4.88,
           "last": 2.25,
@@ -8697,11 +8683,11 @@
           "openInterest": 411,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112264772,
+          "timestamp": 1790113354693,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 737.6,
+          "underlyingPrice": 739.0,
           "bid": 304.9,
           "ask": 312.0,
           "last": 310.07,
@@ -8724,11 +8710,11 @@
           "openInterest": 2953,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112264772,
+          "timestamp": 1790113354693,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 737.6,
+          "underlyingPrice": 739.0,
           "bid": 311.8,
           "ask": 319.15,
           "last": 317.92,
@@ -8751,11 +8737,11 @@
           "openInterest": 3570,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112436158,
+          "timestamp": 1790113450055,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.85,
+          "underlyingPrice": 746.74,
           "bid": 0.82,
           "ask": 1.36,
           "last": 1.27,
@@ -8778,11 +8764,11 @@
           "openInterest": 274,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112474914,
+          "timestamp": 1790113476854,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 228.2,
+          "underlyingPrice": 228.25,
           "bid": 76.55,
           "ask": 80.05,
           "last": 78.46,
@@ -8805,11 +8791,11 @@
           "openInterest": 31414,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790112474914,
+          "timestamp": 1790113476853,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "block_trade",
-          "underlyingPrice": 228.2,
+          "underlyingPrice": 228.25,
           "bid": 76.4,
           "ask": 77.05,
           "last": 76.7,
@@ -8832,11 +8818,11 @@
           "openInterest": 5759,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790112436158,
+          "timestamp": 1790113450055,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.85,
+          "underlyingPrice": 746.74,
           "bid": 2.55,
           "ask": 4.05,
           "last": 3.29,
@@ -8859,11 +8845,11 @@
           "openInterest": 24099,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112264770,
+          "timestamp": 1790113354691,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 737.6,
+          "underlyingPrice": 739.0,
           "bid": 53.55,
           "ask": 55.5,
           "last": 54.62,
@@ -8886,11 +8872,11 @@
           "openInterest": 35550,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112436163,
+          "timestamp": 1790113450060,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.85,
+          "underlyingPrice": 746.74,
           "bid": 8.18,
           "ask": 8.25,
           "last": 8.29,
@@ -8913,16 +8899,16 @@
           "openInterest": 5409,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790112263558,
+          "timestamp": 1790113354269,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
-          "underlyingPrice": 378.56,
+          "underlyingPrice": 378.66,
           "bid": 2.85,
           "ask": 2.9,
           "last": 2.84,
           "iv": null,
-          "delta": 0.452,
+          "delta": 0.453,
           "gamma": 0.046,
           "notes": "Volume 464.8x average",
           "confidence": 1.0,
@@ -8940,11 +8926,11 @@
           "openInterest": 3776,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112264771,
+          "timestamp": 1790113354692,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "block_trade",
-          "underlyingPrice": 737.6,
+          "underlyingPrice": 739.0,
           "bid": 246.1,
           "ask": 251.1,
           "last": 249.56,
@@ -8967,11 +8953,11 @@
           "openInterest": 2587,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790112264771,
+          "timestamp": 1790113354692,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 737.6,
+          "underlyingPrice": 739.0,
           "bid": 236.85,
           "ask": 241.85,
           "last": 242.11,
@@ -8985,8 +8971,8 @@
         }
       ],
       "meta": {
-        "cached_at": "2026-09-22T21:30:24Z",
-        "next_update": "2026-09-22T21:30:49Z"
+        "cached_at": "2026-09-22T21:45:14Z",
+        "next_update": "2026-09-22T21:45:39Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -8996,7 +8982,7 @@
   "traditionalFearGreed": {
     "score": 35.2571428571429,
     "rating": "fear",
-    "timestamp": "2026-09-22T21:10:51+00:00",
+    "timestamp": "2026-09-22T21:25:36+00:00",
     "previous_close": 33.7142857142857,
     "previous_1_week": 27.9714285714286,
     "previous_1_month": 54.65714285714286,
@@ -9365,7 +9351,7 @@
     ],
     "source": "CNN Fear & Greed Index",
     "sourceUrl": "https://www.cnn.com/markets/fear-and-greed",
-    "updated": "22/09/2026 21:30 UTC",
+    "updated": "22/09/2026 21:45 UTC",
     "components": {
       "market_momentum_sp500": 40,
       "market_momentum_sp125": 40,
