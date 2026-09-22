@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "22/09/2026 21:45 UTC",
+  "updated": "22/09/2026 21:57 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1400,12 +1400,25 @@
     }
   },
   "riskOnOff": {
-    "updated": "22/09/2026 21:44 UTC",
-    "score": 82.3,
+    "updated": "22/09/2026 21:56 UTC",
+    "score": 90.5,
     "label": "RISK ON",
     "confidence": 75,
     "method": "Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.",
     "assets": [
+      {
+        "name": "SP500",
+        "symbol": "^GSPC",
+        "value": 7764.64013671875,
+        "change1d": -0.0007734824557181774,
+        "change1w": 2.3585094211189483,
+        "change1m": 1.1762531406855237,
+        "pointChange1d": -0.06005859375,
+        "pointChange1w": 178.91015625,
+        "pointChange1m": 90.27001953124909,
+        "role": "Acciones / apetito de riesgo",
+        "marketSignal": "FAVORECE RISK-ON ↑"
+      },
       {
         "name": "NASDAQ",
         "symbol": "^IXIC",
@@ -1552,52 +1565,52 @@
       {
         "name": "DXY",
         "symbol": "DX-Y.NYB",
-        "value": 100.54100036621094,
-        "change1d": 0.11052480404047937,
-        "change1w": 0.8941282756534941,
-        "change1m": 1.7621429763935215,
-        "pointChange1d": 0.11100006103514204,
-        "pointChange1w": 0.890998840332017,
-        "pointChange1m": 1.7409973144531392,
+        "value": 100.52899932861328,
+        "change1d": 0.09857514999169759,
+        "change1w": 0.8820850870796093,
+        "change1m": 1.7499961775808037,
+        "pointChange1d": 0.09899902343748579,
+        "pointChange1w": 0.878997802734375,
+        "pointChange1m": 1.728996276855483,
         "role": "Dólar / liquidez",
         "marketSignal": "ESTRÉS / RISK-OFF ↑"
       },
       {
         "name": "AUDJPY",
         "symbol": "AUDJPY=X",
-        "value": 111.90599822998047,
-        "change1d": -0.10444675806756676,
-        "change1w": 1.1488191523555624,
-        "change1m": -1.706647234603298,
-        "pointChange1d": -0.11700439453125,
-        "pointChange1w": 1.27099609375,
-        "pointChange1m": -1.9430007934570312,
+        "value": 111.98300170898438,
+        "change1d": -0.035707769467152595,
+        "change1w": 1.2184205239984092,
+        "change1m": -1.6390107339186888,
+        "pointChange1d": -0.04000091552734375,
+        "pointChange1w": 1.3479995727539062,
+        "pointChange1m": -1.865997314453125,
         "role": "Carry / apetito de riesgo",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 86208.3515625,
-        "change1d": -0.45559956529320766,
-        "change1w": 12.832583632823269,
-        "change1m": 11.375082966075546,
-        "pointChange1d": -394.5625,
-        "pointChange1w": 9804.578125,
-        "pointChange1m": 8804.7265625,
+        "value": 86279.2265625,
+        "change1d": -0.3737605177654868,
+        "change1w": 12.925347375778951,
+        "change1m": 11.466648445082516,
+        "pointChange1d": -323.6875,
+        "pointChange1w": 9875.453125,
+        "pointChange1m": 8875.6015625,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2747.6201171875,
-        "change1d": -1.03902302536647,
-        "change1w": 12.280356595385445,
-        "change1m": 13.639355697254318,
-        "pointChange1d": -28.84814453125,
-        "pointChange1w": 300.513427734375,
-        "pointChange1m": 329.778076171875,
+        "value": 2750.7900390625,
+        "change1d": -0.924852014708577,
+        "change1w": 12.40989413817677,
+        "change1m": 13.770461113622567,
+        "pointChange1d": -25.67822265625,
+        "pointChange1w": 303.683349609375,
+        "pointChange1m": 332.947998046875,
         "role": "Beta alta / liquidez",
         "marketSignal": "FAVORECE RISK-ON ↑"
       },
@@ -1630,10 +1643,10 @@
     ],
     "confirmations": [
       "VIX: la volatilidad bursátil está contenida.",
+      "SP500: la bolsa amplia acompaña el apetito por riesgo.",
       "NASDAQ: la beta alta acompaña el régimen.",
       "ETH: cripto acompaña la liquidez/alta beta.",
-      "COPPER: el cobre acompaña la demanda cíclica.",
-      "BTC: cripto acompaña la liquidez/alta beta."
+      "COPPER: el cobre acompaña la demanda cíclica."
     ],
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
@@ -1642,13 +1655,14 @@
       "OIL: el petróleo aporta señal de crecimiento/inflación."
     ],
     "coverage": {
-      "totalAssets": 17,
+      "totalAssets": 18,
       "windows": [
         "1D",
         "1S",
         "1M"
       ],
       "symbols": [
+        "^GSPC",
         "^IXIC",
         "^VIX",
         "^VVIX",
@@ -1670,7 +1684,7 @@
     }
   },
   "automation": {
-    "updatedAt": "22/09/2026 21:45 UTC",
+    "updatedAt": "22/09/2026 21:57 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1681,7 +1695,7 @@
     ]
   },
   "fx": {
-    "updated": "22/09/2026 21:44 UTC",
+    "updated": "22/09/2026 21:56 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1692,65 +1706,65 @@
       },
       "EUR": {
         "pair": "EURUSD=X",
-        "last": 1.145213007926941,
-        "change1d": -0.108794591693262,
-        "change1w": -0.7409549622377831,
-        "change15d": -1.2368292545016257,
-        "change1m": -1.8529518256431898
+        "last": 1.1453442573547363,
+        "change1d": -0.09734636026305088,
+        "change1w": -0.7295791808114793,
+        "change15d": -1.2255103037405957,
+        "change1m": -1.8417034868419946
       },
       "GBP": {
         "pair": "GBPUSD=X",
-        "last": 1.3347749710083008,
-        "change1d": -0.17311380442838198,
-        "change1w": -0.9330002464088216,
-        "change15d": -1.24000120308827,
-        "change1m": -2.1302948274757427
+        "last": 1.334507703781128,
+        "change1d": -0.19310253335296235,
+        "change1w": -0.952836820290992,
+        "change15d": -1.259776304964877,
+        "change1m": -2.149891662368386
       },
       "JPY": {
         "pair": "USDJPY=X",
-        "last": 157.3560028076172,
-        "change1d": 0.008261149279065183,
-        "change1w": -1.3460746401680268,
-        "change15d": 1.772826008788786,
-        "change1m": 1.1204071132442373
+        "last": 157.3159942626953,
+        "change1d": 0.03368454529985021,
+        "change1w": -1.3203068975490506,
+        "change15d": 1.7978007554336983,
+        "change1m": 1.1455477406323356
       },
       "AUD": {
         "pair": "AUDUSD=X",
-        "last": 0.7117437720298767,
-        "change1d": -0.021919511186530016,
-        "change1w": -0.1131697501080775,
-        "change15d": -0.4150166923209686,
-        "change1m": -0.5224183797299387
+        "last": 0.7120985388755798,
+        "change1d": 0.02791430492585789,
+        "change1w": -0.06338141744171022,
+        "change15d": -0.3653788144836856,
+        "change1m": -0.4728340359864691
       },
       "NZD": {
         "pair": "NZDUSD=X",
-        "last": 0.5731644630432129,
-        "change1d": 0.3507856517460439,
-        "change1w": -0.34160819295877554,
-        "change15d": -2.7809936067264784,
-        "change1m": -3.9284698446457433
+        "last": 0.5732301473617554,
+        "change1d": 0.36228579419337326,
+        "change1w": -0.33018739844872247,
+        "change15d": -2.7698523643849504,
+        "change1m": -3.9174601024225764
       },
       "CAD": {
         "pair": "USDCAD=X",
-        "last": 1.4058799743652344,
-        "change1d": -0.18527696315002729,
-        "change1w": -0.9681088616060984,
-        "change15d": -1.185392016758846,
-        "change1m": -1.5750477692400011
+        "last": 1.4057799577713013,
+        "change1d": -0.1781496191755716,
+        "change1w": -0.9609258256938258,
+        "change15d": -1.1781935229685958,
+        "change1m": -1.5678215547041185
       },
       "CHF": {
         "pair": "USDCHF=X",
-        "last": 0.8198599815368652,
-        "change1d": 0.11452544413194099,
-        "change1w": -0.09693888949411367,
-        "change15d": -1.0052969342342788,
-        "change1m": -2.2269321288141075
+        "last": 0.819599986076355,
+        "change1d": 0.14620130408397047,
+        "change1w": -0.0651959695951998,
+        "change15d": -0.9732659542111222,
+        "change1m": -2.1945137416578664
       }
     },
     "method": "Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "22/09/2026 21:44 UTC",
+    "updated": "22/09/2026 21:56 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -2279,10 +2293,10 @@
     "sourceUrl": "https://www.cboe.com/delayed_quotes/",
     "note": "Cadena de opciones retrasada; OI y gamma son datos/proxies, no posiciones reales de dealers.",
     "sourceStatus": "UNAVAILABLE · last valid snapshot retained",
-    "updatedAttempt": "22/09/2026 21:44 UTC"
+    "updatedAttempt": "22/09/2026 21:56 UTC"
   },
   "darkPools": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:56 UTC",
     "markets": [
       {
         "symbol": "SPY",
@@ -3050,7 +3064,7 @@
     "dataStatus": "REAL AGGREGATED FINRA DATA · DELAYED"
   },
   "rotation": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:57 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -3257,7 +3271,7 @@
     "method": "ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."
   },
   "cryptoSentiment": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:57 UTC",
     "fearGreed": {
       "value": 79.0,
       "classification": "Greed",
@@ -3866,16 +3880,16 @@
       ]
     },
     "btc": {
-      "change1d": -0.45051168799982166,
-      "change1w": 12.838350690917078,
-      "change1m": 11.38077552892387,
-      "last": 86212.7578125
+      "change1d": -0.3777839100932434,
+      "change1w": 12.920786900761506,
+      "change1m": 11.46214687942586,
+      "last": 86275.7421875
     },
     "eth": {
-      "change1d": -1.0127313339102884,
-      "change1w": 12.310186944503275,
-      "change1m": 13.66954710167061,
-      "last": 2748.35009765625
+      "change1d": -0.921255592700021,
+      "change1w": 12.413974610681521,
+      "change1m": 13.774590974628008,
+      "last": 2750.889892578125
     },
     "btcHistory": [
       {
@@ -4340,7 +4354,7 @@
       },
       {
         "date": "2026-09-22",
-        "price": 86212.7578125,
+        "price": 86275.7421875,
         "fearGreed": 79.0
       }
     ],
@@ -4350,7 +4364,7 @@
     "dataStatus": "REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
   },
   "bondMarket": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:57 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -4407,17 +4421,17 @@
     "sourceUrl": "https://www.aaii.com/sentimentsurvey",
     "bullBearSpread": -24.5,
     "history": [],
-    "updated": "22/09/2026 21:45 UTC"
+    "updated": "22/09/2026 21:57 UTC"
   },
   "optionsStats": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:57 UTC",
     "totalPutCall": 0.74,
     "indexPutCall": 0.8,
     "source": "Cboe Daily Market Statistics",
     "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   },
   "darkPoolPrints": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:56 UTC",
     "prints": [],
     "assets": {
       "SPY": {
@@ -4748,10 +4762,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 13976616,
-          "offExchangePct": 40.43,
+          "offExchangeShares": 13978344,
+          "offExchangePct": 40.42,
           "offExchange30dPct": 47.24,
-          "litShares": 20594639,
+          "litShares": 20600361,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -5087,10 +5101,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 15547474,
-          "offExchangePct": 39.43,
+          "offExchangeShares": 15548723,
+          "offExchangePct": 39.42,
           "offExchange30dPct": 39.96,
-          "litShares": 23879039,
+          "litShares": 23892453,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -5426,10 +5440,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 1577017,
+          "offExchangeShares": 1577050,
           "offExchangePct": 46.87,
           "offExchange30dPct": 43.59,
-          "litShares": 1787611,
+          "litShares": 1787628,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -6308,14 +6322,7 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {
-          "offExchangeShares": 2449258,
-          "offExchangePct": 37.85,
-          "offExchange30dPct": 38.2,
-          "litShares": 4021537,
-          "source": "ChartExchange public exchange-volume page",
-          "sourceUrl": "https://chartexchange.com/"
-        },
+        "dailyOffExchange": {},
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -6980,10 +6987,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 3655706,
+          "offExchangeShares": 3655820,
           "offExchangePct": 43.57,
           "offExchange30dPct": 46.92,
-          "litShares": 4733863,
+          "litShares": 4733940,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -7651,10 +7658,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 18487403,
+          "offExchangeShares": 18488266,
           "offExchangePct": 45.55,
           "offExchange30dPct": 45.9,
-          "litShares": 22097951,
+          "litShares": 22098352,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -7990,10 +7997,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 46581393,
-          "offExchangePct": 49.78,
+          "offExchangeShares": 46593702,
+          "offExchangePct": 49.79,
           "offExchange30dPct": 49.28,
-          "litShares": 46984507,
+          "litShares": 46993084,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -8329,10 +8336,10 @@
         "shareCount": 0,
         "notional": 0,
         "dailyOffExchange": {
-          "offExchangeShares": 10581955,
+          "offExchangeShares": 10583661,
           "offExchangePct": 41.19,
           "offExchange30dPct": 38.84,
-          "litShares": 15110898,
+          "litShares": 15111906,
           "source": "ChartExchange public exchange-volume page",
           "sourceUrl": "https://chartexchange.com/"
         },
@@ -8356,81 +8363,81 @@
     "note": "BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."
   },
   "darkFlowRadar": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:56 UTC",
     "source": "SquawkFlow",
     "sourceUrl": "https://squawkflow.com/dark-pool-flow",
     "dataStatus": "MODELED · NOT PRINTS",
-    "trackedNotional": "$852.1M",
-    "buySideEstimate": 32.0,
+    "trackedNotional": "$780.9M",
+    "buySideEstimate": 42.0,
     "largestModeled": "$50.0M",
     "dix": 46.7,
     "dixDate": null,
     "signals": [
       {
-        "symbol": "MSFT",
-        "price": "$ 496.78",
-        "shares": "100K",
+        "symbol": "V",
+        "price": "$ 363.18",
+        "shares": "138K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "MA",
-        "price": "$ 556.40",
-        "shares": "74K",
-        "notional": "$41.1M"
-      },
-      {
-        "symbol": "MSFT",
-        "price": "$ 496.90",
-        "shares": "100K",
+        "symbol": "GOOGL",
+        "price": "$ 351.78",
+        "shares": "142K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "AMZN",
-        "price": "$ 254.68",
-        "shares": "12K",
-        "notional": "$2.9M"
-      },
-      {
-        "symbol": "MSFT",
-        "price": "$ 498.20",
-        "shares": "100K",
-        "notional": "$50.0M"
-      },
-      {
-        "symbol": "AMZN",
-        "price": "$ 254.66",
-        "shares": "196K",
-        "notional": "$50.0M"
-      },
-      {
-        "symbol": "AAPL",
-        "price": "$ 340.29",
-        "shares": "147K",
+        "symbol": "V",
+        "price": "$ 363.05",
+        "shares": "138K",
         "notional": "$50.0M"
       },
       {
         "symbol": "BAC",
-        "price": "$ 56.32",
-        "shares": "409K",
-        "notional": "$23.1M"
+        "price": "$ 56.38",
+        "shares": "441K",
+        "notional": "$24.9M"
       },
       {
-        "symbol": "MSFT",
-        "price": "$ 497.56",
-        "shares": "100K",
+        "symbol": "AMD",
+        "price": "$ 619.48",
+        "shares": "81K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "COIN",
-        "price": "$ 200.72",
-        "shares": "249K",
+        "symbol": "AMZN",
+        "price": "$ 255.58",
+        "shares": "196K",
+        "notional": "$50.0M"
+      },
+      {
+        "symbol": "NFLX",
+        "price": "$ 72.14",
+        "shares": "18K",
+        "notional": "$1.3M"
+      },
+      {
+        "symbol": "META",
+        "price": "$ 736.33",
+        "shares": "16K",
+        "notional": "$11.7M"
+      },
+      {
+        "symbol": "AMD",
+        "price": "$ 621.04",
+        "shares": "81K",
+        "notional": "$50.0M"
+      },
+      {
+        "symbol": "META",
+        "price": "$ 738.13",
+        "shares": "68K",
         "notional": "$50.0M"
       }
     ],
     "note": "Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."
   },
   "squawkFlow": {
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:57 UTC",
     "spxGex": {
       "data": {
         "symbol": "SPX",
@@ -8513,7 +8520,7 @@
             "netGex": 0.0
           }
         ],
-        "timestamp": 1790113506083,
+        "timestamp": 1790114207373,
         "asOfDate": "2026-09-22",
         "oiSettleDate": "2026-09-21",
         "contractsAnalyzed": 19544,
@@ -8554,8 +8561,8 @@
         }
       },
       "meta": {
-        "cached_at": "2026-09-22T21:45:11Z",
-        "next_update": "2026-09-22T21:45:36Z"
+        "cached_at": "2026-09-22T21:56:58Z",
+        "next_update": "2026-09-22T21:57:23Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -8656,11 +8663,11 @@
           "openInterest": 7584,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790113450055,
+          "timestamp": 1790113938542,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.74,
+          "underlyingPrice": 746.88,
           "bid": 0.39,
           "ask": 4.88,
           "last": 2.25,
@@ -8668,60 +8675,6 @@
           "delta": 1.0,
           "gamma": 0.0,
           "notes": "Volume 1600.6x average",
-          "confidence": 1.0,
-          "source": "schwab",
-          "isStale": false
-        },
-        {
-          "id": "9eb8b3cd4ce3e74d1438",
-          "symbol": "META",
-          "type": "call",
-          "strike": 560.0,
-          "expiry": "2029-01-19",
-          "premium": 97902030.0,
-          "volume": 3174,
-          "openInterest": 411,
-          "side": "buy",
-          "size": "block",
-          "timestamp": 1790113354693,
-          "unusualScore": 100,
-          "sentiment": "bullish",
-          "flowType": "volume_spike",
-          "underlyingPrice": 739.0,
-          "bid": 304.9,
-          "ask": 312.0,
-          "last": 310.07,
-          "iv": null,
-          "delta": 0.786,
-          "gamma": 0.001,
-          "notes": "Volume 31.7x average",
-          "confidence": 1.0,
-          "source": "schwab",
-          "isStale": false
-        },
-        {
-          "id": "6ba90d4b9ad43340abe7",
-          "symbol": "META",
-          "type": "call",
-          "strike": 540.0,
-          "expiry": "2028-12-15",
-          "premium": 97576417.5,
-          "volume": 3093,
-          "openInterest": 2953,
-          "side": "buy",
-          "size": "block",
-          "timestamp": 1790113354693,
-          "unusualScore": 100,
-          "sentiment": "bullish",
-          "flowType": "volume_spike",
-          "underlyingPrice": 739.0,
-          "bid": 311.8,
-          "ask": 319.15,
-          "last": 317.92,
-          "iv": null,
-          "delta": 0.804,
-          "gamma": 0.001,
-          "notes": "Volume 20.9x average",
           "confidence": 1.0,
           "source": "schwab",
           "isStale": false
@@ -8737,11 +8690,11 @@
           "openInterest": 3570,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790113450055,
+          "timestamp": 1790113938542,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.74,
+          "underlyingPrice": 746.88,
           "bid": 0.82,
           "ask": 1.36,
           "last": 1.27,
@@ -8749,60 +8702,6 @@
           "delta": 1.0,
           "gamma": 0.0,
           "notes": "Volume 4090.0x average",
-          "confidence": 1.0,
-          "source": "schwab",
-          "isStale": false
-        },
-        {
-          "id": "5312f744201b675b7979",
-          "symbol": "NVDA",
-          "type": "call",
-          "strike": 200.0,
-          "expiry": "2029-01-19",
-          "premium": 78769800.0,
-          "volume": 10060,
-          "openInterest": 274,
-          "side": "buy",
-          "size": "block",
-          "timestamp": 1790113476854,
-          "unusualScore": 100,
-          "sentiment": "bullish",
-          "flowType": "volume_spike",
-          "underlyingPrice": 228.25,
-          "bid": 76.55,
-          "ask": 80.05,
-          "last": 78.46,
-          "iv": null,
-          "delta": 0.714,
-          "gamma": 0.003,
-          "notes": "Volume 100.6x average",
-          "confidence": 1.0,
-          "source": "schwab",
-          "isStale": false
-        },
-        {
-          "id": "c207d43a87233d717ec6",
-          "symbol": "NVDA",
-          "type": "call",
-          "strike": 200.0,
-          "expiry": "2028-12-15",
-          "premium": 77515267.5,
-          "volume": 10103,
-          "openInterest": 31414,
-          "side": "sell",
-          "size": "block",
-          "timestamp": 1790113476853,
-          "unusualScore": 100,
-          "sentiment": "bearish",
-          "flowType": "block_trade",
-          "underlyingPrice": 228.25,
-          "bid": 76.4,
-          "ask": 77.05,
-          "last": 76.7,
-          "iv": null,
-          "delta": 0.707,
-          "gamma": 0.003,
-          "notes": "Large premium: $77,515,268",
           "confidence": 1.0,
           "source": "schwab",
           "isStale": false
@@ -8818,11 +8717,11 @@
           "openInterest": 5759,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790113450055,
+          "timestamp": 1790113938542,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.74,
+          "underlyingPrice": 746.88,
           "bid": 2.55,
           "ask": 4.05,
           "last": 3.29,
@@ -8830,33 +8729,6 @@
           "delta": 1.0,
           "gamma": 0.0,
           "notes": "Volume 768.2x average",
-          "confidence": 1.0,
-          "source": "schwab",
-          "isStale": false
-        },
-        {
-          "id": "f1d64af7ac869febeb52",
-          "symbol": "META",
-          "type": "call",
-          "strike": 700.0,
-          "expiry": "2026-10-16",
-          "premium": 71389582.5,
-          "volume": 13093,
-          "openInterest": 24099,
-          "side": "buy",
-          "size": "block",
-          "timestamp": 1790113354691,
-          "unusualScore": 100,
-          "sentiment": "bullish",
-          "flowType": "volume_spike",
-          "underlyingPrice": 739.0,
-          "bid": 53.55,
-          "ask": 55.5,
-          "last": 54.62,
-          "iv": null,
-          "delta": 0.699,
-          "gamma": 0.004,
-          "notes": "Volume 10.9x average",
           "confidence": 1.0,
           "source": "schwab",
           "isStale": false
@@ -8872,11 +8744,11 @@
           "openInterest": 35550,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790113450060,
+          "timestamp": 1790113938547,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 746.74,
+          "underlyingPrice": 746.88,
           "bid": 8.18,
           "ask": 8.25,
           "last": 8.29,
@@ -8889,90 +8761,225 @@
           "isStale": false
         },
         {
-          "id": "047d0552a2cf4da28645",
-          "symbol": "TSLA",
-          "type": "call",
-          "strike": 380.0,
-          "expiry": "2026-09-23",
-          "premium": 36143350.0,
-          "volume": 125716,
-          "openInterest": 5409,
+          "id": "020ebc0b142425afe48e",
+          "symbol": "SPY",
+          "type": "put",
+          "strike": 774.0,
+          "expiry": "2026-09-22",
+          "premium": 30886960.5,
+          "volume": 623979,
+          "openInterest": 6477,
           "side": "sell",
           "size": "block",
-          "timestamp": 1790113354269,
+          "timestamp": 1790113939251,
+          "unusualScore": 100,
+          "sentiment": "bullish",
+          "flowType": "volume_spike",
+          "underlyingPrice": 773.3,
+          "bid": 0.49,
+          "ask": 0.5,
+          "last": 0.49,
+          "iv": null,
+          "delta": -1.0,
+          "gamma": 0.0,
+          "notes": "Volume 1926.8x average",
+          "confidence": 1.0,
+          "source": "schwab",
+          "isStale": false
+        },
+        {
+          "id": "4d6cb8599a436d74c0be",
+          "symbol": "QQQ",
+          "type": "call",
+          "strike": 743.0,
+          "expiry": "2026-09-22",
+          "premium": 29499349.5,
+          "volume": 80931,
+          "openInterest": 6054,
+          "side": "buy",
+          "size": "block",
+          "timestamp": 1790113938542,
+          "unusualScore": 100,
+          "sentiment": "bullish",
+          "flowType": "volume_spike",
+          "underlyingPrice": 746.88,
+          "bid": 2.96,
+          "ask": 4.33,
+          "last": 4.24,
+          "iv": null,
+          "delta": 1.0,
+          "gamma": 0.0,
+          "notes": "Volume 267.4x average",
+          "confidence": 1.0,
+          "source": "schwab",
+          "isStale": false
+        },
+        {
+          "id": "cdb4a846fcfb14f77d3b",
+          "symbol": "SPY",
+          "type": "put",
+          "strike": 775.0,
+          "expiry": "2026-09-22",
+          "premium": 29211787.5,
+          "volume": 204995,
+          "openInterest": 4074,
+          "side": "buy",
+          "size": "block",
+          "timestamp": 1790113939251,
           "unusualScore": 100,
           "sentiment": "bearish",
           "flowType": "volume_spike",
-          "underlyingPrice": 378.66,
-          "bid": 2.85,
-          "ask": 2.9,
-          "last": 2.84,
+          "underlyingPrice": 773.3,
+          "bid": 1.42,
+          "ask": 1.43,
+          "last": 1.45,
           "iv": null,
-          "delta": 0.453,
-          "gamma": 0.046,
-          "notes": "Volume 464.8x average",
+          "delta": -1.0,
+          "gamma": 0.0,
+          "notes": "Volume 1006.4x average",
           "confidence": 1.0,
           "source": "schwab",
           "isStale": false
         },
         {
-          "id": "5da17363ba4ec08ab3bf",
-          "symbol": "META",
+          "id": "0e28e6a68a44cd34d620",
+          "symbol": "SPY",
           "type": "call",
-          "strike": 500.0,
-          "expiry": "2027-01-15",
-          "premium": 36022140.0,
-          "volume": 1449,
-          "openInterest": 3776,
+          "strike": 773.0,
+          "expiry": "2026-09-22",
+          "premium": 27157015.5,
+          "volume": 421039,
+          "openInterest": 9151,
           "side": "buy",
           "size": "block",
-          "timestamp": 1790113354692,
-          "unusualScore": 100,
-          "sentiment": "bullish",
-          "flowType": "block_trade",
-          "underlyingPrice": 739.0,
-          "bid": 246.1,
-          "ask": 251.1,
-          "last": 249.56,
-          "iv": null,
-          "delta": 0.953,
-          "gamma": 0.001,
-          "notes": "Large premium: $36,022,140",
-          "confidence": 1.0,
-          "source": "schwab",
-          "isStale": false
-        },
-        {
-          "id": "98cc2eac7f8693083839",
-          "symbol": "META",
-          "type": "call",
-          "strike": 510.0,
-          "expiry": "2027-01-15",
-          "premium": 31570265.0,
-          "volume": 1319,
-          "openInterest": 2587,
-          "side": "buy",
-          "size": "block",
-          "timestamp": 1790113354692,
+          "timestamp": 1790113939243,
           "unusualScore": 100,
           "sentiment": "bullish",
           "flowType": "volume_spike",
-          "underlyingPrice": 739.0,
-          "bid": 236.85,
-          "ask": 241.85,
-          "last": 242.11,
+          "underlyingPrice": 773.3,
+          "bid": 0.64,
+          "ask": 0.65,
+          "last": 0.65,
           "iv": null,
-          "delta": 0.946,
-          "gamma": 0.001,
-          "notes": "Volume 10.2x average",
+          "delta": 0.82,
+          "gamma": 0.415,
+          "notes": "Volume 920.2x average",
+          "confidence": 1.0,
+          "source": "schwab",
+          "isStale": false
+        },
+        {
+          "id": "4a69624f75067898e269",
+          "symbol": "QQQ",
+          "type": "call",
+          "strike": 747.0,
+          "expiry": "2026-09-22",
+          "premium": 25841261.5,
+          "volume": 622681,
+          "openInterest": 3186,
+          "side": "sell",
+          "size": "block",
+          "timestamp": 1790113938542,
+          "unusualScore": 100,
+          "sentiment": "bearish",
+          "flowType": "volume_spike",
+          "underlyingPrice": 746.88,
+          "bid": 0.4,
+          "ask": 0.43,
+          "last": 0.41,
+          "iv": null,
+          "delta": 0.792,
+          "gamma": 0.886,
+          "notes": "Volume 3908.9x average",
+          "confidence": 1.0,
+          "source": "schwab",
+          "isStale": false
+        },
+        {
+          "id": "609cb68131b658d3dc3b",
+          "symbol": "SPY",
+          "type": "call",
+          "strike": 775.0,
+          "expiry": "2027-03-19",
+          "premium": 23734604.0,
+          "volume": 6008,
+          "openInterest": 7117,
+          "side": "buy",
+          "size": "block",
+          "timestamp": 1790113939250,
+          "unusualScore": 100,
+          "sentiment": "bullish",
+          "flowType": "volume_spike",
+          "underlyingPrice": 773.3,
+          "bid": 38.01,
+          "ask": 41.0,
+          "last": 40.85,
+          "iv": null,
+          "delta": 0.502,
+          "gamma": 0.006,
+          "notes": "Volume 16.9x average",
+          "confidence": 1.0,
+          "source": "schwab",
+          "isStale": false
+        },
+        {
+          "id": "1ada2a4b16b9d7e84225",
+          "symbol": "QQQ",
+          "type": "call",
+          "strike": 745.0,
+          "expiry": "2026-09-23",
+          "premium": 22979320.0,
+          "volume": 61360,
+          "openInterest": 3440,
+          "side": "buy",
+          "size": "block",
+          "timestamp": 1790113938542,
+          "unusualScore": 100,
+          "sentiment": "bullish",
+          "flowType": "volume_spike",
+          "underlyingPrice": 746.88,
+          "bid": 3.71,
+          "ask": 3.78,
+          "last": 3.75,
+          "iv": null,
+          "delta": 0.651,
+          "gamma": 0.064,
+          "notes": "Volume 356.7x average",
+          "confidence": 1.0,
+          "source": "schwab",
+          "isStale": false
+        },
+        {
+          "id": "1f70090de3bb1a74f80f",
+          "symbol": "SPY",
+          "type": "call",
+          "strike": 770.0,
+          "expiry": "2026-12-18",
+          "premium": 19892604.0,
+          "volume": 7284,
+          "openInterest": 21038,
+          "side": "buy",
+          "size": "block",
+          "timestamp": 1790113939250,
+          "unusualScore": 100,
+          "sentiment": "bullish",
+          "flowType": "block_trade",
+          "underlyingPrice": 773.3,
+          "bid": 27.01,
+          "ask": 27.61,
+          "last": 27.45,
+          "iv": null,
+          "delta": 0.541,
+          "gamma": 0.009,
+          "notes": "Large premium: $19,892,604",
           "confidence": 1.0,
           "source": "schwab",
           "isStale": false
         }
       ],
       "meta": {
-        "cached_at": "2026-09-22T21:45:14Z",
-        "next_update": "2026-09-22T21:45:39Z"
+        "cached_at": "2026-09-22T21:57:01Z",
+        "next_update": "2026-09-22T21:57:26Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -8982,7 +8989,7 @@
   "traditionalFearGreed": {
     "score": 35.2571428571429,
     "rating": "fear",
-    "timestamp": "2026-09-22T21:25:36+00:00",
+    "timestamp": "2026-09-22T21:40:43+00:00",
     "previous_close": 33.7142857142857,
     "previous_1_week": 27.9714285714286,
     "previous_1_month": 54.65714285714286,
@@ -9351,7 +9358,7 @@
     ],
     "source": "CNN Fear & Greed Index",
     "sourceUrl": "https://www.cnn.com/markets/fear-and-greed",
-    "updated": "22/09/2026 21:45 UTC",
+    "updated": "22/09/2026 21:57 UTC",
     "components": {
       "market_momentum_sp500": 40,
       "market_momentum_sp125": 40,
