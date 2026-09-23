@@ -121,12 +121,8 @@ def fred_csv(sid):
 
 def update_us(feed):
  us=feed.setdefault('economies',{}).setdefault('us',{}); inds=us.setdefault('indicators',[]); by={x.get('name'):x for x in inds}
- for name,(sid,cat,sign,imp,unit) in {**BLS,**FRED}.items():
-  if sid in [x[0] for x in BLS.values()]:
-   try:
-    now=datetime.now(timezone.utc); j=get('https://api.bls.gov/publicAPI/v2/timeseries/data/',method='post').json()
-   except: continue
-   # BLS is handled below with its own payload.
+ # FRED series are fetched individually. BLS series are fetched together below.
+ for name,(sid,cat,sign,imp,unit) in FRED.items():
   res=fred_csv(sid)
   if not res:continue
   v,d=res; row=by.get(name) or {'cat':cat,'name':name,'actual':'','est':'','surprise':'','date':'','imp':'★'*imp,'source':'FRED','rateImpact':sign}
@@ -134,6 +130,7 @@ def update_us(feed):
   if name not in by:inds.append(row)
  # BLS one request for all series
  try:
+  ids=[x[0] for x in BLS.values()]
   # The public endpoint requires a JSON body.
   j=requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/',json={'seriesid':ids,'startyear':str(datetime.now().year-1),'endyear':str(datetime.now().year)},headers={**HEADERS,'Content-Type':'application/json'},timeout=TIMEOUT).json()
   for name,(sid,cat,sign,imp,unit) in BLS.items():
