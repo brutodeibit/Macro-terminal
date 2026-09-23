@@ -253,21 +253,21 @@ def _cot_z(history,current,lookback=52):
  vals=[x.get("net") for x in history[:lookback] if x.get("net") is not None]
  return zscore(vals,current) if len(vals)>=8 and current is not None else None
 
-def _cot_category(row,pairs):
+def _cot_category(row,pairs,oi=None):
  out={}
+ oi=oi if oi is not None else _cot_num(row,"open_interest_all","open_interest")
  for key,label in pairs:
-  lv=_cot_num(row,
-   key+"_long_all", key+"_long",
-   key.lower()+"_long_all", key.lower()+"_long")
-  sv=_cot_num(row,
-   key+"_short_all", key+"_short",
-   key.lower()+"_short_all", key.lower()+"_short")
-  sp=_cot_num(row,
-   key+"_spread_all", key+"_spread",
-   key.lower()+"_spread_all", key.lower()+"_spread")
+  lv=_cot_num(row,key+"_long_all",key+"_long",key.lower()+"_long_all",key.lower()+"_long")
+  sv=_cot_num(row,key+"_short_all",key+"_short",key.lower()+"_short_all",key.lower()+"_short")
+  sp=_cot_num(row,key+"_spread_all",key+"_spread",key.lower()+"_spread_all",key.lower()+"_spread")
   if lv is not None or sv is not None:
    lv=lv or 0; sv=sv or 0
-   out[label]={"long":lv,"short":sv,"spread":sp,"net":lv-sv}
+   out[label]={
+    "long":lv,"short":sv,"spread":sp,"net":lv-sv,
+    "longPctOI":(lv/oi*100) if oi else None,
+    "shortPctOI":(sv/oi*100) if oi else None,
+    "spreadPctOI":(sp/oi*100) if oi and sp is not None else None
+   }
  return out
 
 def cot_one(rows,label,family,code,group):
@@ -290,7 +290,8 @@ def cot_one(rows,label,family,code,group):
   ]
 
  def snapshot(r):
-  cats=_cot_category(r,primary)
+  oi=_cot_num(r,"open_interest_all","open_interest")
+  cats=_cot_category(r,primary,oi)
   # The selected category is the one used in the dashboard headline.
   cat=cats.get(group)
   if not cat:
@@ -352,6 +353,8 @@ def update_cot(feed):
   ("Dow Jones","gpe5-46if","124603","Leveraged Funds","TFF"),
   ("DXY · USD Index","gpe5-46if","098662","Leveraged Funds","TFF"),
   ("Euro FX","gpe5-46if","099741","Leveraged Funds","TFF"),
+  ("Bitcoin · CME","gpe5-46if","133741","Leveraged Funds","TFF"),
+  ("Ether · CME","gpe5-46if","146021","Leveraged Funds","TFF"),
   ("Oro","72hh-3qpy","088691","Managed Money","Disaggregated"),
   ("Plata","72hh-3qpy","084691","Managed Money","Disaggregated"),
   ("WTI","72hh-3qpy","067651","Managed Money","Disaggregated"),
