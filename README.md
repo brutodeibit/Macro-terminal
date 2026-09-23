@@ -16,3 +16,11 @@ Para consensos/forecasts de Trading Economics, añade `TE_API_KEY` como GitHub S
 
 ## Importante
 El score Risk-On/Risk-Off es descriptivo y transparente; no constituye una señal automática de entrada. Se muestra también qué elementos confirman y cuáles generan tensión.
+
+
+## Monitor Estadístico por Activo
+- `statistical-monitor.html` separado del Monitor Macro para no cargar el HTML principal.
+- `update_stats.py` calcula estadísticas descriptivas con hasta 5 años diarios cuando Yahoo Finance entrega la serie.
+- Incluye pullbacks en tendencia, impulsos, días explosivos, drawdown y estacionalidad por día del mes.
+- Incluye una primera capa de ventanas de liquidez intradía en hora de Nueva York. La muestra intradía pública se etiqueta como parcial y **no se presenta todavía como el backtest de 1–3 años**.
+- `stats-feed.json` conserva el último snapshot válido.
