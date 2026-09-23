@@ -227,42 +227,154 @@ def update_fx(feed):
    "method":"Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."}
 
 
-def cot_rows(dataset,where):
+def cot_rows(dataset,where,limit=260):
  try:
   h={"X-App-Token":os.getenv("CFTC_APP_TOKEN")} if os.getenv("CFTC_APP_TOKEN") else {}
-  return get("https://publicreporting.cftc.gov/resource/"+dataset+".json",{"$limit":"60","$order":"report_date_as_yyyy_mm_dd DESC","$where":where},h).json()
- except Exception:return []
-def cot_one(rows,label,longs,shorts):
+  return get("https://publicreporting.cftc.gov/resource/"+dataset+".json",{
+   "$limit":str(limit),
+   "$order":"report_date_as_yyyy_mm_dd DESC",
+   "$where":where
+  },h).json()
+ except Exception as e:
+  print("COT_ROWS",dataset,type(e).__name__,str(e)[:160]); return []
+
+def _cot_num(row,*keys):
+ for k in keys:
+  v=num(row.get(k))
+  if v is not None:return v
+ return None
+
+def _cot_percentile(history,current,lookback=52):
+ vals=[x.get("net") for x in history[:lookback] if x.get("net") is not None]
+ if len(vals)<8 or current is None:return None
+ return round(100*sum(1 for v in vals if v<=current)/len(vals),1)
+
+def _cot_z(history,current,lookback=52):
+ vals=[x.get("net") for x in history[:lookback] if x.get("net") is not None]
+ return zscore(vals,current) if len(vals)>=8 and current is not None else None
+
+def _cot_category(row,pairs):
+ out={}
+ for key,label in pairs:
+  lv=_cot_num(row,
+   key+"_long_all", key+"_long",
+   key.lower()+"_long_all", key.lower()+"_long")
+  sv=_cot_num(row,
+   key+"_short_all", key+"_short",
+   key.lower()+"_short_all", key.lower()+"_short")
+  sp=_cot_num(row,
+   key+"_spread_all", key+"_spread",
+   key.lower()+"_spread_all", key.lower()+"_spread")
+  if lv is not None or sv is not None:
+   lv=lv or 0; sv=sv or 0
+   out[label]={"long":lv,"short":sv,"spread":sp,"net":lv-sv}
+ return out
+
+def cot_one(rows,label,family,code,group):
  if not rows:return None
- def p(r,ks):
-  for k in ks:
-   v=num(r.get(k))
-   if v is not None:return v
- lv=p(rows[0],longs);sv=p(rows[0],shorts)
- if lv is None or sv is None:return None
- hist=[p(r,longs)-p(r,shorts) for r in rows if p(r,longs) is not None and p(r,shorts) is not None]; net=lv-sv
- return {"name":label,"reportDate":str(rows[0].get("report_date_as_yyyy_mm_dd",""))[:10],"net":net,"long":lv,"short":sv,"zScore":zscore(hist,net),"netChange":net-(hist[1] if len(hist)>1 else net),"reading":("Largos netos" if net>0 else "Cortos netos")}
+ if family=="TFF":
+  primary=[
+   ("dealer_positions","Dealer / Intermediarios"),
+   ("asset_mgr_positions","Asset Managers"),
+   ("lev_money_positions","Leveraged Funds"),
+   ("other_rept_positions","Otros reportables"),
+   ("nonrept_positions","No reportables")
+  ]
+ else:
+  primary=[
+   ("prod_merc_positions","Productores / Comerciantes"),
+   ("swap_positions","Swap Dealers"),
+   ("m_money_positions","Managed Money"),
+   ("other_rept_positions","Otros reportables"),
+   ("nonrept_positions","No reportables")
+  ]
+
+ def snapshot(r):
+  cats=_cot_category(r,primary)
+  # The selected category is the one used in the dashboard headline.
+  cat=cats.get(group)
+  if not cat:
+   # fallback by matching a shortened category label
+   cat=next((v for k,v in cats.items() if group.lower() in k.lower()),None)
+  lv=cat.get("long") if cat else None
+  sv=cat.get("short") if cat else None
+  if lv is None or sv is None:return None
+  oi=_cot_num(r,"open_interest_all","open_interest")
+  return {
+   "date":str(r.get("report_date_as_yyyy_mm_dd",""))[:10],
+   "net":lv-sv,"long":lv,"short":sv,"spread":cat.get("spread"),
+   "openInterest":oi,
+   "netPctOI":((lv-sv)/oi*100) if oi else None,
+   "categories":cats
+  }
+
+ hist=[]
+ for r in rows:
+  s=snapshot(r)
+  if s:hist.append(s)
+ if not hist:return None
+ cur=hist[0]; prev=hist[1] if len(hist)>1 else None; prev4=hist[4] if len(hist)>4 else None
+ net=cur["net"]
+ percentile52=_cot_percentile(hist,net,52)
+ z52=_cot_z(hist,net,52)
+ percentile260=_cot_percentile(hist,net,260)
+ lo52=min((x["net"] for x in hist[:52] if x["net"] is not None),default=None)
+ hi52=max((x["net"] for x in hist[:52] if x["net"] is not None),default=None)
+ if percentile52 is None:state="SIN HISTÓRICO SUFICIENTE"
+ elif percentile52>=90:state="EXTREMO · percentil alto"
+ elif percentile52<=10:state="EXTREMO · percentil bajo"
+ elif percentile52>=75:state="Sesgo alto"
+ elif percentile52<=25:state="Sesgo bajo"
+ else:state="Zona intermedia"
+
+ return {
+  "name":label,"reportDate":cur["date"],"net":net,"long":cur["long"],"short":cur["short"],"spread":cur.get("spread"),
+  "openInterest":cur.get("openInterest"),"netPctOI":cur.get("netPctOI"),
+  "zScore":z52,"z52":z52,"percentile52":percentile52,"percentile260":percentile260,
+  "netChange":net-(prev["net"] if prev else net),
+  "change1w":net-(prev["net"] if prev else net),
+  "change4w":net-(prev4["net"] if prev4 else net),
+  "range52Min":lo52,"range52Max":hi52,
+  "reading":("Largos netos" if net>0 else "Cortos netos" if net<0 else "Neutro"),
+  "state":state,"traderGroup":group,"reportFamily":family,
+  "contractCode":code,
+  "contract":str(rows[0].get("contract_market_name") or rows[0].get("market_and_exchange_names") or ""),
+  "history":hist[:260],
+  "historyWeeks":len(hist),
+  "historyPolicy":"260 semanas almacenadas · 52 semanas por defecto en pantalla",
+  "categories":cur.get("categories") or {}
+ }
+
 def update_cot(feed):
  cfg=[
-  ("S&P 500 E-Mini","gpe5-46if","13874A",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
-  ("Nasdaq-100","gpe5-46if","209742",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
-  ("Dow Jones","gpe5-46if","124603",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
-  ("DXY · USD Index","gpe5-46if","098662",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
-  ("Euro FX","gpe5-46if","099741",("lev_money_positions_long_all","lev_money_positions_long"),("lev_money_positions_short_all","lev_money_positions_short"),"Leveraged Funds","TFF"),
-  ("Oro","72hh-3qpy","088691",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated"),
-  ("Plata","72hh-3qpy","084691",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated"),
-  ("WTI","72hh-3qpy","067651",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated"),
-  ("Brent","72hh-3qpy","06765T",("m_money_positions_long_all","m_money_positions_long"),("m_money_positions_short_all","m_money_positions_short"),"Managed Money","Disaggregated")
+  ("S&P 500 E-Mini","gpe5-46if","13874A","Leveraged Funds","TFF"),
+  ("Nasdaq-100","gpe5-46if","209742","Leveraged Funds","TFF"),
+  ("Dow Jones","gpe5-46if","124603","Leveraged Funds","TFF"),
+  ("DXY · USD Index","gpe5-46if","098662","Leveraged Funds","TFF"),
+  ("Euro FX","gpe5-46if","099741","Leveraged Funds","TFF"),
+  ("Oro","72hh-3qpy","088691","Managed Money","Disaggregated"),
+  ("Plata","72hh-3qpy","084691","Managed Money","Disaggregated"),
+  ("WTI","72hh-3qpy","067651","Managed Money","Disaggregated"),
+  ("Brent","72hh-3qpy","06765T","Managed Money","Disaggregated")
  ]
  out=[];errors=[]
- for name,ds,code,L,S,group,fam in cfg:
-  rows=cot_rows(ds,"cftc_contract_market_code='"+code+"'")
-  x=cot_one(rows,name,L,S) if rows else None
-  if x:
-   x.update(traderGroup=group,reportFamily=fam,contractCode=code,contract=str(rows[0].get("contract_market_name") or rows[0].get("market_and_exchange_names") or ""),openInterest=num(rows[0].get("open_interest_all")))
-   out.append(x)
-  else: errors.append(name)
- if out:feed["cot"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"CFTC Public Reporting Environment","method":"COT semanal; Leveraged Funds para índices/divisas TFF y Managed Money para commodities Disaggregated; filtrado por código CFTC.","sourceUrl":"https://publicreporting.cftc.gov/","errors":errors}
+ for name,ds,code,group,fam in cfg:
+  rows=cot_rows(ds,"cftc_contract_market_code='"+code+"'",260)
+  x=cot_one(rows,name,fam,code,group) if rows else None
+  if x:out.append(x)
+  else:errors.append(name)
+ if out:
+  feed["cot"]={
+   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+   "markets":out,
+   "source":"CFTC Public Reporting Environment",
+   "sourceUrl":"https://publicreporting.cftc.gov/",
+   "method":"COT semanal. La cabecera usa Leveraged Funds para TFF y Managed Money para Disaggregated. Se conservan hasta 260 observaciones semanales por mercado.",
+   "historyDefaultWeeks":52,
+   "historyStoredWeeks":260,
+   "releaseContext":"Datos de cada martes; publicación general viernes 15:30 ET. El histórico sirve para contexto semanal/mensual, no para timing intradía.",
+   "errors":errors
+  }
 
 def finra_access_token():
  try:
