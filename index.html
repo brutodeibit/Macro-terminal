@@ -1100,16 +1100,44 @@ function renderMeetingHistory(data){
 
         function renderCotSection(){
             const c=macroDatabase.__cot||{updated:'—',markets:[]};
-            const rows=(c.markets||[]).map(m=>{
-                const net=Number(m.netSpec ?? m.net), z=Number(m.z52 ?? m.zScore), ch=Number(m.change1w ?? m.netChange);
-                const netTxt=Number.isFinite(net)?net.toLocaleString('es-ES'):'—';
-                const zTxt=Number.isFinite(z)?z.toFixed(1)+'σ':'—';
-                const chTxt=Number.isFinite(ch)?(ch>=0?'+':'')+ch.toLocaleString('es-ES'):'—';
-                const longV=m.specLong ?? m.long, shortV=m.specShort ?? m.short;
-                const reading=m.interpretation || m.reading || 'Sin lectura';
-                return `<div class="metric rounded-xl p-4"><div class="flex items-center justify-between gap-2"><div><div class="text-sm font-bold text-white">${esc(m.name||'')}</div><div class="text-[10px] text-gray-500">${esc(m.reportDate||'')}</div></div><span class="mini-pill">${esc(reading)}</span></div><div class="grid grid-cols-3 gap-2 mt-3 text-center"><div><div class="text-[9px] text-gray-600">Neto espec.</div><div class="text-sm font-black text-white">${netTxt}</div></div><div><div class="text-[9px] text-gray-600">Cambio 1 sem.</div><div class="text-sm font-black text-white">${chTxt}</div></div><div><div class="text-[9px] text-gray-600">z-score</div><div class="text-sm font-black text-white">${zTxt}</div></div></div><div class="text-[10px] text-gray-500 mt-3">Largos ${esc(longV??'—')} · Cortos ${esc(shortV??'—')} · Fuente CFTC</div></div>`;
-            }).join('');
-            return `<section id="sec-cot" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Posicionamiento institucional</div><h2 class="text-xl font-black text-white mt-1">COT · FUTURES</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Posicionamiento semanal de la CFTC. El z-score mide si el neto está relativamente extremo frente a su propia historia; no es una señal de entrada por sí sola.</p></div><span class="mini-pill">Actualizado ${esc(c.updated||'—')}</span></div></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">${rows||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando datos CFTC.</div>'}</div></section>`;
+            const markets=c.markets||[];
+            const keys=markets.map(m=>m.name).filter(Boolean);
+            const selected=(window.__cotMarket&&markets.find(m=>m.name===window.__cotMarket))?window.__cotMarket:(keys[0]||'');
+            window.__cotMarket=selected;
+            const m=markets.find(x=>x.name===selected)||markets[0]||{};
+            const history=m.history||[];
+            const range=window.__cotRange||52;
+            const visible=history.slice(0,range).reverse();
+            const fmtInt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('es-ES'):'—';
+            const fmtPct0=v=>Number.isFinite(Number(v))?Number(v).toFixed(1)+'%':'—';
+            const fmtSigned=v=>Number.isFinite(Number(v))?(Number(v)>=0?'+':'')+Number(v).toLocaleString('es-ES'):'—';
+            const nums=history.map(x=>Number(x.net)).filter(Number.isFinite);
+            const lo=nums.length?Math.min(...nums):0, hi=nums.length?Math.max(...nums):1, span=Math.max(hi-lo,1);
+            const W=900,H=300,L=55,R=20,T=25,B=48;
+            const px=i=>L+i*(W-L-R)/Math.max(visible.length-1,1);
+            const py=v=>T+(hi-v)*(H-T-B)/span;
+            const pts=visible.map((x,i)=>px(i).toFixed(1)+','+py(Number(x.net)).toFixed(1)).join(' ');
+            const dots=visible.map((x,i)=>'<circle cx="'+px(i).toFixed(1)+'" cy="'+py(Number(x.net)).toFixed(1)+'" r="3"><title>'+esc(x.date)+' · Neto '+fmtInt(x.net)+'</title></circle>').join('');
+            const chart=visible.length>1?'<svg viewBox="0 0 '+W+' '+H+'" class="w-full h-[300px]"><line x1="'+L+'" x2="'+(W-R)+'" y1="'+T+'" y2="'+T+'" class="curve-grid"/><line x1="'+L+'" x2="'+(W-R)+'" y1="'+(H-B)+'" y2="'+(H-B)+'" class="curve-grid"/><polyline points="'+pts+'" fill="none" class="cot-line"/>'+dots+'<text x="'+(L-8)+'" y="'+(T+4)+'" text-anchor="end" class="curve-axis">'+fmtInt(hi)+'</text><text x="'+(L-8)+'" y="'+(H-B+4)+'" text-anchor="end" class="curve-axis">'+fmtInt(lo)+'</text><text x="'+L+'" y="'+(H-18)+'" class="curve-axis">'+esc(visible[0]?.date||'')+'</text><text x="'+(W-R)+'" y="'+(H-18)+'" text-anchor="end" class="curve-axis">'+esc(visible[visible.length-1]?.date||'')+'</text></svg>':'<div class="h-[300px] flex items-center justify-center text-xs text-gray-500">Histórico COT insuficiente.</div>';
+            const selector=keys.map(k=>'<option value="'+esc(k)+'" '+(k===selected?'selected':'')+'>'+esc(k)+'</option>').join('');
+            const ranges=[4,13,26,52,104,260].map(n=>'<button onclick="window.__cotRange='+n+';renderContent()" class="mini-pill">'+(n===4?'4S':n===13?'13S':n===26?'26S':n===52?'52S':n===104?'2A':'5A')+'</button>').join('');
+            const z=Number(m.z52??m.zScore);
+            const cats=Object.entries(m.categories||{}).map(([k,v])=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs font-semibold text-white">'+esc(k)+'</td><td class="py-2 px-2 text-xs">'+fmtInt(v.long)+'</td><td class="py-2 px-2 text-xs">'+fmtInt(v.short)+'</td><td class="py-2 px-2 text-xs font-bold">'+fmtSigned(v.net)+'</td></tr>').join('');
+            return '<section id="sec-cot" class="space-y-4">'+
+              '<div class="glass rounded-2xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">POSICIONAMIENTO INSTITUCIONAL · CFTC</div><h2 class="text-xl font-black text-white mt-1">COT · FUTURES</h2><p class="text-sm text-gray-400 mt-1 max-w-5xl">Contexto semanal para operativa de días a semanas. No está diseñado para timing intradía. Guardamos hasta 5 años para medir extremos; la vista inicial es 52 semanas.</p></div><div class="flex items-center gap-2"><span class="mini-pill">Actualizado '+esc(c.updated||'—')+'</span><select onchange="window.__cotMarket=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+selector+'</select></div></div></div>'+
+              '<div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">NETO</span><b class="block text-lg">'+fmtSigned(m.net)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">LARGOS</span><b class="block text-lg">'+fmtInt(m.long)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">CORTOS</span><b class="block text-lg">'+fmtInt(m.short)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">Δ 1 SEM.</span><b class="block text-lg">'+fmtSigned(m.change1w??m.netChange)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">Δ 4 SEM.</span><b class="block text-lg">'+fmtSigned(m.change4w)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">% OI</span><b class="block text-lg">'+fmtPct0(m.netPctOI)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">PERCENTIL 52S</span><b class="block text-lg">'+fmtPct0(m.percentile52)+'</b></div>'+
+              '<div class="metric p-3"><span class="text-[9px] text-gray-500">Z · 52S</span><b class="block text-lg">'+(Number.isFinite(z)?z.toFixed(2)+'σ':'—')+'</b></div></div>'+
+              '<div class="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-4"><div class="metric rounded-xl p-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><b class="text-sm text-white">'+esc(m.name||'')+' · NET POSITIONING</b><div class="text-[10px] text-gray-500 mt-1">Informe '+esc(m.reportDate||'—')+' · '+esc(m.traderGroup||'')+' · '+esc(m.reportFamily||'')+'</div></div><div class="flex flex-wrap gap-1">'+ranges+'</div></div>'+chart+'<div class="text-[10px] text-gray-500">Neto = largos − cortos de la categoría seleccionada. Percentil = posición relativa dentro de su propia historia.</div></div>'+
+              '<div class="metric rounded-xl p-5"><b class="text-sm text-white">LECTURA HISTÓRICA</b><div class="grid grid-cols-2 gap-3 mt-4"><div class="p-3 rounded-lg bg-gray-900"><span class="text-[9px] text-gray-500">ESTADO</span><b class="block text-sm mt-1">'+esc(m.state||m.reading||'—')+'</b></div><div class="p-3 rounded-lg bg-gray-900"><span class="text-[9px] text-gray-500">PERCENTIL 5 AÑOS</span><b class="block text-sm mt-1">'+fmtPct0(m.percentile260)+'</b></div><div class="p-3 rounded-lg bg-gray-900"><span class="text-[9px] text-gray-500">MÍN. 52S</span><b class="block text-sm mt-1">'+fmtInt(m.range52Min)+'</b></div><div class="p-3 rounded-lg bg-gray-900"><span class="text-[9px] text-gray-500">MÁX. 52S</span><b class="block text-sm mt-1">'+fmtInt(m.range52Max)+'</b></div></div><p class="text-xs text-gray-400 mt-4 leading-relaxed">El COT refleja posiciones abiertas reportadas semanalmente. Sirve como contexto de posicionamiento y para detectar extremos; no es un gatillo intradía.</p></div></div>'+
+              '<div class="metric rounded-xl p-5 overflow-x-auto"><div class="flex items-center justify-between gap-3 mb-3"><b class="text-sm text-white">DESGLOSE POR CATEGORÍA</b><span class="mini-pill">'+esc(m.contract||m.contractCode||'')+'</span></div><table class="w-full min-w-[650px]"><thead><tr class="border-b border-gray-800 text-[10px] text-gray-500 uppercase"><th class="text-left py-2 px-2">Categoría</th><th class="text-left py-2 px-2">Largos</th><th class="text-left py-2 px-2">Cortos</th><th class="text-left py-2 px-2">Neto</th></tr></thead><tbody>'+(cats||'<tr><td colspan="4" class="py-3 text-xs text-gray-500">Desglose no disponible.</td></tr>')+'</tbody></table><div class="text-[9px] text-gray-600 mt-3">CFTC PRE · categorías de reporte; no identifica fondos individuales.</div></div>'+
+              '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">'+markets.map(x=>'<button onclick="window.__cotMarket='+JSON.stringify(x.name)+';renderContent()" class="metric rounded-xl p-4 text-left row-hover"><div class="flex justify-between gap-2"><b class="text-sm text-white">'+esc(x.name)+'</b><span class="text-[10px] text-gray-500">'+esc(x.reportDate||'')+'</span></div><div class="mt-2 text-xs">'+fmtSigned(x.net)+' · '+esc(x.state||x.reading||'')+'</div><div class="mt-1 text-[10px] text-gray-500">52S: '+fmtPct0(x.percentile52)+' · z: '+(Number.isFinite(Number(x.z52??x.zScore))?Number(x.z52??x.zScore).toFixed(1)+'σ':'—')+'</div></button>').join('')+'</div></section>';
         }
 
         const INSTRUMENT_NAMES={
