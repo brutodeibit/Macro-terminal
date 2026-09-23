@@ -19,7 +19,9 @@
 
         html { scroll-behavior: smooth; }
         .glass { background: linear-gradient(180deg, rgba(17,22,34,.96), rgba(13,17,26,.96)); border: 1px solid #1a2333; }
-        .metric { background: rgba(9,12,18,.72); border:1px solid #1b2432; }
+        .metric { background: rgba(9,12,18,.72); border:1px solid #1b2432; min-width:0; }
+        .glass, .card { min-width:0; }
+        table, svg { max-width:100%; }
         .mini-pill { font-size:10px; padding:.22rem .5rem; border-radius:999px; border:1px solid #273244; background:#0b1018; color:#9ca3af; }
         .bias-up { color:#34d399; } .bias-down { color:#f87171; } .bias-flat { color:#fbbf24; }
         .source-link { color:#60a5fa; } .source-link:hover { color:#93c5fd; text-decoration:underline; }
@@ -46,14 +48,14 @@
         .risk-up{color:#34d399}.risk-down{color:#f87171}.risk-neutral{color:#fbbf24}
         .risk-badge{font-size:10px;border-radius:999px;padding:4px 8px;border:1px solid #273244;background:#0b1018;color:#cbd5e1;}
         .risk-alert{border-left:3px solid #f59e0b;background:rgba(245,158,11,.06);}
-        #topTabs{position:sticky;top:0;z-index:40;background:rgba(8,10,15,.94);backdrop-filter:blur(12px);padding-top:12px;padding-bottom:10px;margin-top:-1px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
-        .tab-btn{position:relative;transition:.18s ease}.tab-btn:hover{color:#fff}.tab-btn.active:after{content:'';position:absolute;left:0;right:0;bottom:-10px;height:2px;background:#60a5fa;border-radius:999px}
+        #topTabs{position:sticky;top:0;z-index:40;min-width:0;max-width:100%;background:rgba(8,10,15,.96);backdrop-filter:blur(12px);padding-top:12px;padding-bottom:10px;margin-top:-1px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+        .tab-btn{position:relative;flex:0 0 auto;transition:.18s ease}.tab-btn:hover{color:#fff}.tab-btn.active:after{content:'';position:absolute;left:0;right:0;bottom:-10px;height:2px;background:#60a5fa;border-radius:999px}
         .sentiment-gauge{height:150px;border-radius:150px 150px 0 0;background:conic-gradient(from 270deg,#ef4444 0 18%,#f59e0b 18% 36%,#94a3b8 36% 64%,#84cc16 64% 82%,#22c55e 82% 100%);position:relative;overflow:hidden}
         .sentiment-gauge:after{content:'';position:absolute;inset:14px 14px 0;background:#0b1018;border-radius:140px 140px 0 0}
         .sentiment-needle{position:absolute;bottom:7px;left:50%;width:3px;height:62px;background:rgba(248,250,252,.42);transform-origin:50% 100%;z-index:3;border-radius:4px;box-shadow:0 0 5px rgba(255,255,255,.16)} .sentiment-value{position:absolute;z-index:5;left:50%;bottom:20px;transform:translateX(-50%);font-size:30px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none}
     </style>
 </head>
-<body class="flex min-h-screen">
+<body class="flex min-h-screen overflow-hidden">
 
     <aside class="w-64 sidebar flex-shrink-0 hidden md:block p-4">
         <div class="flex items-center gap-2 mb-8 px-2">
@@ -66,7 +68,7 @@
             </nav>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+    <main class="flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 md:p-8">
         <div class="md:hidden mb-4">
             <select id="mobileCountrySelect" class="w-full bg-gray-900 border border-gray-800 text-white p-2.5 rounded-lg text-sm">
             </select>
@@ -684,7 +686,8 @@
             currentCountryKey = key;
             renderSidebar();
             renderContent();
-            window.scrollTo({top:0,behavior:'smooth'});
+            const scroller=document.querySelector('main');
+            if(scroller) scroller.scrollTo({top:0,behavior:'smooth'});
         }
 
         function renderTopTabs(){
@@ -1511,8 +1514,11 @@ function renderMeetingHistory(data){
         }
 
         function scrollToSection(id) {
-            const el = document.getElementById(id);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
+            const el=document.getElementById(id), scroller=document.querySelector('main');
+            if(!el) return;
+            if(!scroller){el.scrollIntoView({behavior:'smooth'});return;}
+            const top=el.getBoundingClientRect().top-scroller.getBoundingClientRect().top+scroller.scrollTop-70;
+            scroller.scrollTo({top,behavior:'smooth'});
         }
 
         // El archivo macro-feed.json debe permanecer en la misma carpeta que este HTML.
