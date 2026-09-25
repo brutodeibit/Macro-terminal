@@ -4,6 +4,9 @@ on:
     branches: [final/integration-options-cot-orderflow-20260925]
 permissions:
   contents: write
+concurrency:
+  group: macro-upgrade-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   cot:
     if: "!contains(github.event.head_commit.message, 'AUTO: apply COT')"
@@ -23,6 +26,10 @@ jobs:
       - run: python -m py_compile scripts/apply_orderflow_phase.py
       - run: python scripts/apply_options_ui_phase.py
       - run: python -m py_compile scripts/apply_options_ui_phase.py
+      - name: Sync latest branch
+        run: |
+          git fetch origin final/integration-options-cot-orderflow-20260925
+          git rebase origin/final/integration-options-cot-orderflow-20260925
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
