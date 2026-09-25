@@ -6,12 +6,19 @@ on:
     - cron: "20 16 * * 1-5"
 permissions:
   contents: write
+
+# Share the same repository-wide writer lock with all feed workflows.
+concurrency:
+  group: macroterminal-main-writer
+  cancel-in-progress: false
+
 jobs:
   stats:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with: {fetch-depth: 1}
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with: {python-version: "3.12"}
       - run: pip install -r requirements.txt
@@ -23,4 +30,11 @@ jobs:
           git add stats-feed.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: refresh statistical monitor"
-          git push origin HEAD:main
+          for i in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main && git push origin HEAD:main && exit 0
+            git rebase --abort || true
+            sleep 5
+          done
+          echo "Unable to publish after 3 attempts"
+          exit 1
