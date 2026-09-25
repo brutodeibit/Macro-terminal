@@ -69,6 +69,35 @@ def _option_gex(calls,puts,spot):
   "negativeZones":sorted(negZones,key=lambda x:abs(x["gamma"]),reverse=True)[:8]
  }
 
+
+def _option_risk_metrics(rows, spot):
+ """Derived chain metrics; descriptive calculations, not dealer-book data."""
+ calls=[x for x in rows if x.get("type")=="C"]
+ puts=[x for x in rows if x.get("type")=="P"]
+ def oi(items, predicate):
+  return sum(float(x.get("openInterest") or 0) for x in items if predicate(float(x.get("strike") or 0)))
+ total=sum(float(x.get("openInterest") or 0) for x in rows)
+ above=oi(rows,lambda k:k>spot); below=oi(rows,lambda k:k<spot); at=oi(rows,lambda k:abs(k-spot)<max(spot*0.005,0.01))
+ def nearest_delta(items, target):
+  valid=[x for x in items if x.get("delta") is not None and x.get("iv") is not None and abs(abs(float(x.get("delta"))) - target)<=0.12]
+  return min(valid,key=lambda x:abs(abs(float(x.get("delta")))-target)) if valid else None
+ c25=nearest_delta(calls,0.25); p25=nearest_delta(puts,0.25)
+ civ=float(c25.get("iv") or 0) if c25 else None; piv=float(p25.get("iv") or 0) if p25 else None
+ if civ and civ<3:civ*=100
+ if piv and piv<3:piv*=100
+ return {
+  "oiAboveSpot":above,"oiBelowSpot":below,"oiAtSpot":at,
+  "oiAbovePct":above/total*100 if total else None,
+  "oiBelowPct":below/total*100 if total else None,
+  "oiAtPct":at/total*100 if total else None,
+  "call25dIv":civ,"put25dIv":piv,
+  "skew25d":(piv-civ) if piv is not None and civ is not None else None,
+  "riskReversal25d":(civ-piv) if piv is not None and civ is not None else None,
+  "call25dStrike":c25.get("strike") if c25 else None,
+  "put25dStrike":p25.get("strike") if p25 else None,
+ }
+
+
 def _option_summary(rows,spot,expiration,oi_prev=None):
  calls=[x for x in rows if x.get("type")=="C"]; puts=[x for x in rows if x.get("type")=="P"]
  ex=max(0,(expiration-datetime.now(timezone.utc)).total_seconds()/86400.0)

@@ -1,0 +1,57 @@
+name: Apply dashboard repair
+
+on:
+  push:
+    paths:
+      - 'scripts/repair_dashboard_views.py'
+      - 'scripts/relax_repair_regex.py'
+      - 'scripts/fix_dashboard_js_syntax.py'
+      - '.github/workflows/apply-dashboard-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Apply deterministic source transformations
+        run: |
+          python scripts/relax_repair_regex.py
+          python scripts/repair_dashboard_views.py
+          python scripts/fix_dashboard_js_syntax.py
+
+      - name: Validate Python
+        run: python -m py_compile market_features.py update_feed.py update_stats.py
+
+      - name: Validate embedded JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',s,re.S|re.I)
+          Path('/tmp/dashboard.js').write_text('\n'.join(scripts),encoding='utf-8')
+          print('embedded script blocks:',len(scripts))
+          PY
+          node --check /tmp/dashboard.js
+
+      - name: Commit repaired dashboard
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add market_features.py index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'UI: repair options, COT and dark-pool views'
+          git push origin HEAD:${GITHUB_REF_NAME}
