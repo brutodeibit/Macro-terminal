@@ -11,9 +11,10 @@ on:
 permissions:
   contents: write
 
+# Share the same repository-wide writer lock with the other feed workflows.
 concurrency:
-  group: macroterminal-professional-feeds
-  cancel-in-progress: true
+  group: macroterminal-main-writer
+  cancel-in-progress: false
 
 jobs:
   update-professional-feeds:
@@ -22,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -56,11 +57,18 @@ jobs:
           FINRA_API_TOKEN: ${{ secrets.FINRA_API_TOKEN }}
         run: python scripts/darkpools.py
 
-      - name: Commit feed changes
+      - name: Commit feed changes safely
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
           git diff --cached --quiet && exit 0
           git commit -m "chore: refresh professional market feeds"
-          git push origin HEAD:main
+          for i in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main && git push origin HEAD:main && exit 0
+            git rebase --abort || true
+            sleep 5
+          done
+          echo "Unable to publish after 3 attempts"
+          exit 1
