@@ -69,6 +69,18 @@ def _option_gex(calls,puts,spot):
   "negativeZones":sorted(negZones,key=lambda x:abs(x["gamma"]),reverse=True)[:8]
  }
 
+def _option_professional_metrics(rows,spot):
+ calls=[x for x in rows if x.get('type')=='C'];puts=[x for x in rows if x.get('type')=='P'];total=sum(float(x.get('openInterest') or 0) for x in rows)
+ def oi(items,fn): return sum(float(x.get('openInterest') or 0) for x in items if fn(float(x.get('strike') or 0)))
+ above=oi(rows,lambda k:k>spot);below=oi(rows,lambda k:k<spot);at=oi(rows,lambda k:abs(k-spot)<=max(spot*.005,.01))
+ def near(items):
+  v=[x for x in items if x.get('delta') is not None and x.get('iv') is not None and abs(abs(float(x['delta']))-.25)<=.15]
+  return min(v,key=lambda x:abs(abs(float(x['delta']))-.25)) if v else None
+ c25=near(calls);p25=near(puts);civ=float(c25.get('iv') or 0)*100 if c25 else None;piv=float(p25.get('iv') or 0)*100 if p25 else None
+ cw=max(calls,key=lambda x:float(x.get('openInterest') or 0),default=None);pw=max(puts,key=lambda x:float(x.get('openInterest') or 0),default=None)
+ return {'oiAboveSpot':above,'oiBelowSpot':below,'oiAtSpot':at,'oiAbovePct':above/total*100 if total else None,'oiBelowPct':below/total*100 if total else None,'oiAtPct':at/total*100 if total else None,'call25dIv':civ,'put25dIv':piv,'skew25d':piv-civ if civ is not None and piv is not None else None,'riskReversal25d':civ-piv if civ is not None and piv is not None else None,'call25dStrike':c25.get('strike') if c25 else None,'put25dStrike':p25.get('strike') if p25 else None,'callWall':cw.get('strike') if cw else None,'putWall':pw.get('strike') if pw else None,'callWallOi':float(cw.get('openInterest') or 0) if cw else None,'putWallOi':float(pw.get('openInterest') or 0) if pw else None,'callWallVolume':float(cw.get('volume') or 0) if cw else None,'putWallVolume':float(pw.get('volume') or 0) if pw else None}
+
+
 def _option_summary(rows,spot,expiration,oi_prev=None):
  calls=[x for x in rows if x.get("type")=="C"]; puts=[x for x in rows if x.get("type")=="P"]
  ex=max(0,(expiration-datetime.now(timezone.utc)).total_seconds()/86400.0)
@@ -120,7 +132,8 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   **gp,
   "gammaFlipDistance":(gp.get("gammaFlip")-spot) if gp.get("gammaFlip") is not None else None,
   "gammaFlipDistancePct":((gp.get("gammaFlip")-spot)/spot*100) if gp.get("gammaFlip") is not None and spot else None,
-  "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:10]
+  "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:10],
+  **_option_professional_metrics(rows,spot)
  }
 
 def _norm_pdf(x): return math.exp(-0.5*x*x)/math.sqrt(2*math.pi)
@@ -392,15 +405,43 @@ def finra_access_token():
   print("FINRA AUTH",type(e).__name__,str(e)[:180])
   return None
 
+def _deribit_options(currency):
+ try:
+  ins=get('https://www.deribit.com/api/v2/public/get_instruments',{'currency':currency,'kind':'option','expired':'false'}).json().get('result',[]);sm=get('https://www.deribit.com/api/v2/public/get_book_summary_by_currency',{'currency':currency,'kind':'option'}).json().get('result',[]);by={x.get('instrument_name'):x for x in sm if isinstance(x,dict)}
+  spot=num(get('https://www.deribit.com/api/v2/public/get_index_price',{'index_name':currency.lower()+'_usd'}).json().get('result',{}).get('index_price'))
+  if not spot:return None
+  today=datetime.now(timezone.utc).date();groups={}
+  for i in ins:
+   name=i.get('instrument_name');ts=i.get('expiration_timestamp');st=by.get(name)
+   if not name or not ts or not st:continue
+   d=(datetime.fromtimestamp(ts/1000,tz=timezone.utc).date()-today).days;b='0DTE' if d==0 else 'NEXT' if d<=7 else '7-30D' if d<=30 else '30-90D' if d<=90 else None
+   if b and b not in groups:groups[b]=(ts,[])
+   if b:groups[b][1].append((i,st))
+  profiles=[]
+  for b,(ts,pairs) in groups.items():
+   rows=[];tt=max((ts/1000-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
+   for i,st in pairs:
+    K=num(i.get('strike'));typ='C' if str(i.get('option_type','')).lower()=='call' else 'P';iv=num(st.get('mark_iv')) or 0;iv=iv/100 if iv>3 else iv
+    if K is None:continue
+    delta,gamma,vanna,charm=_bs_greeks(spot,K,tt,iv,.04,typ);rows.append({'strike':K,'openInterest':num(st.get('open_interest')) or 0,'volume':num(st.get('volume')) or 0,'iv':iv,'gamma':gamma,'delta':delta,'vanna':vanna,'charm':charm,'type':typ})
+   if rows:
+    pp=_option_summary(rows,spot,datetime.fromtimestamp(ts/1000,tz=timezone.utc));pp['bucket']=b;profiles.append(pp)
+  return {'name':currency+' · Deribit','ticker':currency+'-DERIBIT','spot':spot,'profiles':profiles,'source':'Deribit public API','sourceUrl':'https://www.deribit.com/','instrumentType':'Crypto options','dataStatus':'REAL / PUBLIC API','marketLayer':'PRIMARY CRYPTO OPTIONS'}
+ except Exception as e:print('DERIBIT',currency,type(e).__name__,str(e)[:160]);return None
+
+
 def update_options(feed):
  previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
  previous_markets=previous.get("markets",[])
  out=[]
- for sym in ("SPY","QQQ","QQQM","TQQQ","DIA","IWM","GLD","IAU","GDX","SLV","USO","BNO","UUP","FXE","AAPL","NVDA"):
+ for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
   try:
    x=opt(sym)
    if x:out.append(x)
   except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:180])
+ for c in ("BTC","ETH"):
+  x=_deribit_options(c)
+  if x:out.append(x)
  if not out:
   # Never erase a valid option snapshot merely because Yahoo blocks one refresh.
   if previous_markets:
@@ -420,6 +461,24 @@ def update_options(feed):
   arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10] and abs(float(h.get("spot") or 0)-float(snap.get("spot") or 0))<0.0001)]
   arr.append(snap);hist[m["ticker"]]=arr[-64:]
  feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/SPY/options/","sourceStatus":"REAL / DELAYED · public chain snapshot","publication":"Último snapshot de cadena pública disponible en la actualización; el mercado de opciones puede estar cerrado.","note":"Max Pain usa OI público. GEX/Gamma Flip/DEX/Vanna/Charm son proxies calculados con OI/IV y Black-Scholes; no son posicionamiento observado de dealers."}
+
+def _yahoo_quote(symbols):
+ try:return get("https://query1.finance.yahoo.com/v7/finance/quote",{"symbols":",".join(symbols)}).json().get("quoteResponse",{}).get("result",[])
+ except Exception as e:print("YAHOO_QUOTE",type(e).__name__,str(e)[:120]);return []
+
+def update_order_flow(feed):
+ out=[]
+ for x in _yahoo_quote(["SPY","QQQ","GLD","USO","AAPL","NVDA","IBIT"]):
+  bid=num(x.get("bid"));ask=num(x.get("ask"));bs=num(x.get("bidSize"));az=num(x.get("askSize"));spot=num(x.get("regularMarketPrice") or x.get("postMarketPrice"))
+  if bid is not None or ask is not None:
+   out.append({"symbol":x.get("symbol"),"display":"Top of book · "+str(x.get("symbol")),"bestBid":bid,"bestAsk":ask,"mid":(bid+ask)/2 if bid is not None and ask is not None else spot,"spread":ask-bid if bid is not None and ask is not None else None,"bidSize":bs,"askSize":az,"bidDepth":bs,"askDepth":az,"imbalance":((bs or 0)-(az or 0))/max((bs or 0)+(az or 0),1)*100,"bids":[],"asks":[],"source":"Yahoo quote · top-of-book","dataStatus":"REAL / DELAYED · no Level 2"})
+ for inst in ("BTC-PERPETUAL","ETH-PERPETUAL"):
+  try:
+   j=get("https://www.deribit.com/api/v2/public/get_order_book",{"instrument_name":inst,"depth":20}).json().get("result",{});b=[{"price":float(z[0]),"size":float(z[1])} for z in j.get("bids",[]) if len(z)>=2];a=[{"price":float(z[0]),"size":float(z[1])} for z in j.get("asks",[]) if len(z)>=2];bd=sum(z["size"] for z in b);ad=sum(z["size"] for z in a)
+   out.append({"symbol":inst,"display":inst+" · 20 niveles","bestBid":b[0]["price"] if b else None,"bestAsk":a[0]["price"] if a else None,"mid":j.get("underlying_price"),"spread":a[0]["price"]-b[0]["price"] if b and a else None,"bidSize":b[0]["size"] if b else None,"askSize":a[0]["size"] if a else None,"bidDepth":bd,"askDepth":ad,"imbalance":(bd-ad)/(bd+ad)*100 if bd+ad else None,"bids":b,"asks":a,"source":"Deribit public order book","dataStatus":"REAL / PUBLIC · 20 levels"})
+  except Exception as e:print("DERIBIT_BOOK",inst,type(e).__name__,str(e)[:120])
+ feed["orderFlow"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"source":"Yahoo top-of-book + Deribit public depth","note":"Equities/ETF: top-of-book only; BTC/ETH: Deribit 20-level public depth."}
+
 
 def update_dark_pools(feed):
     token=finra_access_token()
