@@ -11,9 +11,10 @@ on:
 permissions:
   contents: write
 
+# All writers use the same lock so generated feeds cannot race on main.
 concurrency:
-  group: macroterminal-feed
-  cancel-in-progress: true
+  group: macroterminal-main-writer
+  cancel-in-progress: false
 
 jobs:
   update-feed:
@@ -21,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -44,11 +45,18 @@ jobs:
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: python update_feed.py
 
-      - name: Commit feed changes
+      - name: Commit feed changes safely
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add macro-feed.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: refresh macro feed"
-          git push origin HEAD:main
+          for i in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main && git push origin HEAD:main && exit 0
+            git rebase --abort || true
+            sleep 5
+          done
+          echo "Unable to publish after 3 attempts"
+          exit 1
