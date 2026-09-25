@@ -17,10 +17,12 @@ jobs:
           python-version: '3.12'
       - run: python scripts/apply_cot_phase.py
       - run: python -m py_compile scripts/apply_cot_phase.py
+      - run: python scripts/apply_options_phase.py
+      - run: python -m py_compile scripts/apply_options_phase.py
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add index.html market_features.py
           git diff --cached --quiet || git commit -m "AUTO: apply COT chart upgrade"
           git push origin final/integration-options-cot-orderflow-20260925
