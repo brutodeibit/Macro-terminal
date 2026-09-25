@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'scripts/repair_dashboard_views.py'
+      - 'scripts/relax_repair_regex.py'
       - '.github/workflows/apply-dashboard-repair.yml'
   workflow_dispatch:
 
@@ -25,7 +26,9 @@ jobs:
           python-version: '3.12'
 
       - name: Apply deterministic source transformations
-        run: python scripts/repair_dashboard_views.py
+        run: |
+          python scripts/relax_repair_regex.py
+          python scripts/repair_dashboard_views.py
 
       - name: Validate Python and JSON-safe source syntax
         run: python -m py_compile market_features.py update_feed.py update_stats.py
