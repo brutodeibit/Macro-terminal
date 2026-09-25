@@ -1,0 +1,26 @@
+name: apply-macro-upgrade-stepwise
+on:
+  push:
+    branches: [final/integration-options-cot-orderflow-20260925]
+permissions:
+  contents: write
+jobs:
+  cot:
+    if: "!contains(github.event.head_commit.message, 'AUTO: apply COT')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: final/integration-options-cot-orderflow-20260925
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/apply_cot_phase.py
+      - run: python -m py_compile scripts/apply_cot_phase.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "AUTO: apply COT chart upgrade"
+          git push origin final/integration-options-cot-orderflow-20260925
