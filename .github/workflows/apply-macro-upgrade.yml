@@ -19,6 +19,8 @@ jobs:
       - run: python -m py_compile scripts/apply_cot_phase.py
       - run: python scripts/apply_options_phase.py
       - run: python -m py_compile scripts/apply_options_phase.py
+      - run: python scripts/apply_orderflow_phase.py
+      - run: python -m py_compile scripts/apply_orderflow_phase.py
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
