@@ -466,29 +466,228 @@ def _deribit_options(currency):
  except Exception as e:
   print("DERIBIT OPTIONS",currency,type(e).__name__,str(e)[:180]);return None
 
+def _farside_num(v):
+ try:
+  s=str(v or "").strip().replace(",","")
+  if s in ("","-","—"):return None
+  if s.startswith("(") and s.endswith(")"):return -float(s[1:-1])
+  return float(re.sub(r"[^0-9.+-]","",s))
+ except Exception:return None
+
+def _bitcoin_etf_flows():
+ try:
+  html=get("https://farside.co.uk/btc/").text
+  soup=BeautifulSoup(html,"html.parser")
+  table=None
+  for tbl in soup.find_all("table"):
+   sample=" ".join(" ".join(td.stripped_strings) for td in tbl.find_all("tr")[:4]).lower()
+   if "ibit" in sample and "total" in sample:
+    table=tbl
+    break
+  if table is None:return None
+  rows=[]
+  for tr in table.find_all("tr"):
+   cells=[re.sub(r"\s+"," "," ".join(td.stripped_strings)).strip() for td in tr.find_all(["th","td"])]
+   if len(cells)<3:continue
+   if re.match(r"^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$",cells[0]):
+    total=_farside_num(cells[-1])
+    if total is not None:rows.append({"date":cells[0],"netFlowUsdM":total})
+  if not rows:return None
+  vals=[x["netFlowUsdM"] for x in rows]
+  return {
+   "provider":"Farside Investors",
+   "source":"U.S. spot Bitcoin ETF flow table",
+   "sourceUrl":"https://farside.co.uk/btc/",
+   "asOf":rows[-1]["date"],
+   "netFlowUsdM":rows[-1]["netFlowUsdM"],
+   "netFlow1d":rows[-1]["netFlowUsdM"],
+   "netFlow1w":sum(vals[-5:]),
+   "netFlow1m":sum(vals[-22:]),
+   "history":rows[-60:],
+   "note":"Flujo neto agregado de la columna Total de los ETF spot BTC listados por Farside."
+  }
+ except Exception as e:
+  print("FARSIDE BTC ETF",type(e).__name__,str(e)[:180]);return None
+
+def _cme_walk(obj):
+ if isinstance(obj,dict):
+  yield obj
+  for v in obj.values():yield from _cme_walk(v)
+ elif isinstance(obj,list):
+  for v in obj:yield from _cme_walk(v)
+
+def _cme_float(d,*keys):
+ for k in keys:
+  if d.get(k) not in (None,""):
+   v=_farside_num(d.get(k))
+   if v is not None:return v
+ return None
+
+def _cme_product_id():
+ try:
+  j=get("https://www.cmegroup.com/CmeWS/mvc/ProductSlate/V2/List",{"pageNumber":"1","sortAsc":"false","sortField":"rank","searchString":"BTC","pageSize":"10"}).json()
+  candidates=[]
+  for d in _cme_walk(j):
+   vals=" ".join(str(d.get(k,"")) for k in ("globex","symbol","code","name","description","productName","productCode")).upper()
+   pid=d.get("id") or d.get("Id") or d.get("productId") or d.get("ProductId")
+   if pid is not None and ("BTC" in vals or "BITCOIN" in vals):candidates.append((str(pid),vals))
+  if not candidates:return None
+  candidates.sort(key=lambda x:(0 if "FUTURE" in x[1] else 1,0 if "BTC" in x[1] else 1))
+  return candidates[0][0]
+ except Exception as e:
+  print("CME PRODUCT",type(e).__name__,str(e)[:160]);return None
+
+def _cme_parse_date(v):
+ if v in (None,""):return None
+ s=str(v).strip()
+ for fmt in ("%Y-%m-%d","%m/%d/%Y","%m/%d/%y","%Y%m%d","%d/%m/%Y"):
+  try:return datetime.strptime(s[:10],fmt).replace(tzinfo=timezone.utc)
+  except Exception:pass
+ m=re.search(r"(\d{4})[-/]?(\d{2})[-/]?(\d{2})",s)
+ if m:
+  try:return datetime(int(m.group(1)),int(m.group(2)),int(m.group(3)),tzinfo=timezone.utc)
+  except Exception:pass
+ return None
+
+def _cme_expirations(product_id):
+ try:
+  arr=get(f"https://www.cmegroup.com/CmeWS/mvc/Settlements/Options/TradeDateAndExpirations/{product_id}").json()
+  now=datetime.now(timezone.utc);found={}
+  for d in _cme_walk(arr):
+   date=None;code=None
+   for k,v in d.items():
+    kl=str(k).lower()
+    if "expiration" in kl or kl in ("expiry","expirydate"):
+     if isinstance(v,str):
+      date=date or _cme_parse_date(v)
+      code=code or (v.strip() if len(v.strip())<=12 else None)
+     elif isinstance(v,(int,float)) and v>1e9:
+      try:date=date or datetime.fromtimestamp(float(v)/1000 if v>1e11 else float(v),tz=timezone.utc)
+      except Exception:pass
+    if kl in ("code","expirationcode","monthcode","contractmonth") and v not in (None,""):
+     code=code or str(v).strip()
+   if date and date>now:found[date.date().isoformat()]=(date,code or date.strftime("%b%y").upper())
+  return sorted(found.values(),key=lambda x:x[0])[:3]
+ except Exception as e:
+  print("CME EXPIRATIONS",type(e).__name__,str(e)[:160]);return []
+
+def _cme_chain(product_id,exp_code):
+ try:
+  url=f"https://www.cmegroup.com/CmeWS/mvc/Quotes/Option/{product_id}/G/{requests.utils.quote(str(exp_code),safe='')}/ALL"
+  j=get(url,{"_":str(int(datetime.now(timezone.utc).timestamp()*1000))}).json()
+  quotes=[]
+  for d in _cme_walk(j):
+   for k,v in d.items():
+    if k.lower() in ("optioncontractquotes","quotes","optionquotes") and isinstance(v,list):quotes.extend(v)
+  rows=[]
+  for x in quotes:
+   if not isinstance(x,dict):continue
+   K=_cme_float(x,"strikePrice","strike","strike_price","exercisePrice","exercise_price")
+   if K is None:continue
+   oi=_cme_float(x,"openInterest","open_interest","oi") or 0
+   vol=_cme_float(x,"volume","tradeVolume","volumeValue") or 0
+   iv=_cme_float(x,"impliedVolatility","iv","markIV","markIv") or 0
+   typ=str(x.get("optionType") or x.get("type") or x.get("putCall") or x.get("callPut") or "").upper()
+   typ="C" if "CALL" in typ or typ=="C" else "P" if "PUT" in typ or typ=="P" else ""
+   if not typ:continue
+   if iv>3:iv/=100.0
+   rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"type":typ})
+  return rows
+ except Exception as e:
+  print("CME CHAIN",exp_code,type(e).__name__,str(e)[:160]);return []
+
+def _cme_btc_option_layer():
+ try:
+  pid=_cme_product_id()
+  if not pid:return None
+  exps=_cme_expirations(pid)
+  if not exps:return None
+  profiles=[];spot=None
+  for d,code in exps:
+   rows=_cme_chain(pid,code)
+   if not rows:continue
+   strikes=[x["strike"] for x in rows]
+   if spot is None and strikes:
+    # CME endpoint is a futures-options chain; use the central listed strike only as fallback.
+    ss=sorted(set(strikes));spot=ss[len(ss)//2]
+   p=_option_summary(rows,float(spot),d)
+   p["bucket"]="CME · "+("NEXT" if not profiles else "SIGUIENTE")
+   p["source"]="CME public option quotes · options on BTC futures"
+   p["sourceUrl"]="https://www.cmegroup.com/markets/cryptocurrencies/bitcoin/bitcoin.contractSpecs.options.html"
+   profiles.append(p)
+  if not profiles:return None
+  return {"ticker":"BTC-CME","name":"Bitcoin Options · CME futures","spot":float(spot),"profiles":profiles,
+          "source":"CME public option quotes","sourceUrl":"https://www.cmegroup.com/markets/cryptocurrencies/bitcoin/bitcoin.contractSpecs.options.html",
+          "status":"REAL / DELAYED · CME public chain",
+          "method":"Opciones sobre futuros de Bitcoin; Max Pain y paredes usan OI público, GEX/Greeks son modelos."}
+ except Exception as e:
+  print("CME BTC OPTIONS",type(e).__name__,str(e)[:180]);return None
+
 def update_options(feed):
  previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
  out=[]
- # Free Yahoo layer: direct ETF/stock option chains. SPX/NDX are reference indices; options are not silently substituted with ETF data.
  for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
   try:
    x=opt(sym)
    if x:out.append(x)
-  except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:180])
+  except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:160])
+
+ deribit={}
  for cur in ("BTC","ETH"):
   try:
    x=_deribit_options(cur)
-   if x:out.append(x)
+   if x:deribit[cur]=x
   except Exception as e:print("OPTIONS DERIBIT",cur,type(e).__name__,str(e)[:160])
+
+ cme_btc=None
+ try:cme_btc=_cme_btc_option_layer()
+ except Exception as e:print("OPTIONS CME BTC",type(e).__name__,str(e)[:160])
+
+ etf_flow=None
+ try:etf_flow=_bitcoin_etf_flows()
+ except Exception as e:print("OPTIONS ETF FLOW",type(e).__name__,str(e)[:160])
+
+ if deribit.get("BTC") or cme_btc or etf_flow:
+  d=deribit.get("BTC") or {}
+  out.append({
+   "ticker":"BTC","name":"Bitcoin · Opciones / Flujos · 3 capas",
+   "spot":d.get("spot") or (cme_btc or {}).get("spot"),
+   "profiles":d.get("profiles") or (cme_btc or {}).get("profiles") or [],
+   "source":"CME futures options + spot BTC ETF flows + Deribit public options",
+   "sourceStatus":"REAL / DELAYED · capas separadas",
+   "btcPerspective":True,
+   "layers":{"cme":cme_btc,"spotEtfFlows":etf_flow,"deribit":d},
+   "method":"BTC separado en CME (opciones sobre futuros), ETF spot (flujo neto agregado) y Deribit (cadena cripto nativa)."
+  })
+ if deribit.get("ETH"):out.append(deribit["ETH"])
+
  if not out:
-  if previous.get("markets"):previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained";previous["updatedAttempt"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC");feed["options"]=previous
+  if previous.get("markets"):
+   previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained"
+   previous["updatedAttempt"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+   feed["options"]=previous
   return
+
  hist=dict(previous.get("history") or {});stamp=datetime.now(timezone.utc).isoformat()
  for m in out:
-  if m.get("ticker") in ("BTC","ETH"):continue
-  p=(m.get("profiles") or [{}])[0];arr=hist.get(m.get("ticker"),[]);snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),"gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),"callWall":p.get("callWall"),"putWall":p.get("putWall"),"ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
-  arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10])];arr.append(snap);hist[m.get("ticker")]=arr[-180:]
- feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Yahoo Finance public option chain + Deribit public BTC/ETH options","sourceUrl":"https://finance.yahoo.com/markets/options/","sourceStatus":"REAL / DELAYED · public chain snapshots","publication":"Yahoo options are delayed; Deribit public options are separate. No CME chain is invented when unavailable.","note":"Max Pain uses OI. GEX/Gamma Flip/DEX/Vanna/Charm are modeled proxies. Call/Put Wall = largest OI concentration by side; GEX clusters show modeled exposure by strike. SPY/QQQ are ETF option layers for S&P 500/Nasdaq-100 reference exposure."}
+  if m.get("ticker") in ("BTC","ETH","BTC-CME"):continue
+  p=(m.get("profiles") or [{}])[0];arr=hist.get(m.get("ticker"),[])
+  snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),
+        "gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),
+        "callWall":p.get("callWall"),"putWall":p.get("putWall"),"ivAtm":p.get("ivAtm"),
+        "expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
+  arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10])]
+  arr.append(snap);hist[m.get("ticker")]=arr[-180:]
+
+ feed["options"]={
+  "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+  "markets":out,"history":hist,
+  "source":"Yahoo Finance public option chain + CME public BTC futures options + Deribit public BTC/ETH options + Farside BTC ETF flows",
+  "sourceUrl":"https://finance.yahoo.com/markets/options/",
+  "sourceStatus":"REAL / DELAYED · public snapshots",
+  "publication":"Yahoo options and CME public quotes may be delayed; Deribit is separate; Farside ETF flows are daily.",
+  "note":"Max Pain is calculated from public OI. Call/Put Wall = largest OI concentration by side. GEX/Gamma Flip remain modelled proxies. BTC is explicitly split into CME futures options, aggregated spot ETF flows, and Deribit."
+}
 
 
 def update_dark_pools(feed):
