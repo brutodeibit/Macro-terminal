@@ -222,6 +222,25 @@ def zscore(a,c):
 def chart(sym):
  try:return (get("https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(sym,safe=""),{"range":"3mo","interval":"1d"}).json().get("chart",{}).get("result") or [None])[0]
  except Exception:return None
+def yahoo_ytd(sym):
+ try:
+  u="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(sym,safe="")
+  j=get(u,{"range":"1y","interval":"1d"}).json().get("chart",{}).get("result",[])
+  if not j:return None
+  r=j[0];ts=r.get("timestamp") or [];q=(r.get("indicators",{}).get("quote") or [{}])[0].get("close") or []
+  rows=[]
+  for t,v in zip(ts,q):
+   if v is None:continue
+   d=datetime.fromtimestamp(float(t),tz=timezone.utc).date()
+   rows.append((d,float(v)))
+  if not rows:return None
+  year=datetime.now(timezone.utc).year;start=next(((d,v) for d,v in rows if d.year==year),None)
+  if not start:return None
+  last=rows[-1][1]
+  return {"changeYtd":(last/start[1]-1)*100,"ytdStart":start[1],"last":last,"ytdDate":start[0].isoformat()}
+ except Exception as e:
+  print("YTD",sym,type(e).__name__,str(e)[:120]);return None
+
 def update_fx(feed):
  sy={"EUR":"EURUSD=X","GBP":"GBPUSD=X","JPY":"USDJPY=X","AUD":"AUDUSD=X","NZD":"NZDUSD=X","CAD":"USDCAD=X","CHF":"USDCHF=X"}
  out={"USD":{"pair":"—","change1d":0,"change1w":0,"change15d":0,"change1m":0}}
@@ -888,16 +907,15 @@ def update_bond_curves(feed):
  feed["bondCurvesUpdated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
 def update_markets_rotation(feed):
- sector_cfg=[("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),
-  ("Consumo discrecional","XLY"),("Consumo básico","XLP"),("Utilities","XLU"),("Materiales","XLB"),("Comunicación","XLC"),("REITs","XLRE")]
+ sector_cfg=[("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),("Consumo discrecional","XLY"),("Consumo básico","XLP"),("Utilities","XLU"),("Materiales","XLB"),("Comunicación","XLC"),("REITs","XLRE")]
  style_cfg=[("Growth vs Value","VUG","VTV"),("Cíclicos vs Defensivos","XLY","XLP"),("Small vs Large","IWM","SPY"),("High Beta vs Low Vol","SPHB","SPLV"),("Nasdaq vs S&P","QQQ","SPY")]
  def series(sym):
   r=chart(sym)
   if not r:return None
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:return None
-  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,
-          "p1":q[-1]-q[-2],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
+  y=yahoo_ytd(sym) or {}
+  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),"p1":q[-1]-q[-2],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
  def rel(a,b,key):
   x=series(a);y=series(b)
   if not x or not y:return None
@@ -905,17 +923,29 @@ def update_markets_rotation(feed):
  sectors=[]
  for name,sym in sector_cfg:
   x=series(sym)
-  if x:
-   sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],"change1w":x["w1"],"change1m":x["m1"],
-    "pointChange1d":x["p1"],"pointChange1w":x["pw"],"pointChange1m":x["pm"],
-    "vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
+  if x:sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],"change1w":x["w1"],"change1m":x["m1"],"changeYtd":x.get("ytd"),"pointChange1d":x["p1"],"pointChange1w":x["pw"],"pointChange1m":x["pm"],"vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
  styles=[]
  for name,a1,b1 in style_cfg:
-  styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1")})
- up=sum(x["change1w"]>0 for x in sectors); down=sum(x["change1w"]<0 for x in sectors); neutral=len(sectors)-up-down
+  a=series(a1);b=series(b1);styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1"),"changeYtd":(a.get("ytd")-b.get("ytd")) if a and b and a.get("ytd") is not None and b.get("ytd") is not None else None})
+ up=sum(x["change1w"]>0 for x in sectors);down=sum(x["change1w"]<0 for x in sectors);neutral=len(sectors)-up-down
  sentiment={"bullishPct":round(up*100/len(sectors),1) if sectors else 0,"neutralPct":round(neutral*100/len(sectors),1) if sectors else 0,"bearishPct":round(down*100/len(sectors),1) if sectors else 0}
- feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,
-  "method":"ETF sectorial: precio actual + cambios absolutos y porcentuales 1D/1S/1M + fuerza relativa frente a SPY."}
+ feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"method":"ETF sectorial: precio actual + cambios 1D/1S/1M/YTD + fuerza relativa frente a SPY."}
+
+def update_global_markets(feed):
+ regions={
+  "ASIA":[("Hong Kong · Hang Seng","^HSI"),("Japón · Nikkei 225","^N225"),("Corea del Sur · KOSPI","^KS11"),("China continental · Shanghai Composite","000001.SS"),("Taiwán · TAIEX","^TWII")],
+  "EUROPA":[("STOXX Europe 600","^STOXX"),("Alemania · DAX","^GDAXI"),("Reino Unido · FTSE 100","^FTSE"),("Francia · CAC 40","^FCHI"),("España · IBEX 35","^IBEX")]
+ }
+ out={}
+ for region,items in regions.items():
+  arr=[]
+  for name,sym in items:
+   r=chart(sym);y=yahoo_ytd(sym) or {}
+   q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
+   if len(q)<22:continue
+   arr.append({"name":name,"symbol":sym,"last":q[-1],"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"changeYtd":y.get("changeYtd"),"ytdStart":y.get("ytdStart"),"source":"Yahoo Finance public market data"})
+  out[region]=arr
+ feed["globalMarkets"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"regions":out,"source":"Yahoo Finance public market data","method":"Índices de referencia por región. Variaciones 1D/1S/1M/YTD; YTD se calcula desde el primer cierre disponible del año natural."}
 
 
 def _cmc_day(timestamp):
@@ -1004,7 +1034,7 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats),("TRAD_FG",update_traditional_fear_greed)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("GLOBAL_MARKETS",update_global_markets),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats),("TRAD_FG",update_traditional_fear_greed)):
   try:
    fn(feed)
   except Exception as e:
