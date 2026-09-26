@@ -83,6 +83,8 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  ivs=[float(x.get("iv") or 0) for x in atm if float(x.get("iv") or 0)>0]
  iv_atm=sum(ivs)/len(ivs) if ivs else None
  if iv_atm and iv_atm>3:iv_atm/=100.0
+ atm_row=atm[0] if atm else {}
+ atm_delta=atm_row.get("delta");atm_gamma=atm_row.get("gamma");atm_vanna=atm_row.get("vanna");atm_charm=atm_row.get("charm")
  expected=spot*iv_atm*math.sqrt(max(ex,0)/365.0) if iv_atm and ex>0 else None
  max_pain=_max_pain(calls,puts)
  dex=None;vanna=None;charm_vals=[];gex_by=[]
@@ -121,7 +123,7 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   "expiration":expiration.date().isoformat(),"daysToExpiry":round(ex,2),
   "callOi":co,"putOi":po,"putCallOi":po/co if co else None,"callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,"putCallVol":pv/cv if cv else None,"totalVolume":cv+pv,"totalOpenInterest":total_oi,
   "oiAboveSpot":above_oi,"oiBelowSpot":below_oi,"oiAtSpot":at_oi,"oiAbovePct":above_oi/total_oi*100 if total_oi else None,"oiBelowPct":below_oi/total_oi*100 if total_oi else None,
-  "ivAtm":iv_atm*100 if iv_atm else None,"expectedMove":expected,"expectedMovePct":expected/spot*100 if expected and spot else None,
+  "ivAtm":iv_atm*100 if iv_atm else None,"atmDelta":atm_delta,"atmGamma":atm_gamma,"atmVega":(float(atm_row.get("vega")) if atm_row.get("vega") is not None else None),"atmCharm":atm_charm,"expectedMove":expected,"expectedMovePct":expected/spot*100 if expected and spot else None,
   "iv25dCall":iv25c*100 if iv25c else None,"iv25dPut":iv25p*100 if iv25p else None,"riskReversal25d":rr25,"skew25d":rr25,
   "call25dStrike":c25.get("strike") if c25 else None,"put25dStrike":p25.get("strike") if p25 else None,
   "maxPain":max_pain,"maxPainDistance":max_pain-spot if max_pain is not None else None,"maxPainDistancePct":(max_pain-spot)/spot*100 if max_pain is not None and spot else None,
@@ -192,7 +194,7 @@ def opt(sym):
      if not K:continue
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
      delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv,0.04,typ)
-     rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
+     rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":(float(_norm_pdf(((math.log(spot/K)+(0.04+0.5*(iv if iv<3 else iv/100)**2)*T)/((iv if iv<3 else iv/100)*math.sqrt(T))))*spot*math.sqrt(T)) if iv else None),"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
    if rows:
     p=_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc));p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER");profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
