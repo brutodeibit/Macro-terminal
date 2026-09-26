@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated": "26/09/2026 07:00 UTC",
+  "updated": "26/09/2026 07:19 UTC",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -1433,10 +1433,10 @@
     }
   },
   "riskOnOff": {
-    "updated": "26/09/2026 06:59 UTC",
-    "score": 75.4,
+    "updated": "26/09/2026 07:18 UTC",
+    "score": 66.5,
     "label": "RISK ON",
-    "confidence": 64,
+    "confidence": 48,
     "method": "Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.",
     "assets": [
       {
@@ -1624,28 +1624,28 @@
       {
         "name": "BTC",
         "symbol": "BTC-USD",
-        "value": 83883.5078125,
-        "change1d": -0.5872957968690362,
-        "change1w": 3.377878106967147,
-        "change1m": 5.286098898491187,
-        "pointChange1d": -495.5546875,
-        "pointChange1w": 2740.8984375,
-        "pointChange1m": 4211.5390625,
+        "value": 83989.65625,
+        "change1d": -0.053865255051144256,
+        "change1w": -3.0175171826366642,
+        "change1m": 5.218726189643119,
+        "pointChange1d": -45.265625,
+        "pointChange1w": -2613.2578125,
+        "pointChange1m": 4165.7890625,
         "role": "Beta alta / liquidez",
-        "marketSignal": "FAVORECE RISK-ON ↑"
+        "marketSignal": "TENSIONA RISK-ON ↓"
       },
       {
         "name": "ETH",
         "symbol": "ETH-USD",
-        "value": 2685.25,
-        "change1d": -0.07634103063752784,
-        "change1w": 1.5986560891388502,
-        "change1m": 9.33080559072199,
-        "pointChange1d": -2.051513671875,
-        "pointChange1w": 42.25244140625,
-        "pointChange1m": 229.171875,
+        "value": 2689.47998046875,
+        "change1d": -0.037004813348007204,
+        "change1w": -3.133055127961404,
+        "change1m": 8.414616419709976,
+        "pointChange1d": -0.99560546875,
+        "pointChange1w": -86.98828125,
+        "pointChange1m": 208.744384765625,
         "role": "Beta alta / liquidez",
-        "marketSignal": "FAVORECE RISK-ON ↑"
+        "marketSignal": "TENSIONA RISK-ON ↓"
       },
       {
         "name": "TLT",
@@ -1684,9 +1684,9 @@
     "tensions": [
       "SKEW: el riesgo de cola no muestra tensión extrema.",
       "AUDJPY: el carry confirma apetito por riesgo.",
-      "MOVE: la volatilidad de bonos no muestra estrés significativo.",
-      "DXY: el dólar actúa como refugio/liquidez.",
-      "LQD: el crédito investment grade se mantiene estable."
+      "ETH: cripto acompaña la liquidez/alta beta.",
+      "BTC: cripto acompaña la liquidez/alta beta.",
+      "MOVE: la volatilidad de bonos no muestra estrés significativo."
     ],
     "coverage": {
       "totalAssets": 18,
@@ -1718,7 +1718,7 @@
     }
   },
   "automation": {
-    "updatedAt": "26/09/2026 07:00 UTC",
+    "updatedAt": "26/09/2026 07:19 UTC",
     "runner": "GitHub Actions / update_feed.py",
     "intervalMinutes": 15,
     "notes": [
@@ -1729,7 +1729,7 @@
     ]
   },
   "fx": {
-    "updated": "26/09/2026 06:59 UTC",
+    "updated": "26/09/2026 07:18 UTC",
     "currencies": {
       "USD": {
         "pair": "—",
@@ -1798,7 +1798,7 @@
     "method": "Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."
   },
   "cot": {
-    "updated": "26/09/2026 06:59 UTC",
+    "updated": "26/09/2026 07:18 UTC",
     "markets": [
       {
         "name": "S&P 500 E-Mini",
@@ -162806,23 +162806,23 @@
     "errors": []
   },
   "options": {
-    "updated": "26/09/2026 06:59 UTC",
+    "updated": "26/09/2026 07:18 UTC",
     "markets": [
       {
         "ticker": "BTC",
         "name": "Bitcoin · Opciones / Flujos · 3 capas",
-        "spot": 83884.46,
+        "spot": 83985.48,
         "profiles": [
           {
             "ticker": "BTC · Deribit",
             "name": "BTC Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 83884.46,
+            "spot": 83985.48,
             "expiration": "2026-09-26",
-            "daysToExpiry": 0.04,
+            "daysToExpiry": 0.03,
             "bucket": "0DTE",
-            "gammaNet": -11165403.786075737,
+            "gammaNet": -5879373.380870472,
             "gammaFlip": null,
             "callWall": 86000.0,
             "putWall": 83000.0,
@@ -162831,31 +162831,31 @@
             "topGexStrikes": [
               {
                 "strike": 84000.0,
-                "gex": -30656552.74924903,
-                "oi": 274.5,
-                "volume": 74.7,
+                "gex": -35026609.949041285,
+                "oi": 273.9,
+                "volume": 71.4,
                 "type": "P",
-                "iv": 15.81
+                "iv": 15.8
               },
               {
                 "strike": 84000.0,
-                "gex": 28110216.127453484,
-                "oi": 251.7,
-                "volume": 256.1,
+                "gex": 32200439.522338796,
+                "oi": 251.8,
+                "volume": 256.2,
                 "type": "C",
-                "iv": 15.81
+                "iv": 15.8
               },
               {
                 "strike": 83500.0,
-                "gex": -5869232.479158274,
+                "gex": -3232079.399802855,
                 "oi": 156.4,
-                "volume": 199.6,
+                "volume": 199.5,
                 "type": "P",
                 "iv": 19.57
               },
               {
                 "strike": 83000.0,
-                "gex": -5056382.372450189,
+                "gex": -2826917.1377655985,
                 "oi": 829.2,
                 "volume": 137.7,
                 "type": "P",
@@ -162863,55 +162863,47 @@
               },
               {
                 "strike": 84500.0,
-                "gex": 1423723.3923031623,
+                "gex": 2625261.7957734633,
                 "oi": 116.1,
-                "volume": 107.5,
+                "volume": 105.2,
                 "type": "C",
                 "iv": 21.94
               },
               {
                 "strike": 84500.0,
-                "gex": -922170.534894038,
+                "gex": -1700427.9676327687,
                 "oi": 75.2,
-                "volume": 70.3,
+                "volume": 70.1,
                 "type": "P",
                 "iv": 21.94
               },
               {
+                "strike": 85000.0,
+                "gex": 1515230.2532949944,
+                "oi": 375.7,
+                "volume": 237.7,
+                "type": "C",
+                "iv": 30.61
+              },
+              {
                 "strike": 83500.0,
-                "gex": 911907.6038589901,
+                "gex": 502170.90418931836,
                 "oi": 24.3,
                 "volume": 11.5,
                 "type": "C",
                 "iv": 19.57
               },
               {
-                "strike": 85000.0,
-                "gex": 838874.5969186011,
-                "oi": 375.7,
-                "volume": 238.5,
-                "type": "C",
-                "iv": 30.61
-              },
-              {
-                "strike": 83000.0,
-                "gex": 53661.55918663973,
-                "oi": 8.8,
-                "volume": 2.8,
-                "type": "C",
-                "iv": 29.09
-              },
-              {
                 "strike": 85500.0,
-                "gex": 45308.92075806425,
+                "gex": 85366.54619936168,
                 "oi": 140.6,
-                "volume": 151.6,
+                "volume": 141.2,
                 "type": "C",
                 "iv": 35.8
               },
               {
                 "strike": 85000.0,
-                "gex": -26347.405492785452,
+                "gex": -47590.40987192157,
                 "oi": 11.8,
                 "volume": 5.0,
                 "type": "P",
@@ -162919,23 +162911,23 @@
               },
               {
                 "strike": 86000.0,
-                "gex": 21052.703483007586,
+                "gex": 43084.90917667834,
                 "oi": 781.0,
-                "volume": 888.5,
+                "volume": 868.9,
                 "type": "C",
                 "iv": 38.62
               },
               {
-                "strike": 82500.0,
-                "gex": -20038.32165133636,
-                "oi": 76.3,
-                "volume": 80.7,
-                "type": "P",
-                "iv": 30.25
+                "strike": 83000.0,
+                "gex": 30001.050183715946,
+                "oi": 8.8,
+                "volume": 2.8,
+                "type": "C",
+                "iv": 29.09
               },
               {
                 "strike": 86000.0,
-                "gex": -14319.073098813868,
+                "gex": -29304.35820057815,
                 "oi": 531.2,
                 "volume": 200.0,
                 "type": "P",
@@ -162943,17 +162935,25 @@
               },
               {
                 "strike": 85500.0,
-                "gex": -5220.515763020206,
+                "gex": -9835.974739898002,
                 "oi": 16.2,
                 "volume": 0.2,
                 "type": "P",
                 "iv": 35.8
               },
               {
+                "strike": 82500.0,
+                "gex": -8757.342226416891,
+                "oi": 76.3,
+                "volume": 80.7,
+                "type": "P",
+                "iv": 30.25
+              },
+              {
                 "strike": 86500.0,
-                "gex": 323.10948801903936,
+                "gex": 727.2740467862053,
                 "oi": 241.2,
-                "volume": 306.4,
+                "volume": 244.1,
                 "type": "C",
                 "iv": 40.38
               }
@@ -162965,12 +162965,12 @@
             "name": "BTC Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 83884.46,
+            "spot": 83985.48,
             "expiration": "2026-09-27",
-            "daysToExpiry": 1.04,
+            "daysToExpiry": 1.03,
             "bucket": "NEXT",
-            "gammaNet": 11707659.109154183,
-            "gammaFlip": 86500.0,
+            "gammaNet": 16707339.641320433,
+            "gammaFlip": 85500.0,
             "callWall": 88000.0,
             "putWall": 78000.0,
             "callWallOiValue": 1720.6,
@@ -162978,131 +162978,131 @@
             "topGexStrikes": [
               {
                 "strike": 82000.0,
-                "gex": 10807191.106775478,
+                "gex": 10527641.850119716,
                 "oi": 1532.5,
                 "volume": 1.0,
                 "type": "C",
-                "iv": 30.53
+                "iv": 30.97
               },
               {
                 "strike": 82000.0,
-                "gex": -9525842.575551266,
+                "gex": -9279437.91917893,
                 "oi": 1350.8,
-                "volume": 679.4,
+                "volume": 679.3,
                 "type": "P",
-                "iv": 30.53
+                "iv": 30.97
               },
               {
                 "strike": 85000.0,
-                "gex": 8956448.588118887,
+                "gex": 9156315.80155207,
                 "oi": 1067.3,
-                "volume": 345.5,
+                "volume": 340.5,
                 "type": "C",
-                "iv": 29.53
+                "iv": 29.19
               },
               {
                 "strike": 84000.0,
-                "gex": -8372596.805090593,
+                "gex": -8376112.585736032,
                 "oi": 951.5,
                 "volume": 98.2,
                 "type": "P",
-                "iv": 29.56
+                "iv": 29.6
               },
               {
                 "strike": 84000.0,
-                "gex": 8085422.6211295845,
+                "gex": 8359017.464212537,
                 "oi": 332.4,
                 "volume": 80.0,
                 "type": "C",
-                "iv": 18.34
-              },
-              {
-                "strike": 83500.0,
-                "gex": -7711202.414810377,
-                "oi": 215.4,
-                "volume": 205.4,
-                "type": "P",
-                "iv": 14.52
-              },
-              {
-                "strike": 84000.0,
-                "gex": 7630810.246321138,
-                "oi": 867.2,
-                "volume": 280.9,
-                "type": "C",
-                "iv": 29.56
+                "iv": 17.87
               },
               {
                 "strike": 84500.0,
-                "gex": 7429571.72526228,
+                "gex": 8323197.123902507,
                 "oi": 270.9,
-                "volume": 195.8,
+                "volume": 192.7,
                 "type": "C",
-                "iv": 16.27
+                "iv": 16.12
+              },
+              {
+                "strike": 84000.0,
+                "gex": 7634014.539516854,
+                "oi": 867.2,
+                "volume": 280.9,
+                "type": "C",
+                "iv": 29.6
               },
               {
                 "strike": 88000.0,
-                "gex": 7247052.309495227,
+                "gex": 7501605.737207737,
                 "oi": 1720.6,
                 "volume": 790.2,
                 "type": "C",
-                "iv": 30.21
+                "iv": 30.01
               },
               {
                 "strike": 85000.0,
-                "gex": -7102724.711874662,
+                "gex": -7261225.236047664,
                 "oi": 846.4,
-                "volume": 15.1,
+                "volume": 13.1,
                 "type": "P",
-                "iv": 29.53
+                "iv": 29.19
               },
               {
                 "strike": 86000.0,
-                "gex": -6697906.108199791,
+                "gex": -6833771.86981624,
                 "oi": 912.8,
                 "volume": 100.1,
                 "type": "P",
-                "iv": 29.08
+                "iv": 29.15
+              },
+              {
+                "strike": 83500.0,
+                "gex": -6806842.273239782,
+                "oi": 215.4,
+                "volume": 205.4,
+                "type": "P",
+                "iv": 15.26
               },
               {
                 "strike": 86000.0,
-                "gex": 6328083.071550722,
+                "gex": 6456447.042648473,
                 "oi": 862.4,
                 "volume": 225.7,
                 "type": "C",
-                "iv": 29.08
+                "iv": 29.15
               },
               {
                 "strike": 84000.0,
-                "gex": -5497309.002332389,
+                "gex": -5683327.15677507,
                 "oi": 226.0,
                 "volume": 27.1,
                 "type": "P",
-                "iv": 18.34
+                "iv": 17.87
               },
               {
                 "strike": 83000.0,
-                "gex": 5455880.117854967,
+                "gex": 5314554.809023125,
                 "oi": 652.2,
                 "volume": 11.5,
                 "type": "C",
-                "iv": 29.59
+                "iv": 30.19
               },
               {
                 "strike": 85000.0,
-                "gex": 4572997.612383857,
+                "gex": 4952402.53340879,
                 "oi": 293.2,
-                "volume": 84.9,
+                "volume": 84.6,
                 "type": "C",
-                "iv": 19.1
+                "iv": 18.78
               },
               {
                 "strike": 84000.0,
-                "gex": 4568019.888605998,
+                "gex": 4629177.698413819,
                 "oi": 106.8,
-                "volume": 91.3,
+                "volume": 91.2,
                 "type": "C",
-                "iv": 14.46
+                "iv": 14.56
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -163112,11 +163112,11 @@
             "name": "BTC Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 83884.46,
+            "spot": 83985.48,
             "expiration": "2026-10-09",
-            "daysToExpiry": 13.04,
+            "daysToExpiry": 13.03,
             "bucket": "7-30D",
-            "gammaNet": 2914465.1774844225,
+            "gammaNet": 3358912.853201787,
             "gammaFlip": 89000.0,
             "callWall": 90000.0,
             "putWall": 75000.0,
@@ -163125,131 +163125,131 @@
             "topGexStrikes": [
               {
                 "strike": 90000.0,
-                "gex": 4534145.872560116,
+                "gex": 4632903.4721715,
                 "oi": 1511.3,
                 "volume": 541.1,
                 "type": "C",
-                "iv": 32.4
+                "iv": 32.28
               },
               {
                 "strike": 85000.0,
-                "gex": -3461212.2999975146,
+                "gex": -3514208.661683966,
                 "oi": 620.6,
-                "volume": 13.8,
+                "volume": 11.8,
                 "type": "P",
-                "iv": 31.29
+                "iv": 30.96
               },
               {
                 "strike": 80000.0,
-                "gex": -3242416.5452935756,
+                "gex": -3200529.701739579,
                 "oi": 842.8,
                 "volume": 4.2,
                 "type": "P",
-                "iv": 33.09
+                "iv": 32.96
               },
               {
                 "strike": 86000.0,
-                "gex": 2951159.263263326,
+                "gex": 3003916.7538754377,
                 "oi": 557.7,
                 "volume": 54.4,
                 "type": "C",
-                "iv": 31.27
+                "iv": 30.95
               },
               {
                 "strike": 78000.0,
-                "gex": -2427634.4934759843,
+                "gex": -2380791.147302057,
                 "oi": 936.5,
                 "volume": 4.6,
                 "type": "P",
-                "iv": 34.66
+                "iv": 34.77
               },
               {
                 "strike": 87000.0,
-                "gex": 2289140.912520957,
+                "gex": 2333337.633019525,
                 "oi": 475.4,
                 "volume": 263.4,
                 "type": "C",
-                "iv": 31.43
+                "iv": 31.13
               },
               {
                 "strike": 85000.0,
-                "gex": 1996638.7421835482,
-                "oi": 358.0,
-                "volume": 66.7,
+                "gex": 2028909.0613621739,
+                "oi": 358.3,
+                "volume": 67.0,
                 "type": "C",
-                "iv": 31.29
+                "iv": 30.96
               },
               {
                 "strike": 84000.0,
-                "gex": 1797706.1326798433,
+                "gex": 1818964.4017888969,
                 "oi": 319.4,
                 "volume": 40.5,
                 "type": "C",
-                "iv": 31.44
+                "iv": 31.1
               },
               {
                 "strike": 83000.0,
-                "gex": -1608589.7195432317,
+                "gex": -1608328.0179912525,
                 "oi": 294.9,
                 "volume": 24.2,
                 "type": "P",
-                "iv": 31.6
+                "iv": 31.5
               },
               {
                 "strike": 82000.0,
-                "gex": 1600619.0271476142,
+                "gex": 1590334.537830147,
                 "oi": 315.6,
                 "volume": 22.0,
                 "type": "C",
-                "iv": 31.8
+                "iv": 31.77
               },
               {
                 "strike": 75000.0,
-                "gex": -1599998.887248862,
+                "gex": -1565155.5868689641,
                 "oi": 1232.5,
                 "volume": 102.2,
                 "type": "P",
-                "iv": 38.67
+                "iv": 38.77
               },
               {
                 "strike": 88000.0,
-                "gex": 1461133.4191267735,
+                "gex": 1483506.8638594865,
                 "oi": 344.4,
                 "volume": 8.6,
                 "type": "C",
-                "iv": 31.46
+                "iv": 31.55
               },
               {
                 "strike": 76000.0,
-                "gex": -1453545.3386702547,
+                "gex": -1421402.0063556414,
                 "oi": 884.7,
                 "volume": 0.2,
                 "type": "P",
-                "iv": 37.24
+                "iv": 37.31
               },
               {
                 "strike": 86000.0,
-                "gex": -1257298.6210352632,
+                "gex": -1279775.1850830263,
                 "oi": 237.6,
                 "volume": 0.0,
                 "type": "P",
-                "iv": 31.27
+                "iv": 30.95
               },
               {
                 "strike": 92000.0,
-                "gex": 1186426.7213074877,
+                "gex": 1212678.5387021736,
                 "oi": 599.0,
                 "volume": 185.3,
                 "type": "C",
-                "iv": 33.64
+                "iv": 33.47
               },
               {
                 "strike": 89000.0,
-                "gex": 1104358.0396369305,
+                "gex": 1121478.022505274,
                 "oi": 323.8,
                 "volume": 306.8,
                 "type": "C",
-                "iv": 32.58
+                "iv": 32.37
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -163259,11 +163259,11 @@
             "name": "BTC Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 83884.46,
+            "spot": 83985.48,
             "expiration": "2026-10-30",
-            "daysToExpiry": 34.04,
+            "daysToExpiry": 34.03,
             "bucket": "30-90D",
-            "gammaNet": 145431219.31048244,
+            "gammaNet": 146681294.83516937,
             "gammaFlip": 81000.0,
             "callWall": 95000.0,
             "putWall": 88000.0,
@@ -163272,131 +163272,131 @@
             "topGexStrikes": [
               {
                 "strike": 90000.0,
-                "gex": 53316774.52725133,
+                "gex": 53627460.63406287,
                 "oi": 19652.2,
-                "volume": 61.5,
+                "volume": 59.0,
                 "type": "C",
-                "iv": 33.9
+                "iv": 34.03
               },
               {
                 "strike": 95000.0,
-                "gex": 40915043.988549985,
+                "gex": 41415467.71495321,
                 "oi": 23299.6,
-                "volume": 62.1,
+                "volume": 59.0,
                 "type": "C",
-                "iv": 35.06
+                "iv": 34.92
               },
               {
                 "strike": 100000.0,
-                "gex": 13003323.308685498,
+                "gex": 13183344.835136041,
                 "oi": 12889.7,
                 "volume": 103.8,
                 "type": "C",
-                "iv": 36.92
+                "iv": 36.84
               },
               {
                 "strike": 85000.0,
-                "gex": 8574534.775265153,
+                "gex": 8599976.719952587,
                 "oi": 2656.3,
                 "volume": 164.1,
-                "type": "C",
-                "iv": 33.92
-              },
-              {
-                "strike": 88000.0,
-                "gex": -7194279.935856104,
-                "oi": 2383.0,
-                "volume": 0.1,
-                "type": "P",
-                "iv": 33.82
-              },
-              {
-                "strike": 70000.0,
-                "gex": 4727035.905627552,
-                "oi": 5768.9,
-                "volume": 2.4,
-                "type": "C",
-                "iv": 40.99
-              },
-              {
-                "strike": 88000.0,
-                "gex": 4277320.945497661,
-                "oi": 1416.8,
-                "volume": 31.2,
-                "type": "C",
-                "iv": 33.82
-              },
-              {
-                "strike": 84000.0,
-                "gex": 4163172.3305554288,
-                "oi": 1293.8,
-                "volume": 232.5,
-                "type": "C",
-                "iv": 33.96
-              },
-              {
-                "strike": 82000.0,
-                "gex": 4108174.8430585745,
-                "oi": 1342.3,
-                "volume": 0.3,
-                "type": "C",
-                "iv": 34.17
-              },
-              {
-                "strike": 92000.0,
-                "gex": 3970245.658130684,
-                "oi": 1702.3,
-                "volume": 55.7,
-                "type": "C",
-                "iv": 34.27
-              },
-              {
-                "strike": 80000.0,
-                "gex": 3840235.3023064947,
-                "oi": 1397.4,
-                "volume": 2.6,
-                "type": "C",
-                "iv": 34.5
-              },
-              {
-                "strike": 80000.0,
-                "gex": -3839410.8636413366,
-                "oi": 1397.1,
-                "volume": 24.1,
-                "type": "P",
-                "iv": 34.5
-              },
-              {
-                "strike": 86000.0,
-                "gex": 3836109.6776638264,
-                "oi": 1200.0,
-                "volume": 20.1,
                 "type": "C",
                 "iv": 33.88
               },
               {
+                "strike": 88000.0,
+                "gex": -7224552.467866178,
+                "oi": 2383.0,
+                "volume": 0.1,
+                "type": "P",
+                "iv": 33.88
+              },
+              {
+                "strike": 70000.0,
+                "gex": 4679735.867006626,
+                "oi": 5768.9,
+                "volume": 2.4,
+                "type": "C",
+                "iv": 41.12
+              },
+              {
+                "strike": 88000.0,
+                "gex": 4295319.318704491,
+                "oi": 1416.8,
+                "volume": 31.2,
+                "type": "C",
+                "iv": 33.88
+              },
+              {
+                "strike": 84000.0,
+                "gex": 4157744.1904844805,
+                "oi": 1293.8,
+                "volume": 232.5,
+                "type": "C",
+                "iv": 34.02
+              },
+              {
+                "strike": 82000.0,
+                "gex": 4101360.1318185437,
+                "oi": 1342.3,
+                "volume": 0.3,
+                "type": "C",
+                "iv": 34.15
+              },
+              {
+                "strike": 92000.0,
+                "gex": 4010002.477579455,
+                "oi": 1702.3,
+                "volume": 55.7,
+                "type": "C",
+                "iv": 34.31
+              },
+              {
+                "strike": 86000.0,
+                "gex": 3852399.3680036613,
+                "oi": 1200.0,
+                "volume": 20.1,
+                "type": "C",
+                "iv": 33.84
+              },
+              {
+                "strike": 80000.0,
+                "gex": 3808266.6913048364,
+                "oi": 1397.4,
+                "volume": 2.6,
+                "type": "C",
+                "iv": 34.66
+              },
+              {
+                "strike": 80000.0,
+                "gex": -3807449.115802194,
+                "oi": 1397.1,
+                "volume": 24.1,
+                "type": "P",
+                "iv": 34.66
+              },
+              {
                 "strike": 91000.0,
-                "gex": 3655488.153335901,
+                "gex": 3691874.4562560786,
                 "oi": 1447.6,
                 "volume": 1.5,
                 "type": "C",
-                "iv": 34.12
+                "iv": 34.07
               },
               {
                 "strike": 87000.0,
-                "gex": 2872166.285200145,
+                "gex": 2878630.6662980206,
                 "oi": 918.2,
                 "volume": 5.5,
                 "type": "C",
-                "iv": 33.82
+                "iv": 33.9
               },
               {
                 "strike": 75000.0,
-                "gex": -2587733.6786722704,
+                "gex": -2575251.1859206846,
                 "oi": 1720.6,
                 "volume": 1.0,
                 "type": "P",
-                "iv": 38.1
+                "iv": 38.07
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -163411,18 +163411,18 @@
           "deribit": {
             "ticker": "BTC",
             "name": "BTC Options · Deribit",
-            "spot": 83884.46,
+            "spot": 83985.48,
             "profiles": [
               {
                 "ticker": "BTC · Deribit",
                 "name": "BTC Options · Deribit",
                 "source": "Deribit public options",
                 "sourceUrl": "https://www.deribit.com/options",
-                "spot": 83884.46,
+                "spot": 83985.48,
                 "expiration": "2026-09-26",
-                "daysToExpiry": 0.04,
+                "daysToExpiry": 0.03,
                 "bucket": "0DTE",
-                "gammaNet": -11165403.786075737,
+                "gammaNet": -5879373.380870472,
                 "gammaFlip": null,
                 "callWall": 86000.0,
                 "putWall": 83000.0,
@@ -163431,31 +163431,31 @@
                 "topGexStrikes": [
                   {
                     "strike": 84000.0,
-                    "gex": -30656552.74924903,
-                    "oi": 274.5,
-                    "volume": 74.7,
+                    "gex": -35026609.949041285,
+                    "oi": 273.9,
+                    "volume": 71.4,
                     "type": "P",
-                    "iv": 15.81
+                    "iv": 15.8
                   },
                   {
                     "strike": 84000.0,
-                    "gex": 28110216.127453484,
-                    "oi": 251.7,
-                    "volume": 256.1,
+                    "gex": 32200439.522338796,
+                    "oi": 251.8,
+                    "volume": 256.2,
                     "type": "C",
-                    "iv": 15.81
+                    "iv": 15.8
                   },
                   {
                     "strike": 83500.0,
-                    "gex": -5869232.479158274,
+                    "gex": -3232079.399802855,
                     "oi": 156.4,
-                    "volume": 199.6,
+                    "volume": 199.5,
                     "type": "P",
                     "iv": 19.57
                   },
                   {
                     "strike": 83000.0,
-                    "gex": -5056382.372450189,
+                    "gex": -2826917.1377655985,
                     "oi": 829.2,
                     "volume": 137.7,
                     "type": "P",
@@ -163463,55 +163463,47 @@
                   },
                   {
                     "strike": 84500.0,
-                    "gex": 1423723.3923031623,
+                    "gex": 2625261.7957734633,
                     "oi": 116.1,
-                    "volume": 107.5,
+                    "volume": 105.2,
                     "type": "C",
                     "iv": 21.94
                   },
                   {
                     "strike": 84500.0,
-                    "gex": -922170.534894038,
+                    "gex": -1700427.9676327687,
                     "oi": 75.2,
-                    "volume": 70.3,
+                    "volume": 70.1,
                     "type": "P",
                     "iv": 21.94
                   },
                   {
+                    "strike": 85000.0,
+                    "gex": 1515230.2532949944,
+                    "oi": 375.7,
+                    "volume": 237.7,
+                    "type": "C",
+                    "iv": 30.61
+                  },
+                  {
                     "strike": 83500.0,
-                    "gex": 911907.6038589901,
+                    "gex": 502170.90418931836,
                     "oi": 24.3,
                     "volume": 11.5,
                     "type": "C",
                     "iv": 19.57
                   },
                   {
-                    "strike": 85000.0,
-                    "gex": 838874.5969186011,
-                    "oi": 375.7,
-                    "volume": 238.5,
-                    "type": "C",
-                    "iv": 30.61
-                  },
-                  {
-                    "strike": 83000.0,
-                    "gex": 53661.55918663973,
-                    "oi": 8.8,
-                    "volume": 2.8,
-                    "type": "C",
-                    "iv": 29.09
-                  },
-                  {
                     "strike": 85500.0,
-                    "gex": 45308.92075806425,
+                    "gex": 85366.54619936168,
                     "oi": 140.6,
-                    "volume": 151.6,
+                    "volume": 141.2,
                     "type": "C",
                     "iv": 35.8
                   },
                   {
                     "strike": 85000.0,
-                    "gex": -26347.405492785452,
+                    "gex": -47590.40987192157,
                     "oi": 11.8,
                     "volume": 5.0,
                     "type": "P",
@@ -163519,23 +163511,23 @@
                   },
                   {
                     "strike": 86000.0,
-                    "gex": 21052.703483007586,
+                    "gex": 43084.90917667834,
                     "oi": 781.0,
-                    "volume": 888.5,
+                    "volume": 868.9,
                     "type": "C",
                     "iv": 38.62
                   },
                   {
-                    "strike": 82500.0,
-                    "gex": -20038.32165133636,
-                    "oi": 76.3,
-                    "volume": 80.7,
-                    "type": "P",
-                    "iv": 30.25
+                    "strike": 83000.0,
+                    "gex": 30001.050183715946,
+                    "oi": 8.8,
+                    "volume": 2.8,
+                    "type": "C",
+                    "iv": 29.09
                   },
                   {
                     "strike": 86000.0,
-                    "gex": -14319.073098813868,
+                    "gex": -29304.35820057815,
                     "oi": 531.2,
                     "volume": 200.0,
                     "type": "P",
@@ -163543,17 +163535,25 @@
                   },
                   {
                     "strike": 85500.0,
-                    "gex": -5220.515763020206,
+                    "gex": -9835.974739898002,
                     "oi": 16.2,
                     "volume": 0.2,
                     "type": "P",
                     "iv": 35.8
                   },
                   {
+                    "strike": 82500.0,
+                    "gex": -8757.342226416891,
+                    "oi": 76.3,
+                    "volume": 80.7,
+                    "type": "P",
+                    "iv": 30.25
+                  },
+                  {
                     "strike": 86500.0,
-                    "gex": 323.10948801903936,
+                    "gex": 727.2740467862053,
                     "oi": 241.2,
-                    "volume": 306.4,
+                    "volume": 244.1,
                     "type": "C",
                     "iv": 40.38
                   }
@@ -163565,12 +163565,12 @@
                 "name": "BTC Options · Deribit",
                 "source": "Deribit public options",
                 "sourceUrl": "https://www.deribit.com/options",
-                "spot": 83884.46,
+                "spot": 83985.48,
                 "expiration": "2026-09-27",
-                "daysToExpiry": 1.04,
+                "daysToExpiry": 1.03,
                 "bucket": "NEXT",
-                "gammaNet": 11707659.109154183,
-                "gammaFlip": 86500.0,
+                "gammaNet": 16707339.641320433,
+                "gammaFlip": 85500.0,
                 "callWall": 88000.0,
                 "putWall": 78000.0,
                 "callWallOiValue": 1720.6,
@@ -163578,131 +163578,131 @@
                 "topGexStrikes": [
                   {
                     "strike": 82000.0,
-                    "gex": 10807191.106775478,
+                    "gex": 10527641.850119716,
                     "oi": 1532.5,
                     "volume": 1.0,
                     "type": "C",
-                    "iv": 30.53
+                    "iv": 30.97
                   },
                   {
                     "strike": 82000.0,
-                    "gex": -9525842.575551266,
+                    "gex": -9279437.91917893,
                     "oi": 1350.8,
-                    "volume": 679.4,
+                    "volume": 679.3,
                     "type": "P",
-                    "iv": 30.53
+                    "iv": 30.97
                   },
                   {
                     "strike": 85000.0,
-                    "gex": 8956448.588118887,
+                    "gex": 9156315.80155207,
                     "oi": 1067.3,
-                    "volume": 345.5,
+                    "volume": 340.5,
                     "type": "C",
-                    "iv": 29.53
+                    "iv": 29.19
                   },
                   {
                     "strike": 84000.0,
-                    "gex": -8372596.805090593,
+                    "gex": -8376112.585736032,
                     "oi": 951.5,
                     "volume": 98.2,
                     "type": "P",
-                    "iv": 29.56
+                    "iv": 29.6
                   },
                   {
                     "strike": 84000.0,
-                    "gex": 8085422.6211295845,
+                    "gex": 8359017.464212537,
                     "oi": 332.4,
                     "volume": 80.0,
                     "type": "C",
-                    "iv": 18.34
-                  },
-                  {
-                    "strike": 83500.0,
-                    "gex": -7711202.414810377,
-                    "oi": 215.4,
-                    "volume": 205.4,
-                    "type": "P",
-                    "iv": 14.52
-                  },
-                  {
-                    "strike": 84000.0,
-                    "gex": 7630810.246321138,
-                    "oi": 867.2,
-                    "volume": 280.9,
-                    "type": "C",
-                    "iv": 29.56
+                    "iv": 17.87
                   },
                   {
                     "strike": 84500.0,
-                    "gex": 7429571.72526228,
+                    "gex": 8323197.123902507,
                     "oi": 270.9,
-                    "volume": 195.8,
+                    "volume": 192.7,
                     "type": "C",
-                    "iv": 16.27
+                    "iv": 16.12
+                  },
+                  {
+                    "strike": 84000.0,
+                    "gex": 7634014.539516854,
+                    "oi": 867.2,
+                    "volume": 280.9,
+                    "type": "C",
+                    "iv": 29.6
                   },
                   {
                     "strike": 88000.0,
-                    "gex": 7247052.309495227,
+                    "gex": 7501605.737207737,
                     "oi": 1720.6,
                     "volume": 790.2,
                     "type": "C",
-                    "iv": 30.21
+                    "iv": 30.01
                   },
                   {
                     "strike": 85000.0,
-                    "gex": -7102724.711874662,
+                    "gex": -7261225.236047664,
                     "oi": 846.4,
-                    "volume": 15.1,
+                    "volume": 13.1,
                     "type": "P",
-                    "iv": 29.53
+                    "iv": 29.19
                   },
                   {
                     "strike": 86000.0,
-                    "gex": -6697906.108199791,
+                    "gex": -6833771.86981624,
                     "oi": 912.8,
                     "volume": 100.1,
                     "type": "P",
-                    "iv": 29.08
+                    "iv": 29.15
+                  },
+                  {
+                    "strike": 83500.0,
+                    "gex": -6806842.273239782,
+                    "oi": 215.4,
+                    "volume": 205.4,
+                    "type": "P",
+                    "iv": 15.26
                   },
                   {
                     "strike": 86000.0,
-                    "gex": 6328083.071550722,
+                    "gex": 6456447.042648473,
                     "oi": 862.4,
                     "volume": 225.7,
                     "type": "C",
-                    "iv": 29.08
+                    "iv": 29.15
                   },
                   {
                     "strike": 84000.0,
-                    "gex": -5497309.002332389,
+                    "gex": -5683327.15677507,
                     "oi": 226.0,
                     "volume": 27.1,
                     "type": "P",
-                    "iv": 18.34
+                    "iv": 17.87
                   },
                   {
                     "strike": 83000.0,
-                    "gex": 5455880.117854967,
+                    "gex": 5314554.809023125,
                     "oi": 652.2,
                     "volume": 11.5,
                     "type": "C",
-                    "iv": 29.59
+                    "iv": 30.19
                   },
                   {
                     "strike": 85000.0,
-                    "gex": 4572997.612383857,
+                    "gex": 4952402.53340879,
                     "oi": 293.2,
-                    "volume": 84.9,
+                    "volume": 84.6,
                     "type": "C",
-                    "iv": 19.1
+                    "iv": 18.78
                   },
                   {
                     "strike": 84000.0,
-                    "gex": 4568019.888605998,
+                    "gex": 4629177.698413819,
                     "oi": 106.8,
-                    "volume": 91.3,
+                    "volume": 91.2,
                     "type": "C",
-                    "iv": 14.46
+                    "iv": 14.56
                   }
                 ],
                 "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -163712,11 +163712,11 @@
                 "name": "BTC Options · Deribit",
                 "source": "Deribit public options",
                 "sourceUrl": "https://www.deribit.com/options",
-                "spot": 83884.46,
+                "spot": 83985.48,
                 "expiration": "2026-10-09",
-                "daysToExpiry": 13.04,
+                "daysToExpiry": 13.03,
                 "bucket": "7-30D",
-                "gammaNet": 2914465.1774844225,
+                "gammaNet": 3358912.853201787,
                 "gammaFlip": 89000.0,
                 "callWall": 90000.0,
                 "putWall": 75000.0,
@@ -163725,131 +163725,131 @@
                 "topGexStrikes": [
                   {
                     "strike": 90000.0,
-                    "gex": 4534145.872560116,
+                    "gex": 4632903.4721715,
                     "oi": 1511.3,
                     "volume": 541.1,
                     "type": "C",
-                    "iv": 32.4
+                    "iv": 32.28
                   },
                   {
                     "strike": 85000.0,
-                    "gex": -3461212.2999975146,
+                    "gex": -3514208.661683966,
                     "oi": 620.6,
-                    "volume": 13.8,
+                    "volume": 11.8,
                     "type": "P",
-                    "iv": 31.29
+                    "iv": 30.96
                   },
                   {
                     "strike": 80000.0,
-                    "gex": -3242416.5452935756,
+                    "gex": -3200529.701739579,
                     "oi": 842.8,
                     "volume": 4.2,
                     "type": "P",
-                    "iv": 33.09
+                    "iv": 32.96
                   },
                   {
                     "strike": 86000.0,
-                    "gex": 2951159.263263326,
+                    "gex": 3003916.7538754377,
                     "oi": 557.7,
                     "volume": 54.4,
                     "type": "C",
-                    "iv": 31.27
+                    "iv": 30.95
                   },
                   {
                     "strike": 78000.0,
-                    "gex": -2427634.4934759843,
+                    "gex": -2380791.147302057,
                     "oi": 936.5,
                     "volume": 4.6,
                     "type": "P",
-                    "iv": 34.66
+                    "iv": 34.77
                   },
                   {
                     "strike": 87000.0,
-                    "gex": 2289140.912520957,
+                    "gex": 2333337.633019525,
                     "oi": 475.4,
                     "volume": 263.4,
                     "type": "C",
-                    "iv": 31.43
+                    "iv": 31.13
                   },
                   {
                     "strike": 85000.0,
-                    "gex": 1996638.7421835482,
-                    "oi": 358.0,
-                    "volume": 66.7,
+                    "gex": 2028909.0613621739,
+                    "oi": 358.3,
+                    "volume": 67.0,
                     "type": "C",
-                    "iv": 31.29
+                    "iv": 30.96
                   },
                   {
                     "strike": 84000.0,
-                    "gex": 1797706.1326798433,
+                    "gex": 1818964.4017888969,
                     "oi": 319.4,
                     "volume": 40.5,
                     "type": "C",
-                    "iv": 31.44
+                    "iv": 31.1
                   },
                   {
                     "strike": 83000.0,
-                    "gex": -1608589.7195432317,
+                    "gex": -1608328.0179912525,
                     "oi": 294.9,
                     "volume": 24.2,
                     "type": "P",
-                    "iv": 31.6
+                    "iv": 31.5
                   },
                   {
                     "strike": 82000.0,
-                    "gex": 1600619.0271476142,
+                    "gex": 1590334.537830147,
                     "oi": 315.6,
                     "volume": 22.0,
                     "type": "C",
-                    "iv": 31.8
+                    "iv": 31.77
                   },
                   {
                     "strike": 75000.0,
-                    "gex": -1599998.887248862,
+                    "gex": -1565155.5868689641,
                     "oi": 1232.5,
                     "volume": 102.2,
                     "type": "P",
-                    "iv": 38.67
+                    "iv": 38.77
                   },
                   {
                     "strike": 88000.0,
-                    "gex": 1461133.4191267735,
+                    "gex": 1483506.8638594865,
                     "oi": 344.4,
                     "volume": 8.6,
                     "type": "C",
-                    "iv": 31.46
+                    "iv": 31.55
                   },
                   {
                     "strike": 76000.0,
-                    "gex": -1453545.3386702547,
+                    "gex": -1421402.0063556414,
                     "oi": 884.7,
                     "volume": 0.2,
                     "type": "P",
-                    "iv": 37.24
+                    "iv": 37.31
                   },
                   {
                     "strike": 86000.0,
-                    "gex": -1257298.6210352632,
+                    "gex": -1279775.1850830263,
                     "oi": 237.6,
                     "volume": 0.0,
                     "type": "P",
-                    "iv": 31.27
+                    "iv": 30.95
                   },
                   {
                     "strike": 92000.0,
-                    "gex": 1186426.7213074877,
+                    "gex": 1212678.5387021736,
                     "oi": 599.0,
                     "volume": 185.3,
                     "type": "C",
-                    "iv": 33.64
+                    "iv": 33.47
                   },
                   {
                     "strike": 89000.0,
-                    "gex": 1104358.0396369305,
+                    "gex": 1121478.022505274,
                     "oi": 323.8,
                     "volume": 306.8,
                     "type": "C",
-                    "iv": 32.58
+                    "iv": 32.37
                   }
                 ],
                 "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -163859,11 +163859,11 @@
                 "name": "BTC Options · Deribit",
                 "source": "Deribit public options",
                 "sourceUrl": "https://www.deribit.com/options",
-                "spot": 83884.46,
+                "spot": 83985.48,
                 "expiration": "2026-10-30",
-                "daysToExpiry": 34.04,
+                "daysToExpiry": 34.03,
                 "bucket": "30-90D",
-                "gammaNet": 145431219.31048244,
+                "gammaNet": 146681294.83516937,
                 "gammaFlip": 81000.0,
                 "callWall": 95000.0,
                 "putWall": 88000.0,
@@ -163872,131 +163872,131 @@
                 "topGexStrikes": [
                   {
                     "strike": 90000.0,
-                    "gex": 53316774.52725133,
+                    "gex": 53627460.63406287,
                     "oi": 19652.2,
-                    "volume": 61.5,
+                    "volume": 59.0,
                     "type": "C",
-                    "iv": 33.9
+                    "iv": 34.03
                   },
                   {
                     "strike": 95000.0,
-                    "gex": 40915043.988549985,
+                    "gex": 41415467.71495321,
                     "oi": 23299.6,
-                    "volume": 62.1,
+                    "volume": 59.0,
                     "type": "C",
-                    "iv": 35.06
+                    "iv": 34.92
                   },
                   {
                     "strike": 100000.0,
-                    "gex": 13003323.308685498,
+                    "gex": 13183344.835136041,
                     "oi": 12889.7,
                     "volume": 103.8,
                     "type": "C",
-                    "iv": 36.92
+                    "iv": 36.84
                   },
                   {
                     "strike": 85000.0,
-                    "gex": 8574534.775265153,
+                    "gex": 8599976.719952587,
                     "oi": 2656.3,
                     "volume": 164.1,
-                    "type": "C",
-                    "iv": 33.92
-                  },
-                  {
-                    "strike": 88000.0,
-                    "gex": -7194279.935856104,
-                    "oi": 2383.0,
-                    "volume": 0.1,
-                    "type": "P",
-                    "iv": 33.82
-                  },
-                  {
-                    "strike": 70000.0,
-                    "gex": 4727035.905627552,
-                    "oi": 5768.9,
-                    "volume": 2.4,
-                    "type": "C",
-                    "iv": 40.99
-                  },
-                  {
-                    "strike": 88000.0,
-                    "gex": 4277320.945497661,
-                    "oi": 1416.8,
-                    "volume": 31.2,
-                    "type": "C",
-                    "iv": 33.82
-                  },
-                  {
-                    "strike": 84000.0,
-                    "gex": 4163172.3305554288,
-                    "oi": 1293.8,
-                    "volume": 232.5,
-                    "type": "C",
-                    "iv": 33.96
-                  },
-                  {
-                    "strike": 82000.0,
-                    "gex": 4108174.8430585745,
-                    "oi": 1342.3,
-                    "volume": 0.3,
-                    "type": "C",
-                    "iv": 34.17
-                  },
-                  {
-                    "strike": 92000.0,
-                    "gex": 3970245.658130684,
-                    "oi": 1702.3,
-                    "volume": 55.7,
-                    "type": "C",
-                    "iv": 34.27
-                  },
-                  {
-                    "strike": 80000.0,
-                    "gex": 3840235.3023064947,
-                    "oi": 1397.4,
-                    "volume": 2.6,
-                    "type": "C",
-                    "iv": 34.5
-                  },
-                  {
-                    "strike": 80000.0,
-                    "gex": -3839410.8636413366,
-                    "oi": 1397.1,
-                    "volume": 24.1,
-                    "type": "P",
-                    "iv": 34.5
-                  },
-                  {
-                    "strike": 86000.0,
-                    "gex": 3836109.6776638264,
-                    "oi": 1200.0,
-                    "volume": 20.1,
                     "type": "C",
                     "iv": 33.88
                   },
                   {
+                    "strike": 88000.0,
+                    "gex": -7224552.467866178,
+                    "oi": 2383.0,
+                    "volume": 0.1,
+                    "type": "P",
+                    "iv": 33.88
+                  },
+                  {
+                    "strike": 70000.0,
+                    "gex": 4679735.867006626,
+                    "oi": 5768.9,
+                    "volume": 2.4,
+                    "type": "C",
+                    "iv": 41.12
+                  },
+                  {
+                    "strike": 88000.0,
+                    "gex": 4295319.318704491,
+                    "oi": 1416.8,
+                    "volume": 31.2,
+                    "type": "C",
+                    "iv": 33.88
+                  },
+                  {
+                    "strike": 84000.0,
+                    "gex": 4157744.1904844805,
+                    "oi": 1293.8,
+                    "volume": 232.5,
+                    "type": "C",
+                    "iv": 34.02
+                  },
+                  {
+                    "strike": 82000.0,
+                    "gex": 4101360.1318185437,
+                    "oi": 1342.3,
+                    "volume": 0.3,
+                    "type": "C",
+                    "iv": 34.15
+                  },
+                  {
+                    "strike": 92000.0,
+                    "gex": 4010002.477579455,
+                    "oi": 1702.3,
+                    "volume": 55.7,
+                    "type": "C",
+                    "iv": 34.31
+                  },
+                  {
+                    "strike": 86000.0,
+                    "gex": 3852399.3680036613,
+                    "oi": 1200.0,
+                    "volume": 20.1,
+                    "type": "C",
+                    "iv": 33.84
+                  },
+                  {
+                    "strike": 80000.0,
+                    "gex": 3808266.6913048364,
+                    "oi": 1397.4,
+                    "volume": 2.6,
+                    "type": "C",
+                    "iv": 34.66
+                  },
+                  {
+                    "strike": 80000.0,
+                    "gex": -3807449.115802194,
+                    "oi": 1397.1,
+                    "volume": 24.1,
+                    "type": "P",
+                    "iv": 34.66
+                  },
+                  {
                     "strike": 91000.0,
-                    "gex": 3655488.153335901,
+                    "gex": 3691874.4562560786,
                     "oi": 1447.6,
                     "volume": 1.5,
                     "type": "C",
-                    "iv": 34.12
+                    "iv": 34.07
                   },
                   {
                     "strike": 87000.0,
-                    "gex": 2872166.285200145,
+                    "gex": 2878630.6662980206,
                     "oi": 918.2,
                     "volume": 5.5,
                     "type": "C",
-                    "iv": 33.82
+                    "iv": 33.9
                   },
                   {
                     "strike": 75000.0,
-                    "gex": -2587733.6786722704,
+                    "gex": -2575251.1859206846,
                     "oi": 1720.6,
                     "volume": 1.0,
                     "type": "P",
-                    "iv": 38.1
+                    "iv": 38.07
                   }
                 ],
                 "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -164012,18 +164012,18 @@
       {
         "ticker": "ETH",
         "name": "ETH Options · Deribit",
-        "spot": 2685.19,
+        "spot": 2689.57,
         "profiles": [
           {
             "ticker": "ETH · Deribit",
             "name": "ETH Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 2685.19,
+            "spot": 2689.57,
             "expiration": "2026-09-26",
-            "daysToExpiry": 0.04,
+            "daysToExpiry": 0.03,
             "bucket": "0DTE",
-            "gammaNet": 756949.3980255995,
+            "gammaNet": 2548368.7936257673,
             "gammaFlip": 2680.0,
             "callWall": 2800.0,
             "putWall": 2660.0,
@@ -164032,7 +164032,7 @@
             "topGexStrikes": [
               {
                 "strike": 2700.0,
-                "gex": 3445909.4993098355,
+                "gex": 5044630.2009276375,
                 "oi": 3046.0,
                 "volume": 1649.0,
                 "type": "C",
@@ -164040,63 +164040,71 @@
               },
               {
                 "strike": 2680.0,
-                "gex": -2943083.9298238624,
-                "oi": 1193.0,
-                "volume": 1225.0,
+                "gex": -2173592.143819452,
+                "oi": 1203.0,
+                "volume": 1235.0,
                 "type": "P",
-                "iv": 23.0
+                "iv": 23.32
               },
               {
                 "strike": 2680.0,
-                "gex": 2770396.6916950517,
+                "gex": 2029047.3628505773,
                 "oi": 1123.0,
                 "volume": 932.0,
                 "type": "C",
-                "iv": 23.0
-              },
-              {
-                "strike": 2660.0,
-                "gex": -1578164.7413153623,
-                "oi": 2807.0,
-                "volume": 2886.0,
-                "type": "P",
-                "iv": 38.69
+                "iv": 23.32
               },
               {
                 "strike": 2700.0,
-                "gex": -1304377.4303034279,
+                "gex": -1909539.9283222477,
                 "oi": 1153.0,
                 "volume": 553.0,
                 "type": "P",
                 "iv": 27.04
               },
               {
+                "strike": 2660.0,
+                "gex": -1050935.9648520183,
+                "oi": 2807.0,
+                "volume": 2886.0,
+                "type": "P",
+                "iv": 38.69
+              },
+              {
                 "strike": 2720.0,
-                "gex": 388253.5907915932,
+                "gex": 698928.3280692783,
                 "oi": 2474.0,
                 "volume": 2879.0,
                 "type": "C",
                 "iv": 34.95
               },
               {
-                "strike": 2660.0,
-                "gex": 152925.11921545365,
-                "oi": 272.0,
-                "volume": 0.0,
-                "type": "C",
-                "iv": 38.69
-              },
-              {
                 "strike": 2720.0,
-                "gex": -102320.67146164866,
+                "gex": -184196.14789861336,
                 "oi": 652.0,
                 "volume": 367.0,
                 "type": "P",
                 "iv": 34.95
               },
               {
+                "strike": 2660.0,
+                "gex": 101836.33147123228,
+                "oi": 272.0,
+                "volume": 0.0,
+                "type": "C",
+                "iv": 38.69
+              },
+              {
+                "strike": 2740.0,
+                "gex": 74118.7936005868,
+                "oi": 1713.0,
+                "volume": 1984.0,
+                "type": "C",
+                "iv": 41.88
+              },
+              {
                 "strike": 2640.0,
-                "gex": -92044.56934372032,
+                "gex": -53259.88262646456,
                 "oi": 961.0,
                 "volume": 1564.0,
                 "type": "P",
@@ -164104,15 +164112,7 @@
               },
               {
                 "strike": 2740.0,
-                "gex": 38379.10215561368,
-                "oi": 1713.0,
-                "volume": 1984.0,
-                "type": "C",
-                "iv": 41.88
-              },
-              {
-                "strike": 2740.0,
-                "gex": -16198.535235556737,
+                "gex": -31283.063498671483,
                 "oi": 723.0,
                 "volume": 528.0,
                 "type": "P",
@@ -164120,15 +164120,23 @@
               },
               {
                 "strike": 2620.0,
-                "gex": -14569.269035982152,
+                "gex": -8159.435025469773,
                 "oi": 806.0,
                 "volume": 575.0,
                 "type": "P",
                 "iv": 51.02
               },
               {
+                "strike": 2760.0,
+                "gex": 5973.741429595168,
+                "oi": 1107.0,
+                "volume": 1307.0,
+                "type": "C",
+                "iv": 46.81
+              },
+              {
                 "strike": 2640.0,
-                "gex": 9865.338857859724,
+                "gex": 5708.395328330748,
                 "oi": 103.0,
                 "volume": 17.0,
                 "type": "C",
@@ -164136,27 +164144,19 @@
               },
               {
                 "strike": 2760.0,
-                "gex": 2894.858730863881,
-                "oi": 1107.0,
-                "volume": 1307.0,
-                "type": "C",
-                "iv": 46.81
-              },
-              {
-                "strike": 2600.0,
-                "gex": -610.668394618573,
-                "oi": 713.0,
-                "volume": 575.0,
-                "type": "P",
-                "iv": 51.05
-              },
-              {
-                "strike": 2760.0,
-                "gex": -394.8723291422276,
+                "gex": -814.8463919321321,
                 "oi": 151.0,
                 "volume": 2.0,
                 "type": "P",
                 "iv": 46.81
+              },
+              {
+                "strike": 2780.0,
+                "gex": 301.4894844326745,
+                "oi": 1168.0,
+                "volume": 1101.0,
+                "type": "C",
+                "iv": 48.23
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -164166,11 +164166,11 @@
             "name": "ETH Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 2685.19,
+            "spot": 2689.57,
             "expiration": "2026-09-27",
-            "daysToExpiry": 1.04,
+            "daysToExpiry": 1.03,
             "bucket": "NEXT",
-            "gammaNet": -2109330.7520275265,
+            "gammaNet": -1556186.2795720387,
             "gammaFlip": null,
             "callWall": 3000.0,
             "putWall": 2600.0,
@@ -164179,131 +164179,131 @@
             "topGexStrikes": [
               {
                 "strike": 2680.0,
-                "gex": -2656201.392057468,
+                "gex": -2554091.8049568343,
                 "oi": 2842.0,
                 "volume": 841.0,
                 "type": "P",
-                "iv": 21.08
+                "iv": 21.29
               },
               {
                 "strike": 2600.0,
-                "gex": -897995.5859728025,
+                "gex": -828898.5884696554,
                 "oi": 4997.0,
                 "volume": 1067.0,
                 "type": "P",
-                "iv": 32.98
+                "iv": 33.39
               },
               {
                 "strike": 2700.0,
-                "gex": 668957.2470150271,
-                "oi": 3123.0,
-                "volume": 1273.0,
-                "type": "C",
-                "iv": 38.77
-              },
-              {
-                "strike": 2680.0,
-                "gex": 666386.9080003429,
-                "oi": 713.0,
-                "volume": 703.0,
-                "type": "C",
-                "iv": 21.08
-              },
-              {
-                "strike": 2700.0,
-                "gex": -647205.1664914888,
+                "gex": -694097.2189049481,
                 "oi": 790.0,
                 "volume": 293.0,
                 "type": "P",
-                "iv": 22.12
+                "iv": 21.87
               },
               {
                 "strike": 2700.0,
-                "gex": 638193.4489833794,
+                "gex": 684432.5740847527,
                 "oi": 779.0,
                 "volume": 356.0,
                 "type": "C",
-                "iv": 22.12
+                "iv": 21.87
               },
               {
-                "strike": 2740.0,
-                "gex": 560194.4066939724,
-                "oi": 1973.0,
-                "volume": 1911.0,
+                "strike": 2700.0,
+                "gex": 675809.7658906298,
+                "oi": 3123.0,
+                "volume": 1273.0,
                 "type": "C",
-                "iv": 26.96
+                "iv": 38.55
               },
               {
                 "strike": 2680.0,
-                "gex": 558922.3838890549,
+                "gex": 640769.6892801628,
+                "oi": 713.0,
+                "volume": 703.0,
+                "type": "C",
+                "iv": 21.29
+              },
+              {
+                "strike": 2740.0,
+                "gex": 639755.8188004816,
+                "oi": 1973.0,
+                "volume": 1911.0,
+                "type": "C",
+                "iv": 26.38
+              },
+              {
+                "strike": 2680.0,
+                "gex": 549338.861447071,
                 "oi": 1003.0,
                 "volume": 166.0,
                 "type": "C",
-                "iv": 25.51
+                "iv": 25.72
               },
               {
                 "strike": 2580.0,
-                "gex": -537753.9519480575,
+                "gex": -502722.65747669194,
                 "oi": 4224.0,
                 "volume": 4623.0,
                 "type": "P",
-                "iv": 35.84
+                "iv": 36.6
               },
               {
                 "strike": 2640.0,
-                "gex": -533896.7493109507,
+                "gex": -497199.38371176244,
                 "oi": 1465.0,
-                "volume": 1564.0,
+                "volume": 1552.0,
                 "type": "P",
-                "iv": 27.4
+                "iv": 27.85
               },
               {
                 "strike": 2620.0,
-                "gex": -504834.4678573433,
+                "gex": -467079.92861485004,
                 "oi": 1974.0,
-                "volume": 960.0,
+                "volume": 955.0,
                 "type": "P",
-                "iv": 29.88
+                "iv": 30.37
               },
               {
                 "strike": 2660.0,
-                "gex": 488600.8628465447,
+                "gex": 464647.2655813603,
                 "oi": 1006.0,
                 "volume": 6.0,
                 "type": "C",
-                "iv": 25.93
-              },
-              {
-                "strike": 2640.0,
-                "gex": -445163.64285668003,
-                "oi": 1228.0,
-                "volume": 616.0,
-                "type": "P",
-                "iv": 26.56
+                "iv": 26.24
               },
               {
                 "strike": 2650.0,
-                "gex": -441275.47615882865,
+                "gex": -438651.7349296038,
                 "oi": 2149.0,
-                "volume": 1839.0,
+                "volume": 1834.0,
                 "type": "P",
-                "iv": 38.73
-              },
-              {
-                "strike": 2600.0,
-                "gex": 407571.13988963264,
-                "oi": 2434.0,
-                "volume": 24.0,
-                "type": "C",
-                "iv": 39.76
+                "iv": 38.65
               },
               {
                 "strike": 2800.0,
-                "gex": 400526.0603416573,
+                "gex": 422990.57861283596,
                 "oi": 2681.0,
                 "volume": 2709.0,
                 "type": "C",
-                "iv": 35.87
+                "iv": 35.38
+              },
+              {
+                "strike": 2600.0,
+                "gex": 399449.55653980444,
+                "oi": 2434.0,
+                "volume": 24.0,
+                "type": "C",
+                "iv": 39.8
+              },
+              {
+                "strike": 2640.0,
+                "gex": -390690.5701685766,
+                "oi": 1228.0,
+                "volume": 616.0,
+                "type": "P",
+                "iv": 27.24
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -164313,11 +164313,11 @@
             "name": "ETH Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 2685.19,
+            "spot": 2689.57,
             "expiration": "2026-10-09",
-            "daysToExpiry": 13.04,
+            "daysToExpiry": 13.03,
             "bucket": "7-30D",
-            "gammaNet": -305087.4743166701,
+            "gammaNet": -280692.16180555394,
             "gammaFlip": null,
             "callWall": 3400.0,
             "putWall": 2500.0,
@@ -164326,131 +164326,131 @@
             "topGexStrikes": [
               {
                 "strike": 2500.0,
-                "gex": -323219.70237761276,
+                "gex": -318240.22561968595,
                 "oi": 3859.0,
                 "volume": 3504.0,
                 "type": "P",
-                "iv": 45.55
+                "iv": 45.6
               },
               {
                 "strike": 2450.0,
-                "gex": -246509.77332793237,
+                "gex": -242197.18409734167,
                 "oi": 3713.0,
                 "volume": 3132.0,
                 "type": "P",
-                "iv": 46.9
+                "iv": 47.28
               },
               {
                 "strike": 2750.0,
-                "gex": 157260.6461531516,
+                "gex": 158516.270796325,
                 "oi": 1223.0,
                 "volume": 170.0,
                 "type": "C",
-                "iv": 42.86
+                "iv": 42.8
               },
               {
                 "strike": 2400.0,
-                "gex": -146244.95826804847,
+                "gex": -143460.05656383236,
                 "oi": 2848.0,
                 "volume": 2028.0,
                 "type": "P",
-                "iv": 48.96
+                "iv": 49.14
               },
               {
                 "strike": 2700.0,
-                "gex": 127253.03548572483,
+                "gex": 127553.24338121164,
                 "oi": 962.0,
                 "volume": 269.0,
                 "type": "C",
-                "iv": 42.84
+                "iv": 42.83
               },
               {
                 "strike": 2800.0,
-                "gex": 123340.5325338944,
+                "gex": 125098.28709158007,
                 "oi": 1041.0,
                 "volume": 18.0,
                 "type": "C",
-                "iv": 43.12
+                "iv": 42.94
               },
               {
                 "strike": 2650.0,
-                "gex": 120489.92160143671,
+                "gex": 119921.28860473486,
                 "oi": 938.0,
                 "volume": 196.0,
                 "type": "C",
-                "iv": 43.06
+                "iv": 43.16
               },
               {
                 "strike": 2550.0,
-                "gex": -110559.95120892901,
+                "gex": -109775.80060139795,
                 "oi": 1285.0,
                 "volume": 1174.0,
                 "type": "P",
-                "iv": 45.45
+                "iv": 45.47
               },
               {
                 "strike": 2700.0,
-                "gex": -94712.23846962473,
+                "gex": -94935.67802593298,
                 "oi": 716.0,
                 "volume": 610.0,
                 "type": "P",
-                "iv": 42.84
+                "iv": 42.83
               },
               {
                 "strike": 2900.0,
-                "gex": 92422.85321836075,
+                "gex": 94298.35424329132,
                 "oi": 1045.0,
                 "volume": 69.0,
                 "type": "C",
-                "iv": 44.11
+                "iv": 43.76
               },
               {
                 "strike": 2600.0,
-                "gex": -88143.23445581524,
+                "gex": -87404.06578466303,
                 "oi": 748.0,
                 "volume": 586.0,
                 "type": "P",
-                "iv": 43.44
+                "iv": 43.51
               },
               {
                 "strike": 3000.0,
-                "gex": 71334.8698011945,
+                "gex": 72821.64236617007,
                 "oi": 1212.0,
                 "volume": 55.0,
                 "type": "C",
-                "iv": 45.96
+                "iv": 45.68
               },
               {
                 "strike": 2800.0,
-                "gex": 70986.8969916486,
+                "gex": 71525.0056574642,
                 "oi": 737.0,
                 "volume": 21.0,
                 "type": "C",
-                "iv": 45.05
+                "iv": 45.01
               },
               {
                 "strike": 2550.0,
-                "gex": -67088.71454755285,
+                "gex": -66108.32970265391,
                 "oi": 658.0,
                 "volume": 201.0,
                 "type": "P",
-                "iv": 44.19
+                "iv": 44.44
               },
               {
                 "strike": 2750.0,
-                "gex": -60563.993735187585,
+                "gex": -61047.55809081691,
                 "oi": 471.0,
                 "volume": 214.0,
                 "type": "P",
-                "iv": 42.86
+                "iv": 42.8
               },
               {
                 "strike": 2750.0,
-                "gex": 48172.540071735966,
+                "gex": 48469.50848556201,
                 "oi": 478.0,
                 "volume": 147.0,
                 "type": "C",
-                "iv": 44.83
+                "iv": 44.74
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -164460,11 +164460,11 @@
             "name": "ETH Options · Deribit",
             "source": "Deribit public options",
             "sourceUrl": "https://www.deribit.com/options",
-            "spot": 2685.19,
+            "spot": 2689.57,
             "expiration": "2026-10-30",
-            "daysToExpiry": 34.04,
+            "daysToExpiry": 34.03,
             "bucket": "30-90D",
-            "gammaNet": 2754377.257216776,
+            "gammaNet": 2793613.2645951854,
             "gammaFlip": 2750.0,
             "callWall": 3200.0,
             "putWall": 2300.0,
@@ -164473,79 +164473,79 @@
             "topGexStrikes": [
               {
                 "strike": 2300.0,
-                "gex": -678867.6802098372,
+                "gex": -672117.3317691503,
                 "oi": 17999.0,
                 "volume": 459.0,
                 "type": "P",
-                "iv": 50.74
+                "iv": 50.75
               },
               {
                 "strike": 3200.0,
-                "gex": 549009.5211187484,
+                "gex": 555701.1172703583,
                 "oi": 13538.0,
-                "volume": 731.0,
+                "volume": 231.0,
                 "type": "C",
-                "iv": 50.19
+                "iv": 50.08
               },
               {
                 "strike": 2600.0,
-                "gex": 459518.63823673996,
+                "gex": 458381.6541340917,
                 "oi": 6518.0,
                 "volume": 102.0,
                 "type": "C",
-                "iv": 47.25
+                "iv": 47.28
               },
               {
                 "strike": 2400.0,
-                "gex": -406085.63696686475,
+                "gex": -403179.61406607996,
                 "oi": 8147.0,
                 "volume": 1143.0,
                 "type": "P",
-                "iv": 49.08
+                "iv": 49.03
               },
               {
                 "strike": 2500.0,
-                "gex": 390336.85840124695,
+                "gex": 388339.0733439845,
                 "oi": 6334.0,
                 "volume": 104.0,
                 "type": "C",
-                "iv": 47.91
+                "iv": 47.93
               },
               {
                 "strike": 2800.0,
-                "gex": 382522.7632441404,
+                "gex": 384248.41688225087,
                 "oi": 5257.0,
                 "volume": 800.0,
                 "type": "C",
-                "iv": 47.33
+                "iv": 47.3
               },
               {
                 "strike": 3000.0,
-                "gex": 314116.9532016687,
+                "gex": 316848.72430713446,
                 "oi": 5352.0,
                 "volume": 185.0,
                 "type": "C",
-                "iv": 48.31
+                "iv": 48.33
               },
               {
                 "strike": 2900.0,
-                "gex": 311538.97365028114,
+                "gex": 313625.034272413,
                 "oi": 4648.0,
                 "volume": 1277.0,
                 "type": "C",
-                "iv": 47.72
+                "iv": 47.71
               },
               {
                 "strike": 2700.0,
-                "gex": 301029.96881214064,
+                "gex": 301420.3037567936,
                 "oi": 4051.0,
-                "volume": 224.0,
+                "volume": 222.0,
                 "type": "C",
-                "iv": 47.12
+                "iv": 47.11
               },
               {
                 "strike": 2650.0,
-                "gex": 220800.44450485648,
+                "gex": 220714.86784817633,
                 "oi": 3023.0,
                 "volume": 6.0,
                 "type": "C",
@@ -164553,51 +164553,51 @@
               },
               {
                 "strike": 3000.0,
-                "gex": 218488.46673331008,
+                "gex": 219617.60157767948,
                 "oi": 4627.0,
                 "volume": 460.0,
                 "type": "C",
-                "iv": 51.0
+                "iv": 50.97
               },
               {
                 "strike": 2600.0,
-                "gex": -215447.83038531407,
+                "gex": -214914.74916136605,
                 "oi": 3056.0,
                 "volume": 436.0,
                 "type": "P",
-                "iv": 47.25
+                "iv": 47.28
               },
               {
                 "strike": 3200.0,
-                "gex": 191201.9297203963,
+                "gex": 192616.5571043085,
                 "oi": 4815.0,
                 "volume": 34.0,
                 "type": "C",
-                "iv": 51.88
+                "iv": 51.81
               },
               {
                 "strike": 2400.0,
-                "gex": 182481.83588261838,
+                "gex": 181175.96257468007,
                 "oi": 3661.0,
                 "volume": 184.0,
                 "type": "C",
-                "iv": 49.08
+                "iv": 49.03
               },
               {
                 "strike": 3100.0,
-                "gex": 169323.40862463496,
+                "gex": 171156.90372295046,
                 "oi": 3425.0,
                 "volume": 605.0,
                 "type": "C",
-                "iv": 49.08
+                "iv": 49.13
               },
               {
                 "strike": 2550.0,
-                "gex": -165945.5505502992,
+                "gex": -165265.40296181757,
                 "oi": 2487.0,
                 "volume": 214.0,
                 "type": "P",
-                "iv": 47.4
+                "iv": 47.44
               }
             ],
             "note": "Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."
@@ -164616,7 +164616,7 @@
     "note": "Max Pain is calculated from public OI. Call/Put Wall = largest OI concentration by side. GEX/Gamma Flip remain modelled proxies. BTC is explicitly split into CME futures options, aggregated spot ETF flows, and Deribit."
   },
   "darkPools": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:18 UTC",
     "markets": [
       {
         "symbol": "SPY",
@@ -165384,7 +165384,7 @@
     "dataStatus": "REAL AGGREGATED FINRA DATA · DELAYED"
   },
   "rotation": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "sectors": [
       {
         "name": "Tecnología",
@@ -165607,7 +165607,7 @@
     "method": "ETF sectorial: precio actual + cambios 1D/1S/1M/YTD + fuerza relativa frente a SPY."
   },
   "cryptoSentiment": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "fearGreed": {
       "value": 73.0,
       "classification": "Greed",
@@ -166216,16 +166216,16 @@
       ]
     },
     "btc": {
-      "change1d": -0.5772036901926958,
-      "change1w": 3.3883727472869385,
-      "change1m": 5.296787256182878,
-      "last": 83892.0234375
+      "change1d": -0.031608882839817554,
+      "change1w": -2.995920767316851,
+      "change1m": 5.24215668187431,
+      "last": 84008.359375
     },
     "eth": {
-      "change1d": -0.06741050188390219,
-      "change1w": 1.6077363182746884,
-      "change1m": 9.340576869246586,
-      "last": 2685.489990234375
+      "change1d": -0.012849145586268929,
+      "change1w": -3.1096476086783342,
+      "change1m": 8.440814388767027,
+      "last": 2690.1298828125
     },
     "btcHistory": [
       {
@@ -166684,8 +166684,13 @@
         "fearGreed": 73.0
       },
       {
+        "date": "2026-09-25",
+        "price": 84034.921875,
+        "fearGreed": 73.0
+      },
+      {
         "date": "2026-09-26",
-        "price": 83892.0234375,
+        "price": 84008.359375,
         "fearGreed": 73.0
       }
     ],
@@ -166695,7 +166700,7 @@
     "dataStatus": "REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
   },
   "bondMarket": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "markets": [
       {
         "name": "Treasuries largos",
@@ -166752,17 +166757,17 @@
     "sourceUrl": "https://www.aaii.com/sentimentsurvey",
     "bullBearSpread": -24.5,
     "history": [],
-    "updated": "26/09/2026 07:00 UTC"
+    "updated": "26/09/2026 07:19 UTC"
   },
   "optionsStats": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "totalPutCall": 0.75,
     "indexPutCall": 0.95,
     "source": "Cboe Daily Market Statistics",
     "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/"
   },
   "darkPoolPrints": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:18 UTC",
     "prints": [],
     "assets": {
       "SPY": {
@@ -167092,7 +167097,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 15887324,
+          "offExchangePct": 43.4,
+          "offExchange30dPct": 47.76,
+          "litShares": 20716920,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -167424,7 +167436,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 11511763,
+          "offExchangePct": 38.06,
+          "offExchange30dPct": 39.76,
+          "litShares": 18737353,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -167756,7 +167775,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 939377,
+          "offExchangePct": 33.87,
+          "offExchange30dPct": 42.52,
+          "litShares": 1833952,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -168548,7 +168574,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 2829601,
+          "offExchangePct": 36.89,
+          "offExchange30dPct": 38.15,
+          "litShares": 4841228,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -169876,7 +169909,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 13351119,
+          "offExchangePct": 44.58,
+          "offExchange30dPct": 45.42,
+          "litShares": 16596768,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -170208,7 +170248,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 41143741,
+          "offExchangePct": 45.82,
+          "offExchange30dPct": 49.39,
+          "litShares": 48644072,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -170540,7 +170587,14 @@
         "printCount": 0,
         "shareCount": 0,
         "notional": 0,
-        "dailyOffExchange": {},
+        "dailyOffExchange": {
+          "offExchangeShares": 8302007,
+          "offExchangePct": 36.82,
+          "offExchange30dPct": 39.01,
+          "litShares": 14244814,
+          "source": "ChartExchange public exchange-volume page",
+          "sourceUrl": "https://chartexchange.com/"
+        },
         "venueClusters": [],
         "source": "Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
         "note": "Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."
@@ -170561,85 +170615,85 @@
     "note": "BUY/SELL agregado y cualquier side individual se tratan como inferencia cuando no hay dato explícito. No identifica la cartera final."
   },
   "darkFlowRadar": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:18 UTC",
     "source": "SquawkFlow",
     "sourceUrl": "https://squawkflow.com/dark-pool-flow",
     "dataStatus": "MODELED · NOT PRINTS",
-    "trackedNotional": "$764.1M",
-    "buySideEstimate": 74.0,
+    "trackedNotional": "$858.8M",
+    "buySideEstimate": 52.0,
     "largestModeled": "$50.0M",
-    "dix": 47.4,
+    "dix": 48.2,
     "dixDate": null,
     "signals": [
       {
-        "symbol": "JPM",
-        "price": "$ 342.66",
+        "symbol": "AAPL",
+        "price": "$ 341.39",
         "shares": "146K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "V",
-        "price": "$ 366.69",
-        "shares": "117K",
-        "notional": "$43.0M"
-      },
-      {
-        "symbol": "META",
-        "price": "$ 747.75",
-        "shares": "67K",
-        "notional": "$50.0M"
+        "symbol": "MA",
+        "price": "$ 569.06",
+        "shares": "11K",
+        "notional": "$6.3M"
       },
       {
         "symbol": "V",
-        "price": "$ 366.92",
+        "price": "$ 366.90",
         "shares": "136K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "AAPL",
-        "price": "$ 341.25",
-        "shares": "66K",
-        "notional": "$22.7M"
-      },
-      {
-        "symbol": "BAC",
-        "price": "$ 56.72",
-        "shares": "74K",
-        "notional": "$4.2M"
-      },
-      {
         "symbol": "GOOGL",
-        "price": "$ 343.39",
+        "price": "$ 343.43",
         "shares": "145K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "JPM",
-        "price": "$ 343.13",
+        "symbol": "MA",
+        "price": "$ 568.75",
+        "shares": "88K",
+        "notional": "$50.0M"
+      },
+      {
+        "symbol": "PLTR",
+        "price": "$ 189.93",
+        "shares": "264K",
+        "notional": "$50.0M"
+      },
+      {
+        "symbol": "GS",
+        "price": "$ 934.88",
+        "shares": "11K",
+        "notional": "$10.4M"
+      },
+      {
+        "symbol": "BAC",
+        "price": "$ 56.83",
+        "shares": "119K",
+        "notional": "$6.7M"
+      },
+      {
+        "symbol": "AAPL",
+        "price": "$ 340.91",
         "shares": "146K",
         "notional": "$50.0M"
       },
       {
-        "symbol": "SPY",
-        "price": "$ 773.53",
-        "shares": "65K",
-        "notional": "$50.0M"
-      },
-      {
-        "symbol": "XOM",
-        "price": "$ 160.31",
-        "shares": "312K",
+        "symbol": "PLTR",
+        "price": "$ 189.28",
+        "shares": "264K",
         "notional": "$50.0M"
       }
     ],
     "note": "Buy/sell and block rows are modelados por SquawkFlow a partir de precios/mercado; no son ejecuciones FINRA observadas. DIX es una serie separada."
   },
   "squawkFlow": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "spxGex": {
       "data": {
         "symbol": "SPX",
-        "spotPrice": 7742.16,
+        "spotPrice": 7704.13,
         "netGex": 15063162695.79,
         "netGexFormatted": "$15.06B",
         "totalCallGex": 0.0,
@@ -170718,7 +170772,7 @@
             "netGex": 0.0
           }
         ],
-        "timestamp": 1790405985220,
+        "timestamp": 1790407133906,
         "asOfDate": "2026-09-25",
         "oiSettleDate": "2026-09-24",
         "inputsStale": false,
@@ -170727,15 +170781,8 @@
         "levelsAsOf": "2026-09-25T08:15:01.954582-04:00",
         "contractsAnalyzed": 20165,
         "source": "d2dt_gex_v2",
-        "impliedBand": {
-          "ref": 7704.1299,
-          "atm_iv_0dte": 0.3392,
-          "move_1d": 96.7,
-          "implied_high": 7800.9,
-          "implied_low": 7607.4,
-          "method": "atm_iv_sqrt_t"
-        },
-        "intradayAt": "2026-09-25T13:00:02.693751-07:00",
+        "impliedBand": null,
+        "intradayAt": null,
         "chainAsOf": null,
         "provenance": {
           "source": "d2dt_gex_v2",
@@ -170743,23 +170790,22 @@
           "isRealtime": false,
           "synthetic": false,
           "oiSettlementDate": "2026-09-24",
-          "quoteAsOf": "2026-09-25T13:00:02.693751-07:00",
           "calculatedAt": "2026-09-25T08:15:01.954582-04:00",
           "methodologyVersion": "gex_v2",
           "units": "usd_per_1pct_move",
           "unitsLabel": "USD of dealer gamma per 1 percent move in spot",
           "unitsFormula": "gamma x open interest x 100 x spot^2 x 0.01",
           "evaluationSpot": 7704.13,
-          "displaySpot": 7742.16,
-          "spotBasis": "Totals and levels were computed at evaluationSpot. displaySpot is a later refresh of the price only; nothing in this payload was recomputed at it.",
+          "displaySpot": 7704.13,
+          "spotBasis": "evaluationSpot and displaySpot are the same price: the totals were computed at the spot shown.",
           "coverage": "Full SPX option chain, every listed expiration and strike, 20,165 contract rows, crossed with Cboe settlement open interest.",
           "comparableTo": "This total is the gex_v2 book: every contract in the chain is re-priced with Black-Scholes at the evaluation spot from an archived implied volatility surface, once per session. The /gex-heatmap total is a different book, summed from the gamma published with each contract on the delayed Cboe chain and recomputed through the session. Both are dollar gamma per 1 percent move, so the unit matches, but the inputs do not and the two totals are not directly comparable. Both derive from daily-settled Cboe open interest.",
           "notAdvice": "Nothing here is advice or a recommendation."
         }
       },
       "meta": {
-        "cached_at": "2026-09-26T07:00:08Z",
-        "next_update": "2026-09-26T07:00:33Z"
+        "cached_at": "2026-09-26T07:18:58Z",
+        "next_update": "2026-09-26T07:19:23Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -170861,7 +170907,7 @@
           "openInterest": 2870,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654086,
+          "timestamp": 1790406852289,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -170889,7 +170935,7 @@
           "openInterest": 5897,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -170917,7 +170963,7 @@
           "openInterest": 3737,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -170945,7 +170991,7 @@
           "openInterest": 1456,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -170973,7 +171019,7 @@
           "openInterest": 710,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654086,
+          "timestamp": 1790406852289,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171001,7 +171047,7 @@
           "openInterest": 1850,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171029,7 +171075,7 @@
           "openInterest": 1497,
           "side": "sell",
           "size": "xxl",
-          "timestamp": 1790405654086,
+          "timestamp": 1790406852289,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171057,7 +171103,7 @@
           "openInterest": 3072,
           "side": "sell",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171085,7 +171131,7 @@
           "openInterest": 1064,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405684260,
+          "timestamp": 1790406883074,
           "chainAsOf": 1790366399000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171113,7 +171159,7 @@
           "openInterest": 736,
           "side": "sell",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171141,7 +171187,7 @@
           "openInterest": 2515,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654079,
+          "timestamp": 1790406852284,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171169,7 +171215,7 @@
           "openInterest": 908,
           "side": "buy",
           "size": "xxl",
-          "timestamp": 1790405654085,
+          "timestamp": 1790406852288,
           "chainAsOf": 1790367299000,
           "unusualScore": 100,
           "sentiment": "bullish",
@@ -171188,8 +171234,8 @@
         }
       ],
       "meta": {
-        "cached_at": "2026-09-26T07:00:08Z",
-        "next_update": "2026-09-26T07:00:33Z"
+        "cached_at": "2026-09-26T07:19:01Z",
+        "next_update": "2026-09-26T07:19:26Z"
       },
       "source": "SquawkFlow",
       "sourceUrl": "https://squawkflow.com/docs/endpoints"
@@ -171568,7 +171614,7 @@
     ],
     "source": "CNN Fear & Greed Index",
     "sourceUrl": "https://www.cnn.com/markets/fear-and-greed",
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "components": {
       "market_momentum_sp500": 36.4,
       "market_momentum_sp125": 36.4,
@@ -171583,7 +171629,7 @@
     "sourceStatus": "REAL / DAILY"
   },
   "globalMarkets": {
-    "updated": "26/09/2026 07:00 UTC",
+    "updated": "26/09/2026 07:19 UTC",
     "regions": {
       "ASIA": [
         {
