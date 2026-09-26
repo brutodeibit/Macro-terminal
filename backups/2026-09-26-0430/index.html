@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Macro Terminal Pro · Interpretación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #080a0f; color: #d1d5db; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .card { background-color: #111622; border: 1px solid #1a2333; }
+        .sidebar { background-color: #0d111a; border-right: 1px solid #1a2333; }
+        .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .nav-item.active { background-color: #1a2333; color: #ffffff; border-left: 3px solid #3b82f6; }
+        .badge-hawkish { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-dovish { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-neutral { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #ffffff; }
+
+        html { scroll-behavior: smooth; }
+        .glass { background: linear-gradient(180deg, rgba(17,22,34,.96), rgba(13,17,26,.96)); border: 1px solid #1a2333; }
+        .metric { background: rgba(9,12,18,.72); border:1px solid #1b2432; min-width:0; }
+        .glass, .card { min-width:0; }
+        table, svg { max-width:100%; }
+        .mini-pill { font-size:10px; padding:.22rem .5rem; border-radius:999px; border:1px solid #273244; background:#0b1018; color:#9ca3af; }
+        .bias-up { color:#34d399; } .bias-down { color:#f87171; } .bias-flat { color:#fbbf24; }
+        .source-link { color:#60a5fa; } .source-link:hover { color:#93c5fd; text-decoration:underline; }
+        .meeting-current { border-color: rgba(59,130,246,.55); box-shadow: inset 0 0 0 1px rgba(59,130,246,.08); }
+        .meeting-old { opacity:.9; }
+        .row-hover:hover { background: rgba(15,23,42,.55); }
+    
+        .curve-wrap { background: rgba(3,7,18,.55); border:1px solid #1f2937; border-radius:16px; padding:14px; }
+        .curve-svg { width:100%; height:300px; display:block; }
+        .curve-grid { stroke:#273244; stroke-width:1; stroke-dasharray:3 5; }
+        .cot-chart-wrap,.dp-chart-wrap{background:#0b1018;border:1px solid #1f2937;border-radius:14px;overflow:hidden}
+        .cot-grid,.dp-grid{stroke:#273244;stroke-width:1;stroke-dasharray:3 5}.cot-axis,.dp-axis{fill:#6b7280;font-size:10px}.cot-line{fill:none;stroke:#facc15;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.cot-dot{fill:#facc15;stroke:#111827;stroke-width:2}.dp-chart-wrap svg{background:linear-gradient(180deg,rgba(17,24,39,.7),rgba(9,12,18,.8))}
+        .curve-axis { fill:#6b7280; font-size:10px; }
+        .curve-line { fill:none; stroke:#60a5fa; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+        .curve-dot { fill:#93c5fd; stroke:#0f172a; stroke-width:2; }
+        .effect-hawkish { color:#f87171; }
+        .effect-dovish { color:#34d399; }
+        .effect-neutral { color:#fbbf24; }
+        .score-chip { border:1px solid #1f2937; background:rgba(17,24,39,.65); border-radius:999px; padding:4px 8px; font-size:10px; }
+
+    
+        .risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+        .risk-meter{height:16px;border-radius:999px;background:#172033;border:1px solid #273244;overflow:hidden;}
+        .risk-meter-fill{height:100%;transition:width .5s ease;}
+        .risk-cell{background:rgba(5,9,18,.65);border:1px solid #1e293b;border-radius:14px;padding:12px;}
+        .risk-up{color:#34d399}.risk-down{color:#f87171}.risk-neutral{color:#fbbf24}
+        .risk-badge{font-size:10px;border-radius:999px;padding:4px 8px;border:1px solid #273244;background:#0b1018;color:#cbd5e1;}
+        .risk-alert{border-left:3px solid #f59e0b;background:rgba(245,158,11,.06);}
+        #topTabs{position:sticky;top:0;z-index:40;min-width:0;max-width:100%;background:rgba(8,10,15,.96);backdrop-filter:blur(12px);padding-top:12px;padding-bottom:10px;margin-top:-1px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+        .tab-btn{position:relative;flex:0 0 auto;transition:.18s ease}.tab-btn:hover{color:#fff}.tab-btn.active:after{content:'';position:absolute;left:0;right:0;bottom:-10px;height:2px;background:#60a5fa;border-radius:999px}
+        .sentiment-gauge{height:150px;border-radius:150px 150px 0 0;background:conic-gradient(from 270deg,#ef4444 0 18%,#f59e0b 18% 36%,#94a3b8 36% 64%,#84cc16 64% 82%,#22c55e 82% 100%);position:relative;overflow:hidden}
+        .sentiment-gauge:after{content:'';position:absolute;inset:14px 14px 0;background:#0b1018;border-radius:140px 140px 0 0}
+        .sentiment-needle{position:absolute;bottom:7px;left:50%;width:3px;height:62px;background:rgba(248,250,252,.42);transform-origin:50% 100%;z-index:3;border-radius:4px;box-shadow:0 0 5px rgba(255,255,255,.16)} .sentiment-value{position:absolute;z-index:5;left:50%;bottom:20px;transform:translateX(-50%);font-size:30px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none}
+    </style>
+</head>
+<body class="flex min-h-screen overflow-hidden">
+
+    <aside class="w-64 sidebar flex-shrink-0 hidden md:block p-4">
+        <div class="flex items-center gap-2 mb-8 px-2">
+            <i class="fa-solid fa-chart-line text-blue-500 text-xl"></i>
+            <span class="font-bold text-lg text-white tracking-wide">MacroTerminal</span>
+        </div>
+        
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 mb-3">Economías Globales</div>
+        <nav class="space-y-1" id="countryNav">
+            </nav>
+    </aside>
+
+    <main class="flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 md:p-8">
+        <div class="md:hidden mb-4">
+            <select id="mobileCountrySelect" class="w-full bg-gray-900 border border-gray-800 text-white p-2.5 rounded-lg text-sm">
+            </select>
+        </div>
+
+        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-white flex items-center gap-3" id="countryTitle">
+                    Monitor Global Macro
+                </h1>
+                <p class="text-sm text-gray-400 mt-1" id="countrySubtitle">
+                    Selecciona una economía para ver política monetaria, desgloses y curva de tipos.
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="manualRefresh()" class="text-xs bg-gray-900 border border-gray-800 text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
+                    <i class="fa-solid fa-rotate mr-1"></i> Actualizar feed
+                </button>
+                <a href="statistical-monitor.html" class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
+                    <i class="fa-solid fa-chart-column mr-1"></i> Monitor estadístico
+                </a>
+                <div class="flex items-center gap-2 text-xs bg-gray-900 border border-gray-800 text-gray-400 px-3 py-1.5 rounded-full w-fit">
+                    <span id="feedDot" class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    <span id="feedStatus">Feed automático · 15 min</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="topTabs" class="flex border-b border-gray-800 mb-6 gap-6 text-sm font-medium text-gray-400 overflow-x-auto"></div>
+
+        <div id="mainDashboard" class="space-y-8">
+            </div>
+    </main>
+
+    <script>
+        const macroDatabase = {
+            us: {
+                id: 'us',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.federalreserve.gov/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Estados Unidos',
+                flag: '🇺🇸',
+                subtitle: 'Fed, fondos federales, curva de Treasuries e indicadores macro de EEUU.',
+                rates: {
+                    official: '3.75%',
+                    real: '0.25%',
+                    posture: '54% Mantener',
+                    postureBadge: 'badge-hawkish',
+                    postureText: 'Restrictivo',
+                    nextMeeting: '27-28/10/2026',
+                    expectations: [
+                        { label: 'Bajada -50 pb', value: '1%' },
+                        { label: 'Bajada -25 pb', value: '1%' },
+                        { label: 'Mantener', value: '54%' },
+                        { label: 'Subida +25 pb', value: '43%' },
+                        { label: 'Subida +50 pb', value: '1%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '29 Jul 2026', title: 'FOMC: mantenimiento 3,50%-3,75%', tone: 'Restrictivo / dividido', summary: 'La Fed mantuvo el rango en 3,50%-3,75%; tres miembros votaron por una subida de 25 pb. Las actas destacaron inflación elevada, incertidumbre y vigilancia del mercado laboral y de precios.' },
+                        { date: '17 Jun 2026', title: 'FOMC: mantenimiento 3,50%-3,75%', tone: 'Mixto', summary: 'La Fed mantuvo el rango. La evaluación siguió centrada en inflación, empleo, perspectivas y balance de riesgos, con atención a la evolución de la actividad y de los precios.' },
+                        { date: '29 Apr 2026', title: 'FOMC: mantenimiento 3,50%-3,75%', tone: 'Mixto / prudente', summary: 'La Fed mantuvo el rango en 3,50%-3,75%. Las actas señalaron inflación elevada y alta incertidumbre, manteniendo un enfoque dependiente de los datos.' }
+                    ],
+                                        date: 'FOMC Meeting',
+                    title: 'Reserva Federal: Decisión de Tipos y Rueda de Prensa',
+                    summary: 'La Reserva Federal decidió mantener los tipos de interés sin cambios en el rango del 3.50% - 3.75%. Sin embargo, lo más destacado de la jornada fue la fuerte división interna: hubo tres votos en contra de miembros que pedían una subida inmediata, marcando un claro sesgo restrictivo.',
+                    tone: 'Tono Restrictivo (Hawkish)',
+                    toneBadge: 'badge-hawkish',
+                    toneDescription: 'El tono general fue cauteloso pero con un claro sesgo restrictivo. Aunque la mayoría optó por la estabilidad, el hecho de que se permitiera y describiera la disidencia como una disputa abierta demuestra preocupación real por los repuntes inflacionarios. No hay prisa por recortar tipos y la puerta a una subida sigue abierta.',
+                    keyPoints: [
+                        'Pausa con tensión: La decisión se tomó con votación dividida (3 miembros votaron subir tipos +25 pb).',
+                        'Economía sólida pero inflación persistente: Crecimiento firme pero precios impulsados por shocks de oferta.',
+                        'El mercado aprieta: Los mayores rendimientos de los bonos están endureciendo las condiciones financieras por sí solos.',
+                        'Disposición a actuar: No dudarán en aplicar subidas adicionales si el IPC no converge al objetivo del 2%.'
+                    ],
+                    watchFactors: [
+                        'Datos de inflación (IPC/PCE): Especialmente el impacto energético en la inflación general.',
+                        'Mercado laboral (NFP y Desempleo): Evaluar si la creación de empleo y los salarios se mantienen o se enfrían.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA NORMAL',
+                    shapeDesc: 'Prestar a más tiempo paga más. Estructura de curva saludable.',
+                    tenors: [
+                        { term: '3M', yield: '3.732%', change: '-0.29 pb', isKey: false },
+                        { term: '1Y', yield: '4.029%', change: '-1.90 pb', isKey: false },
+                        { term: '2Y', yield: '4.183%', change: '-1.90 pb', isKey: true },
+                        { term: '5Y', yield: '4.326%', change: '-0.10 pb', isKey: false },
+                        { term: '10Y', yield: '4.611%', change: '+0.20 pb', isKey: true },
+                        { term: '20Y', yield: '5.168%', change: '+1.10 pb', isKey: false },
+                        { term: '30Y', yield: '5.167%', change: '+0.60 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Salud económica global', value: '+0.43%' },
+                        { label: '10Y − 3M', desc: 'Indicador de recesión favorito de la Fed', value: '+0.88%' },
+                        { label: '30Y − 10Y', desc: 'Prima por plazo a largo plazo', value: '+0.56%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC (Mensual)', actual: '-0.4%', est: '-0.1%', surprise: '-0.3%', date: '12 ago', imp: '★★★' },
+                    { cat: 'INFLACIÓN', name: 'PCE subyacente (Anual)', actual: '3.3%', est: '3.3%', surprise: '0%', date: '30 jul', imp: '★★★' },
+                    { cat: 'EMPLEO', name: 'Nóminas no agrícolas (NFP)', actual: '57K', est: '114K', surprise: '-57K', date: '07 ago', imp: '★★★' },
+                    { cat: 'EMPLEO', name: 'Tasa de desempleo', actual: '4.2%', est: '4.3%', surprise: '-0.1%', date: '07 ago', imp: '★★★' },
+                    { cat: 'CRECIMIENTO', name: 'PIB (Trimestral)', actual: '1.5%', est: '2.1%', surprise: '-0.6%', date: '30 jul', imp: '★★★' }
+                ]
+            },
+            eu: {
+                id: 'eu',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.ecb.europa.eu/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Eurozona',
+                flag: '🇪🇺',
+                subtitle: 'Banco Central Europeo (BCE), tipos de depósito e indicadores del área del euro.',
+                rates: {
+                    official: '2.50%', real: '0.75%', posture: 'Subida +25 pb', postureBadge: 'badge-hawkish', postureText: 'Restrictivo', nextMeeting: '29/10/2026',
+                    expectations: [
+                        { label: 'Bajada -25 pb', value: '15%' },
+                        { label: 'Mantener', value: '80%' },
+                        { label: 'Subida +25 pb', value: '5%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '10 Sep 2026', title: 'BCE: subida de 25 pb', tone: 'Tono restrictivo', summary: 'El BCE elevó los tres tipos oficiales en 25 pb. Justificó la decisión por presiones inflacionistas ligadas al conflicto y proyectó inflación media del 3,0% en 2026; el crecimiento fue revisado al alza para 2026-27.' },
+                        { date: '23 Jul 2026', title: 'BCE: mantenimiento de tipos', tone: 'Tono prudente / dependiente de datos', summary: 'Mantuvo los tres tipos. Señaló alta incertidumbre por energía y el conflicto, y una estrategia reunión a reunión basada en inflación, inflación subyacente, datos y transmisión monetaria.' },
+                        { date: '11 Jun 2026', title: 'BCE: subida de 25 pb', tone: 'Tono restrictivo', summary: 'Subió los tres tipos oficiales en 25 pb por presiones inflacionistas asociadas a energía y conflicto. Las proyecciones elevaron la inflación prevista para 2026-27.' }
+                    ],
+                    
+                    date: '10 Sep 2026',
+                    title: 'BCE: subida de 25 pb y nueva fase de endurecimiento',
+                    summary: 'El BCE subió los tres tipos oficiales en 25 pb, con efectos desde el 16 de septiembre: depósito 2,50%, refinanciación 2,65% y facilidad marginal 2,90%. La decisión respondió a presiones inflacionistas persistentes, especialmente ligadas a energía y al conflicto de Oriente Próximo.',
+                    tone: 'Tono Restrictivo (Hawkish)',
+                    toneBadge: 'badge-hawkish',
+                    toneDescription: 'La decisión del 10 de septiembre supuso un endurecimiento efectivo. El BCE señaló que la inflación permanecerá por encima del objetivo durante un periodo prolongado y elevó las previsiones de inflación para 2027 y 2028 frente a junio. Al mismo tiempo, revisó al alza las perspectivas de crecimiento para 2026-27 y mantuvo su enfoque dependiente de los datos, sin comprometer una senda concreta de tipos.',
+                    keyPoints: [
+                        'Subida de 25 pb: depósito 2,50%, refinanciación 2,65% y marginal 2,90%, efectivos desde el 16 de septiembre.',
+                        'Inflación más persistente: proyección de inflación general 3,0% en 2026, 2,5% en 2027 y 2,1% en 2028.',
+                        'Crecimiento revisado al alza: 0,9% en 2026 y 1,4% en 2027, por mayor resiliencia económica.',
+                        'Sin forward guidance mecánica: el Consejo mantiene una estrategia reunión a reunión y condicionada a inflación, datos y transmisión monetaria.'
+                    ],
+                    watchFactors: [
+                        'Inflación energética y efectos de segunda ronda sobre inflación subyacente y salarios.',
+                        'PMI, actividad y transmisión de las condiciones financieras después de la subida.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA NORMAL', shapeDesc: 'Rendimientos de referencia en la Eurozona.',
+                    tenors: [
+                        { term: '2Y', yield: '2.510%', change: '+0.10 pb', isKey: true },
+                        { term: '5Y', yield: '2.620%', change: '-0.05 pb', isKey: false },
+                        { term: '10Y', yield: '2.710%', change: '-0.05 pb', isKey: true },
+                        { term: '30Y', yield: '3.150%', change: '+0.40 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Diferencial Eurozona', value: '+0.20%' },
+                        { label: '30Y − 10Y', desc: 'Pendiente a largo plazo', value: '+0.44%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC Subyacente Eurozona', actual: '2.8%', est: '2.8%', surprise: '0%', date: '18 ago', imp: '★★★' },
+                    { cat: 'CRECIMIENTO', name: 'PIB Eurozona (Trimestral)', actual: '0.3%', est: '0.2%', surprise: '+0.1%', date: '14 ago', imp: '★★★' },
+                    { cat: 'EMPLEO', name: 'Tasa de Desempleo', actual: '6.5%', est: '6.4%', surprise: '+0.1%', date: '01 sep', imp: '★★☆' }
+                ]
+            },
+            de: {
+                id: 'de',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.bundesbank.de/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Alemania',
+                flag: '🇩🇪',
+                subtitle: 'Bunds alemanes e indicadores industriales de la 1ª economía europea.',
+                rates: {
+                    official: '2.50%', real: '0.30%', posture: 'Marco BCE: +25 pb', postureBadge: 'badge-hawkish', postureText: 'Restrictivo', nextMeeting: '29/10/2026',
+                    expectations: [{ label: 'Mantener BCE', value: '85%' }]
+                },
+                conference: {
+                    history: [
+                        { date: '10 Sep 2026', title: 'BCE: subida de 25 pb · referencia para Alemania', tone: 'Política monetaria del BCE', summary: 'Para Alemania, la decisión monetaria relevante es la del BCE: subida de 25 pb por presiones inflacionistas. Se mantienen las mismas decisiones y comunicación que en la zona euro.' },
+                        { date: '23 Jul 2026', title: 'BCE: mantenimiento · referencia para Alemania', tone: 'Política monetaria del BCE', summary: 'El BCE mantuvo los tipos y mantuvo un enfoque reunión a reunión, vigilando inflación, energía, datos y transmisión monetaria.' },
+                        { date: '11 Jun 2026', title: 'BCE: subida de 25 pb · referencia para Alemania', tone: 'Política monetaria del BCE', summary: 'El BCE subió 25 pb ante nuevas presiones inflacionistas; las proyecciones apuntaban a inflación más alta por el shock energético.' }
+                    ],
+                    
+                    date: 'Perspectiva Bundesbank',
+                    title: 'Evaluación Económica del Bundesbank y Entorno Industrial',
+                    summary: 'El Bundesbank destaca la acusada brecha entre la debilidad estructural del sector industrial alemán y la resistencia del sector servicios, respaldando la postura de extrema prudencia del BCE.',
+                    tone: 'Prudente y Vigilante',
+                    toneBadge: 'badge-neutral',
+                    toneDescription: 'Alemania continúa sufriendo los efectos de la lenta demanda externa y los costes de energía, lo que limita su margen de crecimiento sin que esto suponga una caída drástica e inmediata de la inflación subyacente.',
+                    keyPoints: [
+                        'Estancamiento manufacturero: Los pedidos industriales no muestran una recuperación en V.',
+                        'Presión de costes salariales: Los acuerdos laborales recientes sostienen los costes en servicios.',
+                        'Ancla de liquidez: Los Bunds alemanes siguen actuando como el activo refugio por excelencia en Europa.',
+                        'Marco fiscal restrictivo: Limitaciones constitucionales de deuda restringen estímulos fiscales agresivos.'
+                    ],
+                    watchFactors: [
+                        'Índice IFO de Clima Empresarial y encuesta de expectativas ZEW.',
+                        'Datos de producción industrial y pedidos de manufacturas.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA BUND', shapeDesc: 'Curva libre de riesgo de la Eurozona.',
+                    tenors: [
+                        { term: '2Y', yield: '2.250%', change: '-0.30 pb', isKey: true },
+                        { term: '5Y', yield: '2.380%', change: '-0.10 pb', isKey: false },
+                        { term: '10Y', yield: '2.520%', change: '+0.20 pb', isKey: true },
+                        { term: '30Y', yield: '2.880%', change: '+0.50 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Spread Bund Alemán', value: '+0.27%' },
+                        { label: 'Alemania − Italia 10Y', desc: 'Prima de riesgo periférica', value: '1.25%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'ADELANTADOS', name: 'Índice IFO Clima Empresarial', actual: '87.0', est: '86.5', surprise: '+0.5', date: '25 ago', imp: '★★★' },
+                    { cat: 'PRODUCCIÓN', name: 'Pedidos Industriales (Mensual)', actual: '-1.1%', est: '-0.5%', surprise: '-0.6%', date: '06 sep', imp: '★★★' },
+                    { cat: 'INFLACIÓN', name: 'IPC Alemania (Anual)', actual: '2.2%', est: '2.2%', surprise: '0%', date: '29 ago', imp: '★★★' }
+                ]
+            },
+            uk: {
+                id: 'uk',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.bankofengland.co.uk/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Reino Unido',
+                flag: '🇬🇧',
+                subtitle: 'Bank of England (BoE), curva de Gilts y libra esterlina (GBP).',
+                rates: {
+                    official: '3.75%', real: '1.10%', posture: 'Mantener', postureBadge: 'badge-hawkish', postureText: 'Restrictivo', nextMeeting: '17/09/2026',
+                    expectations: [
+                        { label: 'Bajada -25 pb', value: '30%' },
+                        { label: 'Mantener', value: '70%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '29 Jul 2026', title: 'BoE: mantenimiento en 3,75%', tone: 'Mixto / restrictivo', summary: 'El MPC mantuvo Bank Rate en 3,75% por 6-3. Tres miembros pidieron +25 pb. La inflación había bajado a 2,6%, pero energía y riesgos de efectos de segunda ronda seguían preocupando.' },
+                        { date: '17 Jun 2026', title: 'BoE: mantenimiento en 3,75%', tone: 'Mixto', summary: 'El MPC mantuvo 3,75% por 7-2 y dos miembros votaron +25 pb. CPI bajó a 2,8%, mientras el mercado laboral se estaba relajando.' },
+                        { date: '29 Apr 2026', title: 'BoE: mantenimiento en 3,75%', tone: 'Restrictivo / prudente', summary: 'El MPC mantuvo 3,75% por 8-1. CPI había subido a 3,3% y el shock energético elevaba la incertidumbre sobre la trayectoria de inflación.' }
+                    ],
+                    
+                    date: 'MPC Decision',
+                    title: 'Bank of England: Tipos de Interés y Comunicado del MPC',
+                    summary: 'El Comité de Política Monetaria (MPC) decidió mantener la tasa oficial en el 3.75% tras una votación ajustada de 6 a 3. Andrew Bailey reiteró que la inflación del sector servicios requiere mantener los tipos en territorio restrictivo.',
+                    tone: 'Tono Restrictivo (Hawkish)',
+                    toneBadge: 'badge-hawkish',
+                    toneDescription: 'La división en el seno del comité muestra opiniones encontradas, pero la mayoría prefiere curarse en salud debido a la persistencia de los incrementos salariales y el dinamismo del sector servicios británico.',
+                    keyPoints: [
+                        'Votación dividida (6-3): Tres miembros del MPC abogaron abiertamente por recortar tipos 25 pb.',
+                        'Rigidez en servicios: La inflación de servicios se mantiene por encima del promedio deseado.',
+                        'Mercado laboral en ajuste: Cierto aumento en el desempleo pero los sueldos crecen con solidez.',
+                        'Estrategia de cautela: El BoE prefiere dejar los tipos altos más tiempo antes que arriesgarse a un rebrote.'
+                    ],
+                    watchFactors: [
+                        'Evolución del IPC del sector servicios y salarios semanales medios.',
+                        'Nuevos datos de empleo emitidos por la Oficina Nacional de Estadística (ONS).'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA GILT', shapeDesc: 'Rendimientos de los bonos británicos.',
+                    tenors: [
+                        { term: '2Y', yield: '4.100%', change: '+0.50 pb', isKey: true },
+                        { term: '5Y', yield: '4.250%', change: '+0.80 pb', isKey: false },
+                        { term: '10Y', yield: '4.850%', change: '+1.20 pb', isKey: true },
+                        { term: '30Y', yield: '5.200%', change: '+1.50 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Spread Gilt UK', value: '+0.75%' },
+                        { label: '30Y − 10Y', desc: 'Pendiente a largo plazo', value: '+0.35%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC General UK (Anual)', actual: '2.6%', est: '2.5%', surprise: '+0.1%', date: '19 ago', imp: '★★★' },
+                    { cat: 'INFLACIÓN', name: 'IPC Servicios UK', actual: '5.2%', est: '5.1%', surprise: '+0.1%', date: '19 ago', imp: '★★★' },
+                    { cat: 'EMPLEO', name: 'Crecimiento de Salarios', actual: '5.4%', est: '5.2%', surprise: '+0.2%', date: '13 ago', imp: '★★★' }
+                ]
+            },
+            jp: {
+                id: 'jp',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.boj.or.jp/en/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Japón',
+                flag: '🇯🇵',
+                subtitle: 'Bank of Japan (BoJ), yen (JPY) y proceso de normalización monetaria.',
+                rates: {
+                    official: '1.00%', real: '-1.20%', posture: 'Subidas Progresivas', postureBadge: 'badge-hawkish', postureText: 'Normalización', nextMeeting: '17-18/09/2026',
+                    expectations: [
+                        { label: 'Mantener', value: '85%' },
+                        { label: 'Subida +25 pb', value: '15%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '31 Jul 2026', title: 'BoJ: mantenimiento en torno a 0,75%', tone: 'Normalización gradual', summary: 'El BoJ mantuvo la guía de tipos en torno al 0,75%. La decisión y la comunicación mantuvieron el enfoque de normalización condicionado por las perspectivas de actividad y precios.' },
+                        { date: '16 Jun 2026', title: 'BoJ: mantenimiento', tone: 'Normalización prudente', summary: 'El BoJ mantuvo la orientación monetaria y actualizó sus medidas operativas sobre compras de JGB. La normalización siguió dependiendo de la evolución económica y de precios.' },
+                        { date: '28 Apr 2026', title: 'BoJ: mantenimiento en torno a 0,75%', tone: 'Más restrictivo en el debate interno', summary: 'Mantuvo el tipo en torno al 0,75% por 6-3. Tres miembros defendieron 1,0% ante riesgos de precios al alza y consideraron necesario acercar el tipo a una posición más neutral.' }
+                    ],
+                    
+                    date: 'BoJ Policy Meeting',
+                    title: 'Bank of Japan: Conferencia de Prensa de Kazuo Ueda',
+                    summary: 'El Banco de Japón mantuvo los tipos en el 1.00%, reafirmando que continuará con las subidas graduales de tipos si la economía y la inflación evolucionan en línea con sus proyecciones de crecimiento salarial.',
+                    tone: 'Tono Restrictivo Progresivo (Hawkish Moderado)',
+                    toneBadge: 'badge-hawkish',
+                    toneDescription: 'Kazuo Ueda mostró una postura decidida a seguir alejando al BoJ de los tipos ultrabajos. Destacó que el círculo virtuoso entre salarios y precios se está afianzando en las grandes empresas japonesas.',
+                    keyPoints: [
+                        'Senda de subidas activa: El BoJ reafirma que el tipo de interés real sigue siendo negativo y debe subir.',
+                        'Negociación salarial sólida: Los incrementos salariales del ciclo "Shunto" respaldan la inflación.',
+                        'Sensibilidad al Yen: La volatilidad del tipo de cambio USD/JPY se sigue muy de cerca por su impacto importado.',
+                        'Reducción de JGBs: Continúa la disminución planificada de compras de deuda soberana.'
+                    ],
+                    watchFactors: [
+                        'IPC Subyacente de Tokio y cifras nacionales de inflación.',
+                        'Evolución del tipo de cambio USD/JPY y rendimientos del bono JGB a 10 años.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA JGB', shapeDesc: 'Subida progresiva de rendimientos en Japón.',
+                    tenors: [
+                        { term: '2Y', yield: '0.550%', change: '+0.20 pb', isKey: true },
+                        { term: '5Y', yield: '0.780%', change: '+0.30 pb', isKey: false },
+                        { term: '10Y', yield: '1.080%', change: '+0.50 pb', isKey: true },
+                        { term: '30Y', yield: '2.150%', change: '+1.10 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Spread Bonos Japoneses', value: '+0.53%' },
+                        { label: '30Y − 10Y', desc: 'Pendiente tramo largo JGB', value: '+1.07%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC Subyacente Tokio', actual: '2.8%', est: '2.7%', surprise: '+0.1%', date: '28 ago', imp: '★★★' },
+                    { cat: 'CRECIMIENTO', name: 'PIB Japón (Trimestral)', actual: '0.7%', est: '0.5%', surprise: '+0.2%', date: '15 ago', imp: '★★★' },
+                    { cat: 'CONSUMO', name: 'Gasto de los Hogares', actual: '0.1%', est: '-0.3%', surprise: '+0.4%', date: '05 sep', imp: '★★☆' }
+                ]
+            },
+            au: {
+                id: 'au',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.rba.gov.au/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Australia',
+                flag: '🇦🇺',
+                subtitle: 'Reserve Bank of Australia (RBA) y dólar australiano (AUD).',
+                rates: {
+                    official: '4.35%', real: '0.85%', posture: 'Mantener/Vigilante', postureBadge: 'badge-hawkish', postureText: 'Restrictivo', nextMeeting: '29/09/2026',
+                    expectations: [
+                        { label: 'Mantener', value: '90%' },
+                        { label: 'Subida +25 pb', value: '10%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '11 Ago 2026', title: 'RBA: mantenimiento en 4,35%', tone: 'Restrictivo', summary: 'Mantuvo 4,35% por unanimidad. La inflación seguía demasiado alta, la economía operaba por encima de capacidad y el banco señaló que podría volver a subir si reaparecían riesgos al alza.' },
+                        { date: '16 Jun 2026', title: 'RBA: mantenimiento en 4,35%', tone: 'Restrictivo', summary: 'Mantuvo 4,35%. La inflación general y subyacente seguían elevadas y las condiciones financieras se habían endurecido tras las subidas anteriores.' },
+                        { date: '5 May 2026', title: 'RBA: subida a 4,35%', tone: 'Restrictivo', summary: 'Subió 25 pb a 4,35% por inflación persistentemente alta, presiones de capacidad y expectativas inflacionistas al alza. La decisión fue 8-1.' }
+                    ],
+                    
+                    date: 'RBA Board Decision',
+                    title: 'Reserve Bank of Australia: Cash Rate y Conferencia de Michele Bullock',
+                    summary: 'El RBA mantuvo la Cash Rate en el 4.35%. La Gobernadora Michele Bullock recalcó que la inflación subyacente está descendiendo a un ritmo excesivamente lento y que no dudará en subir tipos si los datos lo exigen.',
+                    tone: 'Tono Restrictivo (Hawkish)',
+                    toneBadge: 'badge-hawkish',
+                    toneDescription: 'El RBA se mantiene como uno de los bancos centrales más firmes en su mensaje. La directiva prefiere mantener una política monetaria estricta para garantizar que las expectativas de inflación permanezcan ancladas.',
+                    keyPoints: [
+                        'Sin prisa por recortar: El junta del RBA reiteró que no contempla recortes de tipos a corto plazo.',
+                        'Inflación recortada alta: La medida preferida de inflación subyacente sigue por encima del rango 2-3%.',
+                        'Mercado laboral tenso: La tasa de desempleo contenida ejerce presión sobre el coste laboral.',
+                        'Flexibilidad absoluta: Los ajustes futuros dependerán de los datos trimestrales de precios.'
+                    ],
+                    watchFactors: [
+                        'IPC Trimestral (Trimmed Mean) publicado por la Oficina Australiana de Estadística.',
+                        'Datos mensuales de creación de empleo y tasa de desempleo.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA AU', shapeDesc: 'Rendimientos soberanos de Australia.',
+                    tenors: [
+                        { term: '2Y', yield: '3.900%', change: '+0.80 pb', isKey: true },
+                        { term: '5Y', yield: '4.050%', change: '+1.00 pb', isKey: false },
+                        { term: '10Y', yield: '4.250%', change: '+1.10 pb', isKey: true },
+                        { term: '30Y', yield: '4.650%', change: '+0.90 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Spread Curva Australiana', value: '+0.35%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC Recortado RBA (Trimestral)', actual: '3.9%', est: '3.8%', surprise: '+0.1%', date: '31 jul', imp: '★★★' },
+                    { cat: 'EMPLEO', name: 'Tasa de Desempleo Australia', actual: '4.1%', est: '4.1%', surprise: '0%', date: '15 ago', imp: '★★★' },
+                    { cat: 'VENTAS', name: 'Ventas Minoristas', actual: '0.5%', est: '0.3%', surprise: '+0.2%', date: '02 sep', imp: '★★☆' }
+                ]
+            },
+            nz: {
+                id: 'nz',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.rbnz.govt.nz/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Nueva Zelanda',
+                flag: '🇳🇿',
+                subtitle: 'RBNZ, tasa OCR, curva soberana neozelandesa e indicadores de actividad.',
+                rates: {
+                    official: '2.75%', real: '-1.35%', posture: 'Subida +25 pb', postureBadge: 'badge-hawkish', postureText: 'Restrictivo', nextMeeting: '28/10/2026',
+                    expectations: [
+                        { label: 'Mantener', value: '23%' },
+                        { label: 'Subida +25 pb', value: '77%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '2 Sep 2026', title: 'RBNZ: OCR 2,75%', tone: 'Restrictivo / normalización', summary: 'El RBNZ elevó el OCR hasta 2,75%. La decisión forma parte de la secuencia de normalización de 2026 y se incorporó al seguimiento de inflación y actividad.' },
+                        { date: '8 Jul 2026', title: 'RBNZ: OCR 2,50%', tone: 'Restrictivo', summary: 'El OCR quedó en 2,50%. La política siguió orientada a contener la inflación mientras el comité evaluaba la recuperación de la actividad y las presiones internas.' },
+                        { date: '27 May 2026', title: 'RBNZ: OCR 2,25%', tone: 'Prudente / normalización', summary: 'El OCR se situó en 2,25%. El comité mantuvo un enfoque dependiente de los datos para valorar la velocidad de normalización posterior.' }
+                    ],
+                    
+                    date: '2 Sep 2026',
+                    title: 'RBNZ: subida del OCR a 2,75%',
+                    summary: 'El RBNZ elevó el OCR 25 pb hasta 2,75%. La inflación había aumentado al 4,1% en el trimestre de junio por el encarecimiento de combustibles asociado al conflicto de Oriente Próximo. El banco indicó que podría necesitar subir más el OCR, aunque la senda no está predeterminada y dependerá del balance de riesgos.',
+                    tone: 'Tono Restrictivo / Normalización',
+                    toneBadge: 'badge-hawkish',
+                    toneDescription: 'El RBNZ está retirando estímulo para evitar que el shock energético se convierta en inflación persistente. La institución destacó que la inflación de medio plazo sigue siendo compatible con volver al objetivo y que la política futura no será mecánica.',
+                    keyPoints: [
+                        'Subida de tipos: El OCR se elevó 25 pb hasta el 2,75% por consenso.',
+                        'Inflación interna rígida: Sin enfriamiento rápido en los sectores de construcción y servicios locales.',
+                        'Efecto divisa: La depreciación reciente del NZD exige mantener la firmeza para evitar inflación importada.',
+                        'Flexibilidad: El RBNZ ajustará el ritmo si los riesgos de crecimiento global se deterioran.'
+                    ],
+                    watchFactors: [
+                        'Evolución del IPC no transable y ventas minoristas.',
+                        'Presiones salariales y expectativas de inflación a 2 años.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA EMPINADA', shapeDesc: 'Diferencial amplio entre plazos cortos y largos.',
+                    tenors: [
+                        { term: '2Y', yield: '3.573%', change: '-0.38 pb', isKey: true },
+                        { term: '5Y', yield: '4.100%', change: '+0.20 pb', isKey: false },
+                        { term: '10Y', yield: '4.705%', change: '+0.75 pb', isKey: true }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Pendiente Curva NZ', value: '+1.13%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'CONSUMO', name: 'Ventas minoristas (Trimestral)', actual: '0.5%', est: '0.1%', surprise: '+0.4%', date: '22 may', imp: '★★★' },
+                    { cat: 'INFLACIÓN', name: 'IPC (Anual)', actual: '2.7%', est: '2.5%', surprise: '+0.2%', date: '21 jul', imp: '★★★' }
+                ]
+            },
+            ca: {
+                id: 'ca',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.bankofcanada.ca/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Canadá',
+                flag: '🇨🇦',
+                subtitle: 'Bank of Canada (BoC), tasa overnight e indicadores de Canadá.',
+                rates: {
+                    official: '2.25%', real: '0.10%', posture: 'Pausa', postureBadge: 'badge-neutral', postureText: 'Neutro', nextMeeting: '28/10/2026',
+                    expectations: [
+                        { label: 'Bajada -25 pb', value: '20%' },
+                        { label: 'Mantener', value: '75%' },
+                        { label: 'Subida +25 pb', value: '5%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '2 Sep 2026', title: 'BoC: mantenimiento en 2,25%', tone: 'Neutral / prudente', summary: 'Mantuvo el objetivo en 2,25%. El banco destacó inflación todavía elevada por energía, incertidumbre comercial y crecimiento global resistente.' },
+                        { date: '15 Jul 2026', title: 'BoC: mantenimiento en 2,25%', tone: 'Neutral / equilibrado', summary: 'Mantuvo 2,25%. Señaló que el crecimiento canadiense estaba retomándose y que la inflación debía bajar gradualmente, aunque con incertidumbre elevada.' },
+                        { date: '10 Jun 2026', title: 'BoC: mantenimiento en 2,25%', tone: 'Neutral / cauteloso', summary: 'Mantuvo 2,25%. La economía estaba débil y el shock energético elevaba la inflación, mientras el banco intentaba evitar que el encarecimiento de la energía se volviera persistente.' }
+                    ],
+                    
+                    date: 'BoC Rate Announcement',
+                    title: 'Bank of Canada: Rueda de Prensa de Tiff Macklem',
+                    summary: 'El Bank of Canada mantuvo su tipo de interés oficial en el 2.25%. Tiff Macklem señaló que las fuerzas de oferta y demanda en la economía canadiense están cerca del equilibrio, lo que permite una pausa prolongada.',
+                    tone: 'Tono Neutral / Equilibrado',
+                    toneBadge: 'badge-neutral',
+                    toneDescription: 'El BoC muestra satisfacción con el avance de la inflación, que se sitúa cerca del centro de su rango meta. Sin embargo, vigilan de cerca el endeudamiento hipotecario de las familias y el impacto del comercio transfronterizo.',
+                    keyPoints: [
+                        'Mantenimiento en 2.25%: Decisión alineada con las expectativas del consenso de mercado.',
+                        'Inflación bajo control: Medidas subyacentes (CPI-Median y CPI-Trim) estables cerca del 2%.',
+                        'Sector inmobiliario moderado: El adjustment en los tipos de hipotecas ha estabilizado la demanda.',
+                        'Dependencia de EE.UU.: Monitoreo constante del desempeño económico de su principal socio comercial.'
+                    ],
+                    watchFactors: [
+                        'Cifras de inflación subyacente de Statistics Canada.',
+                        'Cambio neto en la creación de empleo y crecimiento de salarios.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA CANADÁ', shapeDesc: 'Rendimientos de bonos soberanos canadienses.',
+                    tenors: [
+                        { term: '2Y', yield: '3.100%', change: '-0.50 pb', isKey: true },
+                        { term: '5Y', yield: '3.250%', change: '-0.10 pb', isKey: false },
+                        { term: '10Y', yield: '3.450%', change: '+0.20 pb', isKey: true },
+                        { term: '30Y', yield: '3.700%', change: '+0.40 pb', isKey: false }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Spread Curva Canadá', value: '+0.35%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC Canadá (Anual)', actual: '2.4%', est: '2.4%', surprise: '0%', date: '19 ago', imp: '★★★' },
+                    { cat: 'EMPLEO', name: 'Cambio de Empleo Neto', actual: '22K', est: '15K', surprise: '+7K', date: '08 ago', imp: '★★★' },
+                    { cat: 'CRECIMIENTO', name: 'PIB Canadá (Mensual)', actual: '0.2%', est: '0.1%', surprise: '+0.1%', date: '30 ago', imp: '★★☆' }
+                ]
+            },
+            ch: {
+                id: 'ch',
+                updated: 'Actualizado · 16 sep 2026',
+                sourceName: 'Fuente oficial del banco central',
+                sourceUrl: 'https://www.snb.ch/en/',
+                sourceStatus: 'Referencia oficial verificada · 16 sep 2026',
+                name: 'Suiza',
+                flag: '🇨🇭',
+                subtitle: 'Swiss National Bank (SNB) y franco suizo (CHF).',
+                rates: {
+                    official: '0.00%', real: '-0.30%', posture: 'Mantener', postureBadge: 'badge-neutral', postureText: 'Neutro/Vigilante', nextMeeting: '24/09/2026',
+                    expectations: [
+                        { label: 'Mantener', value: '95%' },
+                        { label: 'Subida +25 pb', value: '5%' }
+                    ]
+                },
+                conference: {
+                    history: [
+                        { date: '18 Jun 2026', title: 'SNB: mantenimiento en 0%', tone: 'Expansivo / prudente', summary: 'Mantuvo el tipo en 0% y aumentó su disposición a intervenir en divisas si fuese necesario para contrarrestar una apreciación rápida y excesiva del franco.' },
+                        { date: '19 Mar 2026', title: 'SNB: mantenimiento en 0%', tone: 'Expansivo / prudente', summary: 'Mantuvo el tipo en 0%. Elevó la previsión de inflación a corto plazo por energía, pero consideró prácticamente sin cambios la presión inflacionista de medio plazo.' },
+                        { date: '11 Dic 2025', title: 'SNB: mantenimiento en 0%', tone: 'Neutral / acomodaticio', summary: 'Mantuvo el tipo en 0%. La inflación reciente estaba algo por debajo de lo esperado y el SNB mantuvo su disposición a actuar en el mercado de divisas.' }
+                    ],
+                    
+                    date: 'SNB Monetary Policy Assessment',
+                    title: 'Swiss National Bank: Evaluación Monetaria y Franco Suizo',
+                    summary: 'El SNB mantuvo su tipo de interés oficial en el 0.00%. El presidente Martin Schlegel reiteró la disposición del banco central a intervenir activamente en el mercado cambiario si el franco suizo experimenta un encarecimiento excesivo.',
+                    tone: 'Tono Neutral con Vigilancia Cambiaria',
+                    toneBadge: 'badge-neutral',
+                    toneDescription: 'La prioridad estratégica del SNB es evitar una apreciación desmedida del CHF que perjudique a las empresas exportadoras suizas. La inflación dentro del país permanece completamente bajo control en rangos mínimos.',
+                    keyPoints: [
+                        'Tipo clave en 0.00%: Estabilidad garantizada para mantener la fluidez crediticia.',
+                        'Inflación controlada: Los precios al consumo crecen cómodamente dentro de la banda de confort.',
+                        'Intervención en Forex: El SNB venderá francos en los mercados si la moneda presiona a la baja la economía.',
+                        'Exportaciones industriales: El sector relojero y de maquinaria sigue acusando la debilidad europea.'
+                    ],
+                    watchFactors: [
+                        'Evolución del par EUR/CHF y volumen de reservas de divisas del SNB.',
+                        'Índice KOF de previsión económica e IPC mensual suizo.'
+                    ]
+                },
+                bonds: {
+                    shape: 'CURVA SUIZA', shapeDesc: 'Entorno de rendimientos reducidos.',
+                    tenors: [
+                        { term: '2Y', yield: '0.450%', change: '-0.10 pb', isKey: true },
+                        { term: '5Y', yield: '0.520%', change: '0.00 pb', isKey: false },
+                        { term: '10Y', yield: '0.620%', change: '0.00 pb', isKey: true }
+                    ],
+                    spreads: [
+                        { label: '10Y − 2Y', desc: 'Spread Bonos Suiza', value: '+0.17%' }
+                    ]
+                },
+                indicators: [
+                    { cat: 'INFLACIÓN', name: 'IPC Suiza (Anual)', actual: '1.3%', est: '1.2%', surprise: '+0.1%', date: '03 sep', imp: '★★★' },
+                    { cat: 'ADELANTADOS', name: 'Barómetro Económico KOF', actual: '101.5', est: '100.8', surprise: '+0.7', date: '29 ago', imp: '★★★' }
+                ]
+            }
+        };
+
+        let currentCountryKey = '__global';
+
+        function renderSidebar() {
+            const nav = document.getElementById('countryNav');
+            const mobileSelect = document.getElementById('mobileCountrySelect');
+            nav.innerHTML = '';
+            mobileSelect.innerHTML = '';
+
+            const globalBtn=document.createElement('button');
+            globalBtn.className=`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition nav-item ${currentCountryKey==='__global'?'active':'text-gray-400 hover:text-white hover:bg-gray-900'}`;
+            globalBtn.onclick=()=>switchCountry('__global');
+            globalBtn.innerHTML=`<span class="flex items-center gap-2.5"><span>🌐</span><span>Panel Macro Global</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
+            nav.appendChild(globalBtn);
+
+            const sep=document.createElement('div');
+            sep.className='text-[10px] font-semibold text-gray-600 uppercase tracking-wider px-2 py-3';
+            sep.textContent='Economías';
+            nav.appendChild(sep);
+
+            const mobileGlobal=document.createElement('option');
+            mobileGlobal.value='__global';
+            mobileGlobal.textContent='🌐 Panel Macro Global';
+            mobileGlobal.selected=currentCountryKey==='__global';
+            mobileSelect.appendChild(mobileGlobal);
+
+            Object.entries(macroDatabase).forEach(([key,c])=>{
+                if(!c || key.startsWith('__') || !c.id) return;
+                const btn=document.createElement('button');
+                btn.className=`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition nav-item ${key===currentCountryKey?'active':'text-gray-400 hover:text-white hover:bg-gray-900'}`;
+                btn.onclick=()=>switchCountry(key);
+                btn.innerHTML=`<span class="flex items-center gap-2.5"><span>${c.flag||'🌎'}</span><span>${esc(c.name||key)}</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
+                nav.appendChild(btn);
+
+                const opt=document.createElement('option');
+                opt.value=key;
+                opt.textContent=`${c.flag||'🌎'} ${c.name||key}`;
+                opt.selected=key===currentCountryKey;
+                mobileSelect.appendChild(opt);
+            });
+            mobileSelect.onchange=e=>switchCountry(e.target.value);
+        }
+
+        function switchCountry(key) {
+            currentCountryKey = key;
+            renderSidebar();
+            renderContent();
+            const scroller=document.querySelector('main');
+            if(scroller) scroller.scrollTo({top:0,behavior:'smooth'});
+        }
+
+        function renderTopTabs(){
+            const el=document.getElementById('topTabs');
+            if(!el) return;
+            const global=currentCountryKey==='__global';
+            const tabs=global?[
+              ['sec-resumen','PANEL GLOBAL'],['sec-risk','RISK ON/OFF'],['sec-fx','DIVISAS / CARRY'],
+              ['sec-cot','COT'],['sec-options','OPCIONES / GAMMA'],['sec-darkpool','DARK POOLS / OTC'],['sec-rotation','MERCADOS & ROTACIÓN'],['sec-sentiment','SENTIMIENTO / BONOS']
+            ]:[
+              ['sec-tipos','TIPOS'],['sec-conferencia','RUEDA DE PRENSA'],['sec-bonos','CURVA'],
+              ['sec-indicadores','INDICADORES']
+            ];
+            el.innerHTML=tabs.map(([id,label],i)=>`<button class="tab-btn ${i===0?'active':''} pb-3 whitespace-nowrap" onclick="scrollToSection('${id}')">${label}</button>`).join('');
+        }
+
+        function esc(v){ return String(v ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
+
+        function toneScore(tone=''){
+            const t=tone.toLowerCase();
+            if(t.includes('hawk')||t.includes('restrict')) return 1;
+            if(t.includes('dov')||t.includes('acomod')) return -1;
+            return 0;
+        }
+
+        function policyBias(score){
+            if(score>=2.6) return {label:'Claramente restrictivo',short:'Restrictivo ↑↑',icon:'↑↑',cls:'bias-down'};
+            if(score>=0.9) return {label:'Moderadamente restrictivo',short:'Restrictivo ↑',icon:'↑',cls:'bias-down'};
+            if(score<=-2.6) return {label:'Claramente acomodaticio',short:'Acomodaticio ↓↓',icon:'↓↓',cls:'bias-up'};
+            if(score<=-0.9) return {label:'Moderadamente acomodaticio',short:'Acomodaticio ↓',icon:'↓',cls:'bias-up'};
+            return {label:'Mixto / neutral',short:'Neutral →',icon:'→',cls:'bias-flat'};
+        }
+        function biasLabel(score){ return policyBias(score).label; }
+        function biasClass(score){ return policyBias(score).cls; }
+        function dirIcon(score){ return policyBias(score).icon; }
+        function expectationLabel(data){
+            const ex=data?.rates?.expectations||[];
+            let up=0,hold=0,down=0;
+            ex.forEach(e=>{
+                const v=parseNum(e.value); if(!Number.isFinite(v)) return;
+                const l=String(e.label||'').toLowerCase();
+                if(l.includes('subida')) up+=v;
+                else if(l.includes('bajada')) down+=v;
+                else if(l.includes('mantener')||l.includes('hold')) hold+=v;
+            });
+            if(up===0 && down===0 && hold===0) return {label:'Sin pricing claro',cls:'bias-flat'};
+            if(up>down+8) return {label:'Más probabilidad de subida',cls:'bias-down'};
+            if(down>up+8) return {label:'Más probabilidad de bajada',cls:'bias-up'};
+            if(hold>=Math.max(up,down)) return {label:'Más probabilidad de mantener',cls:'bias-flat'};
+            return {label:'Pricing mixto',cls:'bias-flat'};
+        }
+
+        const indicatorCatalog = {
+            us: {
+                'INFLACIÓN': [
+                    ['CPI (IPC) general', 'BLS', 'referencia principal de precios al consumidor', 'hawkHigher'],
+                    ['CPI subyacente', 'BLS', 'inflación sin alimentos ni energía', 'hawkHigher'],
+                    ['PCE', 'BEA', 'medida preferida de la Fed', 'hawkHigher'],
+                    ['PCE subyacente', 'BEA', 'medida especialmente relevante para la Fed', 'hawkHigher'],
+                    ['PPI', 'BLS', 'presión de precios upstream', 'hawkHigher'],
+                    ['PPI subyacente', 'BLS', 'presión de precios sin componentes volátiles', 'hawkHigher'],
+                    ['Expectativas de inflación', 'Fed / encuesta oficial', 'presión futura sobre precios', 'hawkHigher']
+                ],
+                'EMPLEO': [
+                    ['NFP', 'BLS', 'creación de empleo', 'hawkHigher'],
+                    ['Tasa de desempleo', 'BLS', 'holgura del mercado laboral', 'hawkLower'],
+                    ['Salarios medios', 'BLS', 'presión salarial', 'hawkHigher'],
+                    ['ADP', 'ADP', 'señal adelantada del empleo privado', 'hawkHigher'],
+                    ['JOLTS', 'U.S. Bureau of Labor Statistics', 'vacantes y tensión laboral', 'hawkHigher'],
+                    ['Initial Jobless Claims', 'U.S. Department of Labor', 'deterioro o fortaleza del empleo', 'hawkLowerWhenHigher'],
+                    ['Continuing Claims', 'U.S. Department of Labor', 'persistencia del desempleo', 'hawkLowerWhenHigher']
+                ],
+                'CRECIMIENTO / ACTIVIDAD': [
+                    ['PIB', 'BEA', 'crecimiento de la economía', 'hawkHigher'],
+                    ['ISM Manufacturing', 'ISM', 'actividad manufacturera', 'hawkHigher'],
+                    ['ISM Services', 'ISM', 'actividad de servicios', 'hawkHigher'],
+                    ['PMI Composite', 'S&P Global', 'actividad adelantada', 'hawkHigher'],
+                    ['Retail Sales', 'U.S. Census Bureau', 'demanda del consumidor', 'hawkHigher'],
+                    ['Industrial Production', 'Federal Reserve', 'actividad industrial', 'hawkHigher']
+                ]
+            },
+            eu: {
+                'INFLACIÓN': [['HICP general','Eurostat','inflación armonizada','hawkHigher'],['HICP subyacente','Eurostat','inflación subyacente','hawkHigher'],['Salarios','ECB/Eurostat','presión salarial','hawkHigher']],
+                'EMPLEO': [['Desempleo','Eurostat','holgura laboral','hawkLower'],['Empleo','Eurostat','fortaleza del mercado laboral','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','Eurostat','crecimiento','hawkHigher'],['PMI Composite','S&P Global','actividad adelantada','hawkHigher'],['Ventas minoristas','Eurostat','demanda','hawkHigher']]
+            },
+            de: {
+                'INFLACIÓN': [['CPI general','Destatis','inflación alemana','hawkHigher'],['CPI subyacente','Destatis','inflación subyacente','hawkHigher']],
+                'EMPLEO': [['Desempleo','Bundesagentur für Arbeit','holgura laboral','hawkLower'],['Salarios','Destatis','presión salarial','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','Destatis','crecimiento','hawkHigher'],['IFO','ifo Institut','sentimiento empresarial adelantado','hawkHigher'],['PMI','S&P Global','actividad adelantada','hawkHigher']]
+            },
+            uk: {
+                'INFLACIÓN': [['CPI','ONS','inflación general','hawkHigher'],['CPI subyacente','ONS','inflación subyacente','hawkHigher'],['Salarios','ONS','presión salarial','hawkHigher']],
+                'EMPLEO': [['Desempleo','ONS','holgura laboral','hawkLower'],['Empleo','ONS','fortaleza laboral','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','ONS','crecimiento','hawkHigher'],['PMI','S&P Global','actividad adelantada','hawkHigher'],['Retail Sales','ONS','demanda','hawkHigher']]
+            },
+            ch: {
+                'INFLACIÓN': [['CPI','FSO','inflación','hawkHigher'],['CPI subyacente','FSO','inflación subyacente','hawkHigher']],
+                'EMPLEO': [['Desempleo','SECO','holgura laboral','hawkLower']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','FSO/SECO','crecimiento','hawkHigher'],['PMI','Procure.ch','actividad industrial','hawkHigher']]
+            },
+            jp: {
+                'INFLACIÓN': [['CPI','Statistics Bureau of Japan','inflación','hawkHigher'],['CPI subyacente','Statistics Bureau of Japan','inflación subyacente','hawkHigher'],['Salarios','MHLW','presión salarial','hawkHigher']],
+                'EMPLEO': [['Desempleo','Statistics Bureau of Japan','holgura laboral','hawkLower'],['Ofertas/ratio de empleo','MHLW','tensión laboral','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','Cabinet Office','crecimiento','hawkHigher'],['Tankan','Bank of Japan','actividad/confianza empresarial','hawkHigher'],['Industrial Production','METI','actividad','hawkHigher']]
+            },
+            ca: {
+                'INFLACIÓN': [['CPI','Statistics Canada','inflación','hawkHigher'],['CPI-Median','Bank of Canada/Statistics Canada','inflación subyacente','hawkHigher'],['CPI-Trim','Bank of Canada/Statistics Canada','inflación subyacente','hawkHigher']],
+                'EMPLEO': [['Desempleo','Statistics Canada','holgura laboral','hawkLower'],['Empleo neto','Statistics Canada','fortaleza laboral','hawkHigher'],['Salarios','Statistics Canada','presión salarial','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','Statistics Canada','crecimiento','hawkHigher'],['PMI','S&P Global','actividad adelantada','hawkHigher']]
+            },
+            au: {
+                'INFLACIÓN': [['CPI','ABS','inflación general','hawkHigher'],['Trimmed Mean CPI','ABS/RBA','inflación subyacente','hawkHigher'],['Wage Price Index','ABS','presión salarial','hawkHigher']],
+                'EMPLEO': [['Desempleo','ABS','holgura laboral','hawkLower'],['Empleo','ABS','fortaleza laboral','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','ABS','crecimiento','hawkHigher'],['PMI','S&P Global','actividad adelantada','hawkHigher'],['Retail Sales','ABS','demanda','hawkHigher']]
+            },
+            nz: {
+                'INFLACIÓN': [['CPI','Stats NZ','inflación','hawkHigher'],['Inflación subyacente','RBNZ/Stats NZ','presión de precios','hawkHigher'],['Expectativas de inflación','RBNZ','presión futura','hawkHigher']],
+                'EMPLEO': [['Desempleo','Stats NZ','holgura laboral','hawkLower'],['Empleo','Stats NZ','fortaleza laboral','hawkHigher'],['Salarios','Stats NZ','presión salarial','hawkHigher']],
+                'CRECIMIENTO / ACTIVIDAD': [['PIB','Stats NZ','crecimiento','hawkHigher'],['PMI','Business NZ / BNZ','actividad adelantada','hawkHigher']]
+            }
+        };
+
+        function parseNum(v){
+            if(v===null || v===undefined || v==='') return NaN;
+            const s=String(v).replace(/\s/g,'').replace(/,/g,'.').replace(/%/g,'').replace(/K/gi,'e3').replace(/M/gi,'e6').replace(/B/gi,'e9');
+            const n=Number(s);
+            return Number.isFinite(n) ? n : NaN;
+        }
+
+        function importanceWeight(imp=''){
+            const n=(String(imp).match(/★/g)||[]).length;
+            return n ? n : 1;
+        }
+
+        function indicatorMeta(ind){
+            const name=(ind.name||'').toLowerCase();
+            const cat=(ind.cat||ind.category||'').toUpperCase();
+            let higherIsHawkish=true;
+            let importance=1;
+            if(/desempleo|paro|jobless|claims|initial|continuing/.test(name)) higherIsHawkish=false;
+            if(/participación|participation|horas trabajadas/.test(name)) higherIsHawkish=true;
+            if(/inflación|ipc|cpi|pce|ppi|precios|wage|salario|salarios|expectativas de inflación/.test(name)) higherIsHawkish=true;
+            if(/pib|gdp|pmi|ventas minoristas|retail|producción industrial|industrial production/.test(name)) higherIsHawkish=true;
+            const w=importanceWeight(ind.imp);
+            importance = w>=3 ? 1.35 : w===2 ? 1.15 : 1;
+            return {higherIsHawkish, importance, cat};
+        }
+
+        function indicatorDirection(ind){
+            const actual=parseNum(ind.actual), est=parseNum(ind.est);
+            if(!Number.isFinite(actual) || !Number.isFinite(est)) return {score:0,label:'Sin cálculo',delta:NaN,meta:indicatorMeta(ind)};
+            const meta=indicatorMeta(ind);
+            const delta=actual-est;
+            // No sobrerreaccionar a una diferencia mínima: el dato queda "en línea".
+            const tolerance = Math.max(1e-9, Math.abs(est)*0.0025);
+            if(Math.abs(delta)<=tolerance) return {score:0,label:'En línea →',delta,meta};
+            const direction=(delta>0?1:-1)*(meta.higherIsHawkish?1:-1);
+            const magnitude=Math.min(1.5, Math.max(0.35, Math.abs(delta)/(Math.abs(est)||1)*2.5));
+            const score=direction*magnitude*meta.importance;
+            return {score,label:score>0?'Presiona tipos ↑':'Alivia tipos ↓',delta,meta};
+        }
+
+        function groupRead(score){
+            if(score>=1.1) return {label:'Hawkish ↑', cls:'effect-hawkish'};
+            if(score<=-1.1) return {label:'Dovish ↓', cls:'effect-dovish'};
+            return {label:'Mixta →', cls:'effect-neutral'};
+        }
+
+        function toneScore(tone=''){
+            const s=String(tone).toLowerCase();
+            if(/hawkish|restrictivo|restrictiva|endurec/.test(s) && !/dovish/.test(s)) return 1;
+            if(/dovish|acomodatic|expansiv|flexible/.test(s)) return -1;
+            return 0;
+        }
+
+        function macroInterpretation(data){
+            const inds=data.indicators||[];
+            const groups={inflation:0,employment:0,growth:0};
+            const contributors=[];
+            for(const ind of inds){
+                const d=indicatorDirection(ind);
+                if(d.score===0) continue;
+                const cat=(ind.cat||'').toUpperCase();
+                if(cat.includes('INFL')) groups.inflation += d.score;
+                else if(cat.includes('EMPLEO')) groups.employment += d.score;
+                else if(cat.includes('CREC') || cat.includes('ACTIV')) groups.growth += d.score;
+                contributors.push({name:ind.name, score:d.score, label:d.label, cat, abs:Math.abs(d.score)});
+            }
+            const central=toneScore(data.conference?.tone || data.rates?.postureText);
+
+            // Las expectativas se leen por dirección neta, no por "probabilidad de subida" aislada.
+            let exp=0, expWeight=0;
+            (data.rates?.expectations||[]).forEach(e=>{
+                const v=parseNum(e.value); if(!Number.isFinite(v)) return;
+                const l=(e.label||'').toLowerCase();
+                let dir=0;
+                if(l.includes('subida')) dir=1;
+                else if(l.includes('bajada')) dir=-1;
+                if(dir){ exp += dir*(v/100); expWeight += v/100; }
+            });
+            const expSignal=exp*2.0;
+
+            // El 2Y es confirmación de mercado, no el conductor principal.
+            let bond=0;
+            const t2=(data.bonds?.tenors||[]).find(t=>t.term==='2Y');
+            if(t2){ const ch=parseNum(t2.change); if(Number.isFinite(ch)) bond=Math.max(-0.7,Math.min(0.7,ch/4)); }
+
+            // Política monetaria: pondera inflación > empleo > crecimiento, con el banco central como ancla.
+            const policy = central*1.9 + groups.inflation*0.95 + groups.employment*0.65 + groups.growth*0.35 + expSignal*0.75 + bond*0.45;
+            const score=Math.max(-5,Math.min(5,policy));
+
+            // La confianza cae cuando los grupos importantes se contradicen.
+            const vals=[groups.inflation,groups.employment,groups.growth,central,expSignal,bond].filter(v=>Math.abs(v)>0.05);
+            const pos=vals.filter(v=>v>0).length, neg=vals.filter(v=>v<0).length;
+            const conflict=vals.length ? Math.min(pos,neg)/Math.max(1,vals.length) : 0;
+            const strength=Math.min(1,Math.abs(score)/3.4);
+            let confidence=Math.round(48 + strength*42 - conflict*28);
+            confidence=Math.max(25,Math.min(88,confidence));
+
+            let label='Mixto / neutral →';
+            if(score>=2.6) label='Claramente hawkish ↑';
+            else if(score>=0.9) label='Moderadamente hawkish ↑';
+            else if(score<=-2.6) label='Claramente dovish ↓';
+            else if(score<=-0.9) label='Moderadamente dovish ↓';
+
+            contributors.sort((a,b)=>b.abs-a.abs);
+            const positives=contributors.filter(x=>x.score>0).slice(0,3);
+            const negatives=contributors.filter(x=>x.score<0).sort((a,b)=>a.score-b.score).slice(0,3);
+            return {score,label,central,exp:expSignal,bond,groups,confidence,positives,negatives,conflict};
+        }
+
+        function effectForIndicator(ind){
+            const d=indicatorDirection(ind);
+            let cls='effect-neutral';
+            if(d.score>0) cls='effect-hawkish';
+            if(d.score<0) cls='effect-dovish';
+            return `<span class="${cls} font-semibold">${esc(d.label)}</span>`;
+        }
+
+        function findCatalogMatch(data, itemName){
+            const all=[...(data.indicators||[])];
+            const q=itemName.toLowerCase();
+            return all.find(i => {
+                const n=(i.name||'').toLowerCase();
+                if(q==='nfp') return /nóminas|nfp|nonfarm/.test(n);
+                if(q==='pce') return /pce/.test(n) && !/subyacente|core/.test(q);
+                if(q==='pce subyacente') return /pce/.test(n) && /subyacente|core/.test(n);
+                if(q==='cpi subyacente') return /cpi|ipc/.test(n) && /subyacente|core/.test(n);
+                if(q==='cpi (ipc) general') return /cpi|ipc/.test(n) && !/subyacente|core/.test(n);
+                if(q==='desempleo' || q==='tasa de desempleo') return /desempleo|paro|unemployment/.test(n);
+                if(q==='pib') return /pib|gdp/.test(n);
+                if(q==='ism manufacturing') return /ism.*manufactur|manufactur.*ism/.test(n);
+                if(q==='ism services') return /ism.*servic|servic.*ism/.test(n);
+                if(q==='ppi') return /ppi|ipp/.test(n);
+                return n.includes(q);
+            });
+        }
+
+        function renderIndicatorMiniCatalog(data){
+            const catalog=indicatorCatalog[data.id] || {};
+            return Object.entries(catalog).map(([group, items])=>{
+                const chips=items.map(([name,src,role])=>{
+                    const match=findCatalogMatch(data,name);
+                    if(match){
+                        return `<div class="card rounded-xl p-3">
+                            <div class="flex items-start justify-between gap-2"><div class="text-xs font-semibold text-white">${esc(name)}</div><span class="score-chip">${esc(src)}</span></div>
+                            <div class="mt-2 text-[11px] text-gray-500">${esc(role)}</div>
+                            <div class="mt-2 flex items-baseline justify-between gap-2"><span class="text-sm font-black text-white">${esc(match.actual)}</span><span class="text-[10px] text-gray-500">Prev. ${esc(match.est)}</span></div>
+                            <div class="mt-1 text-[11px]">${effectForIndicator(match)}</div>
+                        </div>`;
+                    }
+                    return `<div class="card rounded-xl p-3 opacity-70">
+                        <div class="flex items-start justify-between gap-2"><div class="text-xs font-semibold text-white">${esc(name)}</div><span class="score-chip">${esc(src)}</span></div>
+                        <div class="mt-2 text-[11px] text-gray-500">${esc(role)}</div>
+                        <div class="mt-2 text-[11px] text-gray-600">Pendiente de feed oficial</div>
+                    </div>`;
+                }).join('');
+                return `<div><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-2">${esc(group)}</div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">${chips}</div></div>`;
+            }).join('');
+        }
+
+        function renderCurveChart(data){
+            const pts=(data.bonds?.tenors||[]).map(t=>({term:t.term,y:parseNum(t.yield)})).filter(p=>Number.isFinite(p.y));
+            if(pts.length<2) return `<div class="curve-wrap text-xs text-gray-500">Sin suficientes vencimientos para dibujar la curva.</div>`;
+            const W=900,H=300,L=48,R=22,T=18,B=48;
+            const ys=pts.map(p=>p.y), minY=Math.min(...ys), maxY=Math.max(...ys);
+            const pad=Math.max((maxY-minY)*0.18,0.08), lo=minY-pad, hi=maxY+pad;
+            const x=i=>L+i*(W-L-R)/(pts.length-1);
+            const y=v=>T+(hi-v)*(H-T-B)/(hi-lo);
+            const poly=pts.map((p,i)=>`${x(i)},${y(p.y)}`).join(' ');
+            const ticks=[0.25,0.5,0.75].map(f=>lo+(hi-lo)*f);
+            const grid=ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" class="curve-grid"/><text x="${L-8}" y="${y(v)+3}" text-anchor="end" class="curve-axis">${v.toFixed(2)}%</text>`).join('');
+            const labels=pts.map((p,i)=>`<text x="${x(i)}" y="${H-24}" text-anchor="middle" class="curve-axis">${esc(p.term)}</text><circle cx="${x(i)}" cy="${y(p.y)}" r="4.5" class="curve-dot"/><text x="${x(i)}" y="${y(p.y)-10}" text-anchor="middle" class="curve-axis">${p.y.toFixed(2)}%</text>`).join('');
+            return `<div class="curve-wrap"><svg class="curve-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de rendimientos"><line x1="${L}" x2="${L}" y1="${T}" y2="${H-B}" class="curve-grid"/><line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" class="curve-grid"/>${grid}<polyline points="${poly}" class="curve-line"/>${labels}</svg><div class="mt-2 text-[10px] text-gray-500">Rendimiento por vencimiento. La forma y su cambio se interpretan junto con 2Y/10Y y las expectativas de tipos.</div></div>`;
+        }
+
+        function renderUSInflationAnticipation(data){
+            if(data.id!=='us') return '';
+            const names=['CPI (IPC) general','PPI','PCE subyacente'];
+            const rows=names.map(n=>{
+                const m=findCatalogMatch(data,n);
+                return m ? `<div class="flex items-center justify-between gap-2 py-2 border-b border-gray-800/60"><span class="text-xs text-gray-400">${esc(n)}</span><span class="text-xs font-bold text-white">${esc(m.actual)} vs ${esc(m.est)} · ${effectForIndicator(m)}</span></div>` :
+                `<div class="flex items-center justify-between gap-2 py-2 border-b border-gray-800/60"><span class="text-xs text-gray-400">${esc(n)}</span><span class="text-xs text-gray-600">Pendiente</span></div>`;
+            }).join('');
+            return `<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Anticipación de inflación hacia PCE</div><div class="text-sm font-bold text-white mt-1">CPI / PPI → PCE subyacente</div><div class="text-xs text-gray-500 mt-1 leading-relaxed">Los datos que se publican antes pueden orientar el sesgo esperado del PCE, pero no sustituyen el dato final.</div><div class="mt-3">${rows}</div></div>`;
+        }
+
+        function riskDecimals(name){
+            const n=String(name||'').toUpperCase();
+            if(n==='SKEW') return 0;
+            return 2;
+        }
+        function riskFmt(v, suffix='', name=''){
+            if(v===null || v===undefined || v==='') return '—';
+            const n=Number(v);
+            return Number.isFinite(n) ? n.toFixed(riskDecimals(name))+suffix : esc(v);
+        }
+        function riskToneClass(sig){ return sig==='risk-on'?'risk-up':sig==='risk-off'?'risk-down':'risk-neutral'; }
+        function renderRiskOnOff(){
+ const r=macroDatabase.__riskOnOff||{score:null,label:'SIN SINCRONIZAR',confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
+ const score=Number(r.score),valid=Number.isFinite(score),width=valid?Math.max(0,Math.min(100,score)):0;
+ const assets=(r.assets||[]).map(a=>`
+ <div class="risk-cell">
+  <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${esc(a.name||a.symbol)} <em class="text-gray-600">${esc(a.symbol||"")}</em></span><span class="risk-badge">${esc(a.marketSignal||'—')}</span></div>
+  <div class="text-lg font-black text-white mt-2">${riskFmt(a.value,a.unit||'',a.name||a.symbol)}</div>
+  <div class="grid grid-cols-3 gap-1 mt-2">
+   <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1D</div><b class="text-[10px] ${a.change1d>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1d))?(a.change1d>=0?'+':'')+Number(a.change1d).toFixed(2)+'%':'—'}<small class="block text-[9px] text-gray-500">${Number.isFinite(Number(a.pointChange1d))?(a.pointChange1d>=0?' +':'')+Number(a.pointChange1d).toFixed(2):'—'}</small></b></div>
+   <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1S</div><b class="text-[10px] ${a.change1w>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1w))?(a.change1w>=0?'+':'')+Number(a.change1w).toFixed(2)+'%':'—'}<small class="block text-[9px] text-gray-500">${Number.isFinite(Number(a.pointChange1w))?(a.pointChange1w>=0?' +':'')+Number(a.pointChange1w).toFixed(2):'—'}</small></b></div>
+   <div class="rounded bg-gray-900/60 px-1.5 py-1 text-center"><div class="text-[8px] text-gray-600">1M</div><b class="text-[10px] ${a.change1m>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1m))?(a.change1m>=0?'+':'')+Number(a.change1m).toFixed(2)+'%':'—'}<small class="block text-[9px] text-gray-500">${Number.isFinite(Number(a.pointChange1m))?(a.pointChange1m>=0?' +':'')+Number(a.pointChange1m).toFixed(2):'—'}</small></b></div>
+  </div>
+  <div class="text-[10px] text-gray-600 mt-1">${esc(a.role||'Confirmación')}</div>
+ </div>`).join('');
+ const conf=(r.confirmations||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-emerald-400">•</span><span>${esc(x)}</span></li>`).join('');
+ const tens=(r.tensions||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-amber-400">•</span><span>${esc(x)}</span></li>`).join('');
+ return `<section id="sec-risk" class="space-y-4">
+  <div class="glass rounded-2xl p-5">
+   <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+    <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-scale-balanced text-blue-400"></i> Econic personalizado · régimen de mercado</div>
+     <h2 class="text-xl md:text-2xl font-black text-white mt-1">RISK ON / RISK OFF</h2>
+     <p class="text-sm text-gray-400 mt-1 max-w-4xl">Lectura intermercado. Los porcentajes son variaciones de precio del último cierre disponible: 1D, 1 semana y 1 mes. La etiqueta de cada activo describe su relación con el régimen, no si “sube = alcista”.</p>
+    </div>
+    <div class="metric rounded-xl px-5 py-4 min-w-[250px]"><div class="flex items-center justify-between"><div class="text-[10px] uppercase text-gray-500">Régimen actual</div><span class="risk-badge">Confianza ${valid&&r.confidence!==null?esc(String(r.confidence))+'%':'—'}</span></div>
+     <div class="text-2xl font-black ${valid?(score>=60?'risk-up':score<=40?'risk-down':'risk-neutral'):'text-gray-400'} mt-1">${esc(r.label||'SIN SINCRONIZAR')}</div>
+     <div class="risk-meter mt-3"><div class="risk-meter-fill" style="width:${width}%"></div></div>
+     <div class="flex justify-between text-[9px] text-gray-600 mt-1"><span>RISK OFF</span><span>NEUTRAL</span><span>RISK ON</span></div>
+    </div>
+   </div>
+   <div class="mt-4 text-[10px] text-gray-600">Última sincronización: ${esc(r.updated||'—')} · 1S = semana de mercado (~5 cierres), 1M = ~21 cierres. El fin de semana conserva el último cierre disponible.</div>
+  </div>
+  <div class="risk-grid">${assets||'<div class="metric rounded-xl p-4 text-xs text-gray-500">Esperando sincronización.</div>'}</div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+   <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmaciones</div><div class="text-[10px] text-gray-600 mt-1">Señales que apuntan al mismo régimen.</div><ul class="space-y-2 mt-3">${conf||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
+   <div class="metric rounded-xl p-4 risk-alert"><div class="text-[10px] uppercase tracking-wider text-gray-500">Tensiones / cobertura</div><div class="text-[10px] text-gray-600 mt-1">Señales que impiden simplificar el contexto.</div><ul class="space-y-2 mt-3">${tens||'<li class="text-xs text-gray-600">—</li>'}</ul></div>
+  </div>
+ </section>`;
+}
+
+function renderGlobalSummary(){
+ const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>({d,score:macroInterpretation(d).score}));
+ const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
+ const label=v=>v>0.9?'RESTRICTIVO':v<-0.9?'ACOMODATICIO':'MIXTO';
+ return `
+ <section id="sec-resumen" class="space-y-5">
+  ${renderRiskOnOff()}
+  <div class="glass rounded-2xl p-5">
+   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Mapa macro global</div>
+     <h2 class="text-xl md:text-2xl font-black text-white mt-1">Mapa global de política monetaria</h2>
+     <p class="text-sm text-gray-400 mt-1 max-w-3xl">Compara la presión monetaria de cada economía. No es un indicador de mercado alcista/bajista: restrictivo significa más presión sobre tipos y acomodaticio menos.</p>
+    </div>
+    <div class="metric rounded-xl px-4 py-3 min-w-[210px]"><div class="text-[10px] text-gray-500 uppercase">Presión monetaria agregada</div><div class="text-lg font-black ${biasClass(avg)} mt-1">${label(avg)}</div></div>
+   </div>
+  </div>
+  <div class="flex flex-wrap gap-2 text-[11px] text-gray-500"><span class="mini-pill">RESTRICTIVO = presión de tipos ↑</span><span class="mini-pill">ACOMODATICIO = presión de tipos ↓</span><span class="mini-pill">MIXTO = señales enfrentadas</span></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+   ${entries.map(({d,score})=>`
+    <button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
+     <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag}</span><span class="font-bold text-white">${esc(d.name)}</span></div><span class="text-xs font-black ${biasClass(score)}">${label(score)}</span></div>
+     <div class="mt-3 flex items-center justify-between"><span class="mini-pill">${esc(d.conference?.tone || d.rates?.postureText || 'Sin tono')}</span><span class="text-xs ${biasClass(score)}">${score>0.9?'presión de tipos ↑':score<-0.9?'presión de tipos ↓':'sin dirección clara'}</span></div>
+     <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official)} · Próxima ${esc(d.rates?.nextMeeting)}</div>
+    </button>`).join('')}
+  </div>
+ </section>`;
+}
+
+function renderMeetingHistory(data){
+            const hist=data.conference?.history || [];
+            const items=[
+                {label:'Última', cls:'meeting-current', item:hist[0], fallback:{date:data.conference?.date, title:data.conference?.title, tone:data.conference?.tone, summary:data.conference?.summary}},
+                {label:'Anterior', cls:'meeting-old', item:hist[1]},
+                {label:'Hace 2 reuniones', cls:'meeting-old', item:hist[2]}
+            ];
+            return items.map(x=>{
+              const m=x.item||x.fallback;
+              if(!m) return `<div class="card rounded-xl p-4 opacity-60"><div class="text-[10px] uppercase text-gray-500">${x.label}</div><div class="text-sm text-gray-500 mt-2">Datos pendientes de incorporar desde fuente oficial.</div></div>`;
+              const tl=(m.tone||'').toLowerCase();
+              const tc=tl.includes('hawk')||tl.includes('restrict')?'text-red-300':tl.includes('dov')||tl.includes('acomod')?'text-emerald-300':'text-amber-300';
+              return `<div class="card ${x.cls} rounded-xl p-4">
+                <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${x.label}</span><span class="mini-pill">${esc(m.date||'')}</span></div>
+                <div class="font-bold text-white text-sm mt-2">${esc(m.title||'Reunión')}</div>
+                <div class="text-xs ${tc} mt-2">${esc(m.tone||'Sin clasificar')}</div>
+                <div class="text-xs text-gray-400 mt-2 leading-relaxed">${esc(m.summary||'')}</div>${Array.isArray(m.keyPoints)&&m.keyPoints.length?`<details class="mt-3"><summary class="cursor-pointer text-[10px] text-blue-300">Ver puntos clave</summary><ul class="mt-2 space-y-1.5">${m.keyPoints.map(k=>`<li class="text-[11px] text-gray-400">• ${esc(k)}</li>`).join('')}</ul></details>`:''}<div class="text-[9px] text-gray-600 mt-2">Fuente: comunicación/reunión disponible del banco central</div>
+              </div>`;
+            });
+        }
+
+        function renderCotSection(){
+ const c=macroDatabase.__cot||{updated:'—',markets:[]},markets=c.markets||[],keys=markets.map(m=>m.name).filter(Boolean);
+ const selected=(window.__cotMarket&&markets.find(m=>m.name===window.__cotMarket))?window.__cotMarket:(keys[0]||'');window.__cotMarket=selected;
+ const m=markets.find(x=>x.name===selected)||markets[0]||{},history=m.history||[],range=window.__cotRange||52,visible=history.slice(0,range).reverse();
+ const fmtInt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('es-ES'):'—',fmtPct0=v=>Number.isFinite(Number(v))?Number(v).toFixed(1)+'%':'—',fmtSigned=v=>Number.isFinite(Number(v))?(Number(v)>=0?'+':'')+Number(v).toLocaleString('es-ES'):'—';
+ const nums=visible.map(x=>Number(x.net)).filter(Number.isFinite),lo=nums.length?Math.min(...nums):0,hi=nums.length?Math.max(...nums):1,span=Math.max(hi-lo,1);
+ const W=960,H=340,L=58,R=22,T=28,B=58,px=i=>L+i*(W-L-R)/Math.max(visible.length-1,1),py=v=>T+(hi-v)*(H-T-B)/span;
+ const pts=visible.map((x,i)=>px(i).toFixed(1)+','+py(Number(x.net)).toFixed(1)).join(' ');
+ const labels=visible.map((x,i)=>{const step=Math.max(1,Math.ceil(visible.length/6));return i%step===0||i===visible.length-1?'<text x="'+px(i).toFixed(1)+'" y="'+(H-18)+'" text-anchor="'+(i===visible.length-1?'end':'middle')+'" class="cot-axis">'+esc(String(x.date||'').slice(0,10))+'</text>':''}).join('');
+ const dots=visible.map((x,i)=>'<circle cx="'+px(i).toFixed(1)+'" cy="'+py(Number(x.net)).toFixed(1)+'" r="4.2" class="cot-dot"><title>'+esc(x.date)+' · Largos '+fmtInt(x.long)+' · Cortos '+fmtInt(x.short)+' · Neto '+fmtInt(x.net)+'</title></circle>').join('');
+ const grid=[0,1,2,3,4].map(n=>{const y=T+n*(H-T-B)/4;const val=hi-n*span/4;return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="cot-grid"/><text x="'+(L-8)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" class="cot-axis">'+fmtInt(val)+'</text>';}).join('');
+ const chart=visible.length>1?'<div class="cot-chart-wrap"><svg viewBox="0 0 '+W+' '+H+'" class="w-full h-[340px]"><defs><linearGradient id="cotFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#facc15" stop-opacity=".18"/><stop offset="100%" stop-color="#facc15" stop-opacity="0"/></linearGradient></defs>'+grid+'<polyline points="'+pts+'" class="cot-line"/><polygon points="'+L+','+(H-B)+' '+pts+' '+(W-R)+','+(H-B)+'" fill="url(#cotFill)"/>'+dots+labels+'</svg></div>':'<div class="h-[340px] flex items-center justify-center text-xs text-gray-500">Histórico COT insuficiente.</div>';
+ const selector=keys.map(k=>'<option value="'+esc(k)+'" '+(k===selected?'selected':'')+'>'+esc(k)+'</option>').join('');
+ const ranges=[4,13,26,52,104,260].map(n=>'<button onclick="window.__cotRange='+n+';renderContent()" class="mini-pill '+(n===range?'text-yellow-300 border-yellow-500/40':'')+'">'+(n===4?'4S':n===13?'13S':n===26?'26S':n===52?'52S':n===104?'2A':'5A')+'</button>').join('');
+ const cats=Object.entries(m.categories||{}).map(([k,v])=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs font-semibold text-white">'+esc(k)+'</td><td class="py-2 px-2 text-xs">'+fmtInt(v.long)+' <span class="text-gray-500">('+fmtPct0(v.longPctOI)+')</span></td><td class="py-2 px-2 text-xs">'+fmtInt(v.short)+' <span class="text-gray-500">('+fmtPct0(v.shortPctOI)+')</span></td><td class="py-2 px-2 text-xs font-bold">'+fmtSigned(v.net)+'</td><td class="py-2 px-2 text-xs text-gray-500">'+fmtPct0(v.spreadPctOI)+'</td></tr>').join('');
+ const histRows=visible.slice().reverse().map(x=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs text-gray-400">'+esc(x.date)+'</td><td class="py-2 px-2 text-xs">'+fmtInt(x.long)+'</td><td class="py-2 px-2 text-xs">'+fmtInt(x.short)+'</td><td class="py-2 px-2 text-xs font-bold">'+fmtSigned(x.net)+'</td><td class="py-2 px-2 text-xs">'+fmtPct0(x.netPctOI)+'</td></tr>').join('');
+ return '<section id="sec-cot" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">POSICIONAMIENTO INSTITUCIONAL · CFTC</div><h2 class="text-xl font-black text-white mt-1">COT · FUTURES</h2><p class="text-sm text-gray-400 mt-1 max-w-5xl">Vista tipo TradingView/Yahoo: línea limpia, puntos amarillos, fechas y tooltip con largos/cortos/neto. Contexto semanal; no timing intradía.</p></div><div class="flex items-center gap-2"><span class="mini-pill">Actualizado '+esc(c.updated||'—')+'</span><select onchange="window.__cotMarket=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+selector+'</select></div></div></div><div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3"><div class="metric p-3"><span class="text-[9px] text-gray-500">NETO</span><b class="block text-lg">'+fmtSigned(m.net)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">LARGOS</span><b class="block text-lg">'+fmtInt(m.long)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">CORTOS</span><b class="block text-lg">'+fmtInt(m.short)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">Δ 1 SEM.</span><b class="block text-lg">'+fmtSigned(m.change1w??m.netChange)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">Δ 4 SEM.</span><b class="block text-lg">'+fmtSigned(m.change4w)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">% OI</span><b class="block text-lg">'+fmtPct0(m.netPctOI)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">PERCENTIL 52S</span><b class="block text-lg">'+fmtPct0(m.percentile52)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">Z · 52S</span><b class="block text-lg">'+(Number.isFinite(Number(m.z52??m.zScore))?Number(m.z52??m.zScore).toFixed(2)+'σ':'—')+'</b></div></div><div class="metric rounded-xl p-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><b class="text-sm text-white">'+esc(m.name||'')+' · NET POSITIONING</b><div class="text-[10px] text-gray-500 mt-1">Informe '+esc(m.reportDate||'—')+' · '+esc(m.traderGroup||'')+' · '+esc(m.reportFamily||'')+'</div></div><div class="flex flex-wrap gap-1">'+ranges+'</div></div>'+chart+'<div class="flex flex-wrap gap-3 mt-2 text-[10px]"><span class="text-yellow-300">● cada punto = una semana CFTC</span><span class="text-gray-500">Hover sobre un punto = fecha + largos + cortos + neto</span></div></div><div class="metric rounded-xl p-5 overflow-x-auto"><div class="flex items-center justify-between gap-3 mb-3"><b class="text-sm text-white">HISTÓRICO VISIBLE · SEMANA A SEMANA</b><span class="mini-pill">'+esc(m.contract||m.contractCode||'')+'</span></div><table class="w-full min-w-[650px]"><thead><tr class="border-b border-gray-800 text-[10px] text-gray-500 uppercase"><th class="text-left py-2 px-2">Semana</th><th class="text-left py-2 px-2">Largos</th><th class="text-left py-2 px-2">Cortos</th><th class="text-left py-2 px-2">Neto</th><th class="text-left py-2 px-2">% OI</th></tr></thead><tbody>'+histRows+'</tbody></table></div><div class="metric rounded-xl p-5 overflow-x-auto"><div class="flex items-center justify-between gap-3 mb-3"><b class="text-sm text-white">DESGLOSE POR CATEGORÍA</b><span class="mini-pill">CFTC · semanal</span></div><table class="w-full min-w-[650px]"><thead><tr class="border-b border-gray-800 text-[10px] text-gray-500 uppercase"><th class="text-left py-2 px-2">Categoría</th><th class="text-left py-2 px-2">Largos</th><th class="text-left py-2 px-2">Cortos</th><th class="text-left py-2 px-2">Neto</th><th class="text-left py-2 px-2">Spread % OI</th></tr></thead><tbody>'+cats+'</tbody></table></div></section>';
+}
+
+const INSTRUMENT_NAMES={
+            SPY:'SPDR S&P 500 ETF Trust',
+            QQQ:'Invesco QQQ Trust · Nasdaq-100',
+            QQQM:'Invesco NASDAQ 100 ETF',
+            TQQQ:'ProShares UltraPro QQQ · Nasdaq-100 3x ETF',
+            DIA:'SPDR Dow Jones Industrial Average ETF',
+            UUP:'Invesco DB US Dollar Index Bullish Fund · DXY proxy',
+            FXE:'Invesco CurrencyShares Euro Trust · EUR proxy',
+            GLD:'SPDR Gold Shares · Gold proxy',
+            IAU:'iShares Gold Trust · Gold proxy',
+            GDX:'VanEck Gold Miners ETF',
+            SLV:'iShares Silver Trust · Silver proxy',
+            USO:'United States Oil Fund · WTI / West Texas Intermediate proxy',
+            BNO:'United States Brent Oil Fund · Brent crude proxy',
+            AAPL:'Apple Inc.',
+            NVDA:'NVIDIA Corporation',
+            IWM:'iShares Russell 2000 ETF'
+        };
+        function instrumentName(ticker,fallback){
+            return INSTRUMENT_NAMES[String(ticker||'').toUpperCase()]||fallback||ticker||'—';
+        }
+
+        function renderOptionsSection(){
+ const o=macroDatabase.__options||{updated:'—',markets:[]},markets=o.markets||[],keys=markets.map(m=>m.ticker||m.name).filter(Boolean);
+ const selected=(window.__optTicker&&markets.find(m=>(m.ticker||m.name)===window.__optTicker))?window.__optTicker:(keys[0]||'SPY');window.__optTicker=selected;
+ const m=markets.find(x=>(x.ticker||x.name)===selected)||{},profiles=m.profiles||[],p=profiles[0]||m;
+ const rows=(p.topGexStrikes||[]).slice(0,16),maxG=Math.max(...rows.map(x=>Math.abs(Number(x.gex)||0)),1),maxOI=Math.max(...rows.map(x=>Number(x.oi)||0),1);
+ const select=keys.map(k=>'<option value="'+esc(k)+'" '+(k===selected?'selected':'')+'>'+esc(k)+' · '+esc(instrumentName(k))+'</option>').join('');
+ const dist=v=>Number.isFinite(Number(v))&&Number.isFinite(Number(m.spot))?(Number(v)-Number(m.spot)):null;
+ const level=v=>Number.isFinite(Number(v))?fmtNum(v,2)+' · '+fmtPct(dist(v)/Number(m.spot)*100,2):'—';
+ const gexBars=rows.map(x=>{const g=Number(x.gex)||0,w=Math.max(3,Math.round(Math.abs(g)/maxG*100));return '<div class="grid grid-cols-[55px_1fr_80px] gap-2 items-center text-[10px]"><span class="text-right text-gray-400">'+fmtNum(x.strike,0)+'</span><div class="h-3 bg-gray-900 rounded overflow-hidden"><div class="'+(g>=0?'bg-emerald-400':'bg-red-400')+' h-full rounded" style="width:'+w+'%"></div></div><span class="text-right '+(g>=0?'text-emerald-300':'text-red-300')+'">'+fmtCompactMoney(g)+'</span></div>'}).join('');
+ const oiBars=rows.map(x=>'<div class="grid grid-cols-[55px_1fr_70px] gap-2 items-center text-[10px]"><span class="text-right text-gray-400">'+fmtNum(x.strike,0)+'</span><div class="h-2 bg-gray-900 rounded overflow-hidden"><div class="bg-blue-400/80 h-full rounded" style="width:'+Math.max(2,Math.round((Number(x.oi)||0)/maxOI*100))+'%"></div></div><span class="text-right text-gray-400">'+fmtNum(x.oi,0)+'</span></div>').join('');
+ const profileCards=profiles.map((q,i)=>'<div class="metric rounded-xl p-4"><div class="flex justify-between gap-2"><div><div class="text-[9px] text-gray-500 uppercase">'+esc(q.bucket||('VENCIMIENTO '+(i+1)))+' · '+esc(q.expiration||'—')+'</div><div class="text-[10px] text-gray-600 mt-1">'+fmtNum(q.daysToExpiry,1)+' días</div></div><span class="mini-pill">'+(m.source||'PUBLIC')+'</span></div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3 text-xs"><div><span class="text-gray-500">Max Pain</span><b class="block">'+level(q.maxPain)+'</b></div><div><span class="text-gray-500">Gamma Flip · proxy</span><b class="block">'+level(q.gammaFlip??q.zeroGamma)+'</b></div><div><span class="text-gray-500">Call Wall · OI</span><b class="block">'+fmtNum(q.callWallOi??q.callWall,2)+' <small class="text-gray-500">'+fmtNum(q.callWallOiValue,0)+' OI</small></b></div><div><span class="text-gray-500">Put Wall · OI</span><b class="block">'+fmtNum(q.putWallOi??q.putWall,2)+' <small class="text-gray-500">'+fmtNum(q.putWallOiValue,0)+' OI</small></b></div><div><span class="text-gray-500">GEX net · modeled</span><b class="block">'+fmtCompactMoney(q.gammaNet)+'</b></div><div><span class="text-gray-500">DEX · proxy</span><b class="block">'+fmtCompactMoney(q.dexProxy??q.dex)+'</b></div><div><span class="text-gray-500">Vanna · proxy</span><b class="block">'+fmtCompactMoney(q.vannaProxy??q.vanna)+'</b></div><div><span class="text-gray-500">Charm · proxy</span><b class="block">'+fmtCompactMoney(q.charm)+'</b></div><div><span class="text-gray-500">ATM Δ / Γ</span><b class="block">'+fmtNum(q.atmDelta,3)+' / '+fmtNum(q.atmGamma,5)+'</b></div><div><span class="text-gray-500">ATM Vega</span><b class="block">'+fmtNum(q.atmVega,3)+'</b></div><div><span class="text-gray-500">25D Call IV</span><b class="block">'+fmtPct(q.iv25dCall)+'</b></div><div><span class="text-gray-500">25D Put IV</span><b class="block">'+fmtPct(q.iv25dPut)+'</b></div><div><span class="text-gray-500">25D RR / Skew</span><b class="block">'+fmtPct(q.riskReversal25d)+'</b></div><div><span class="text-gray-500">OI > / < spot</span><b class="block">'+fmtPct(q.oiAbovePct,1)+' / '+fmtPct(q.oiBelowPct,1)+'</b></div><div><span class="text-gray-500">Call OI / Put OI</span><b class="block">'+fmtNum(q.callOi,0)+' / '+fmtNum(q.putOi,0)+'</b></div><div><span class="text-gray-500">Call Vol / Put Vol</span><b class="block">'+fmtNum(q.callVolume,0)+' / '+fmtNum(q.putVolume,0)+'</b></div><div><span class="text-gray-500">ATM IV · observed</span><b class="block">'+fmtPct(q.ivAtm)+'</b></div><div><span class="text-gray-500">Expected Move</span><b class="block">'+(Number.isFinite(Number(q.expectedMove))?'±'+fmtNum(q.expectedMove,2)+' ('+fmtPct(q.expectedMovePct,1)+')':'—')+'</b></div></div></div>').join('');
+ const refs='<div class="metric rounded-xl p-4"><div class="text-[9px] text-gray-500 uppercase">ÍNDICES DE REFERENCIA</div><div class="grid grid-cols-2 gap-2 mt-2 text-xs"><div><b class="text-white">SPX</b><span class="block text-gray-500">referencia S&P 500 · opción directa no inventada</span></div><div><b class="text-white">NDX</b><span class="block text-gray-500">referencia Nasdaq-100 · opción directa no inventada</span></div><div><b class="text-white">SPY / QQQ</b><span class="block text-gray-500">cadenas públicas ETF</span></div><div><b class="text-white">BTC / ETH</b><span class="block text-gray-500">Deribit separado · CME/IBIT no mezclados</span></div></div></div>';
+ return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-col md:flex-row md:items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">DERIVATIVES DESK · PUBLIC / DELAYED</div><h2 class="text-xl font-black text-white mt-1">OPTIONS · GEX / OI / IV / FLOW STRUCTURE</h2><div class="text-xs text-gray-400 mt-1">'+instrumentName(selected)+' · <b>'+esc(selected)+'</b></div><p class="text-sm text-gray-400 mt-1">Inspirado en la forma de leer cadenas de Yahoo/Barchart y mapas de GEX: OI, volumen, IV, 25D skew, paredes por OI y clusters de gamma. Las métricas de posicionamiento son modelos, no un libro de dealers.</p></div><select onchange="window.__optTicker=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+select+'</select></div><div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-4"><div class="metric p-3"><span class="text-[9px] text-gray-500">SPOT</span><b class="block text-lg">'+fmtNum(m.spot,2)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">MAX PAIN</span><b class="block text-lg">'+fmtNum(p.maxPain,2)+'</b><span class="text-[9px] text-gray-500">'+level(p.maxPain)+'</span></div><div class="metric p-3"><span class="text-[9px] text-gray-500">GAMMA FLIP · PROXY</span><b class="block text-lg">'+fmtNum(p.gammaFlip??p.zeroGamma,2)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">GEX NET · MODELED</span><b class="block text-lg '+(Number(p.gammaNet)>=0?'text-emerald-300':'text-red-300')+'">'+fmtCompactMoney(p.gammaNet)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">25D RR / SKEW</span><b class="block text-lg">'+fmtPct(p.riskReversal25d)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">ATM IV</span><b class="block text-lg">'+fmtPct(p.ivAtm)+'</b></div></div></div>'+refs+'<div class="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-4"><div class="metric rounded-xl p-5"><div class="flex justify-between items-center"><div><b class="text-sm text-white">GEX CLUSTERS · POR STRIKE</b><div class="text-[10px] text-gray-500 mt-1">Mayor tamaño = mayor exposición gamma modelada; no equivale a volumen negociado.</div></div><span class="mini-pill">'+esc(p.expiration||'—')+'</span></div><div class="space-y-2 mt-5">'+(gexBars||'<div class="text-xs text-gray-500">No hay clusters GEX.</div>')+'</div><div class="mt-5 text-[10px]"><span class="text-emerald-300">■ GEX +</span><span class="text-red-300 ml-4">■ GEX −</span></div></div><div class="metric rounded-xl p-5"><b class="text-sm text-white">OI CLUSTERS · STRIKE</b><div class="text-[10px] text-gray-500 mt-1">Concentración de Open Interest. No garantiza soporte/resistencia.</div><div class="space-y-2 mt-4">'+(oiBars||'<div class="text-xs text-gray-500">No hay OI por strike.</div>')+'</div></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">'+profileCards+'</div><div class="metric rounded-xl p-4"><b class="text-sm text-white">LECTURA</b><p class="text-xs text-gray-400 mt-2">Max Pain = cálculo sobre OI. Call/Put Wall = strike con mayor OI del lado correspondiente. GEX/Gamma Flip/DEX/Vanna/Charm = proxies calculados. 25D RR = IV de call 25-delta menos IV de put 25-delta. Expected Move solo aparece cuando la IV ATM y el vencimiento permiten calcularlo. Para BTC/ETH, Deribit se mantiene separado de cualquier futura capa CME o IBIT.</p></div></section>';
+}
+
+function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
+
+        function fmtPct(v,d=2){ const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }
+        function fmtNum(v,d=2){ const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }
+        function fxBiasLabel(score){ if(score>=2) return 'Muy alcista'; if(score>=0.9) return 'Alcista'; if(score>=0.35) return 'Levemente alcista'; if(score<=-2) return 'Muy bajista'; if(score<=-0.9) return 'Bajista'; if(score<=-0.35) return 'Levemente bajista'; return 'Neutral'; }
+        function fxBiasClass(score){ return score>0.35?'bias-up':score<-0.35?'bias-down':'bias-flat'; }
+        function parseRate(v){ const s=String(v??'').replace(',','.').replace('%','').replace('–','-'); const nums=s.match(/-?\d+(?:\.\d+)?/g); if(!nums) return NaN; return nums.length===2?(Number(nums[0])+Number(nums[1]))/2:Number(nums[0]); }
+        function buildFxComparator(){
+            const fx=macroDatabase.__fx||{currencies:{}};
+            const all=Object.values(macroDatabase).filter(d=>d&&d.id);
+            const rows=all.map(d=>{ const code=d.id==='us'?'USD':d.id==='eu'||d.id==='de'?'EUR':d.id==='uk'?'GBP':d.id==='jp'?'JPY':d.id==='au'?'AUD':d.id==='nz'?'NZD':d.id==='ca'?'CAD':'CHF'; const m=fx.currencies?.[code]||{}; return {id:d.id,code,name:d.name,pol:macroInterpretation(d).score,rate:parseRate(d.rates?.official),y2:parseRate((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield),real:parseRate(d.rates?.real),tr5:Number(m.change1w)||0,tr15:Number(m.change15d)||0,tr20:Number(m.change1m)||0}; });
+            const by=Object.fromEntries(rows.map(x=>[x.code,x]));
+            function score(a,b){ const A=by[a],B=by[b]; if(!A||!B) return 0; return 0.95*(A.pol-B.pol)+0.75*((A.y2||0)-(B.y2||0))+0.45*((A.real||0)-(B.real||0))+0.32*(A.tr5-B.tr5)+0.14*(A.tr20-B.tr20); }
+            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); return {...x,score:sc,label:fxBiasLabel(sc)};});
+            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD']; const matrix=codes.map(base=>({base,cols:codes.map(q=>base===q?null:score(base,q))}));
+            return {updated:fx.updated||'—',rows:vsUsd,matrix};
+        }
+        function renderFxComparator(){
+            const fx=buildFxComparator();
+            const rows=fx.rows.map(x=>`<tr class="border-b border-gray-900/70"><td class="py-3 px-3 text-sm font-bold text-white">${x.code}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(x.name||'')}</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.rate,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y2,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr5,2)}</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr15,2)}</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr20,2)}</td><td class="py-3 px-3 text-sm font-black ${fxBiasClass(x.score)}">${x.label}</td></tr>`).join('');
+            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD'];
+            const heads=codes.map(c=>`<th class="py-2 px-2 text-[10px] text-gray-500">${c}</th>`).join('');
+            const matrix=fx.matrix.map(r=>`<tr><td class="py-2 px-2 text-xs font-bold text-white">${r.base}</td>${r.cols.map(v=>`<td class="py-2 px-2 text-xs ${v===null?'text-gray-700':fxBiasClass(v)}">${v===null?'—':fxBiasLabel(v).replace('Levemente ','L. ')}</td>`).join('')}</tr>`).join('');
+            return `<section id="sec-fx" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Algoritmo personalizado</div><h2 class="text-xl font-black text-white mt-1">DIVISAS · CARRY + TIPOS + TENDENCIA</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">Combina postura monetaria, diferencial de tipos, 2Y, tipo real y tendencia de 1S/15D/1M. El carry es un proxy; no sustituye forwards u OIS.</p></div><span class="mini-pill">${esc(fx.updated)}</span></div></div><div class="card rounded-2xl p-4 overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-gray-800"><th class="py-2 px-3 text-left text-[10px] text-gray-500">Moneda</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Nombre</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Tipo</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">2Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">1S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15D</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">1M</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Sesgo vs USD</th></tr></thead><tbody>${rows}</tbody></table></div><div class="metric rounded-xl p-4 overflow-x-auto"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">Matriz de sesgo relativo</div><table class="w-full"><thead><tr><th class="py-2 px-2 text-left text-[10px] text-gray-600">Base \\ Cta.</th>${heads}</tr></thead><tbody>${matrix}</tbody></table></div></section>`;
+        }
+        function renderDarkPoolSection(){
+ const t=macroDatabase.__darkPoolPrints||{assets:{}},assets=t.assets||{},keys=Object.keys(assets),selected=(window.__darkPoolTicker&&assets[window.__darkPoolTicker])?window.__darkPoolTicker:(keys[0]||'SPY');window.__darkPoolTicker=selected;
+ const a=assets[selected]||{ticker:selected,lastPrice:null,priceSeries:[],prints:[],venueClusters:[],dailyOffExchange:{}},ps=a.priceSeries||[],dpx=a.dailyOffExchange||{};
+ const W=980,H=390,L=60,R=80,T=28,B=58,lo=ps.length?Math.min(...ps.map(x=>+x.price)):0,hi=ps.length?Math.max(...ps.map(x=>+x.price)):1,pad=(hi-lo||1)*.12,y0=lo-pad,y1=hi+pad,minTs=ps.length?Math.min(...ps.map(p=>+p.ts)):0,maxTs=ps.length?Math.max(...ps.map(p=>+p.ts)):1,span=Math.max(maxTs-minTs,1);
+ const x=ts=>L+(+ts-minTs)*(W-L-R)/span,y=price=>H-B-(+price-y0)/(y1-y0)*(H-T-B);
+ const pts=ps.map(p=>x(p.ts).toFixed(1)+','+y(p.price).toFixed(1)).join(' ');
+ const area=pts?L+','+(H-B)+' '+pts+' '+(W-R)+','+(H-B):'';
+ const ticks=[0,1,2,3,4].map(n=>{const yy=T+n*(H-T-B)/4,val=y1-n*(y1-y0)/4;return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'" class="dp-grid"/><text x="'+(L-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" class="dp-axis">'+fmtNum(val,2)+'</text>';}).join('');
+ const dates=ps.filter((_,i)=>i===0||i===ps.length-1||i%Math.max(1,Math.floor(ps.length/5))===0).map(p=>'<text x="'+x(p.ts).toFixed(1)+'" y="'+(H-18)+'" text-anchor="middle" class="dp-axis">'+esc(new Date(+p.ts*1000).toISOString().slice(11,16))+'</text>').join('');
+ const dots=(a.prints||[]).map((p,i)=>{const q=Number.isFinite(+p.price)?+p.price:+p.priceApprox;const yy=Number.isFinite(q)?y(q):(H-T)/2;const ts=Number.isFinite(+p.approxTs)?+p.approxTs:minTs+i*(span/Math.max(a.prints.length-1,1));const xx=x(ts);const rr=Math.max(4,Math.min(18,Math.sqrt(Math.max(+p.size||1000,1))/8));const c=p.side==='BUY'?'#34d399':p.side==='SELL'?'#f87171':'#facc15';return '<circle cx="'+xx.toFixed(1)+'" cy="'+yy.toFixed(1)+'" r="'+rr.toFixed(1)+'" fill="'+c+'" fill-opacity=".78" stroke="#e5e7eb" stroke-opacity=".45"><title>'+esc(selected)+' · '+esc(p.timestamp||'')+' · '+(p.side||'PRINT')+' · '+fmtNum(q,2)+' · '+(+p.size||0).toLocaleString('es-ES')+' sh · '+fmtCompactMoney(p.notional)+'</title></circle>';}).join('');
+ const sel=keys.map(k=>'<option value="'+esc(k)+'" '+(k===selected?'selected':'')+'>'+esc(k)+' · '+esc(instrumentName(k))+'</option>').join('');
+ const rows=(a.prints||[]).slice(0,100).map(p=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs '+(p.side==='BUY'?'text-emerald-300':p.side==='SELL'?'text-red-300':'text-yellow-300')+'">'+(p.side||'PRINT')+'</td><td class="py-2 px-2 text-xs text-gray-400">'+esc(p.timestamp||'—')+'</td><td class="py-2 px-2 text-xs text-right">'+fmtNum(p.price??p.priceApprox,2)+'</td><td class="py-2 px-2 text-xs text-right">'+(+p.size||0).toLocaleString('es-ES')+'</td><td class="py-2 px-2 text-xs text-right">'+fmtCompactMoney(p.notional)+'</td><td class="py-2 px-2 text-xs text-gray-500">'+esc(p.venue||'TRF')+'</td></tr>').join('');
+ const vc=(a.venueClusters||[]).map(v=>'<div class="grid grid-cols-[80px_1fr_95px] gap-2 items-center text-xs"><b class="text-white">'+esc(v.venue)+'</b><div class="h-2 bg-gray-900 rounded"><div class="h-full bg-blue-400/80 rounded" style="width:'+Math.min(100,(v.shares/Math.max(a.shareCount||1,1))*100)+'%"></div></div><span class="text-right text-gray-400">'+(+v.shares||0).toLocaleString('es-ES')+'</span></div>').join('');
+ const svg=ps.length?'<div class="dp-chart-wrap"><svg viewBox="0 0 '+W+' '+H+'" class="w-full h-[390px]">'+ticks+'<polygon points="'+area+'" fill="#60a5fa" fill-opacity=".10"/><polyline points="'+pts+'" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+dots+dates+'<text x="'+(W-R+8)+'" y="'+(T+4)+'" class="dp-axis">PRICE</text></svg></div>':'<div class="h-[390px] flex items-center justify-center text-gray-500">Sin serie intradía.</div>';
+ return '<section id="sec-darkpool" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex justify-between items-center gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">INSTITUTIONAL FLOW DESK</div><h2 class="text-xl font-black text-white">DARK POOLS · '+instrumentName(selected)+' · '+esc(selected)+'</h2><p class="text-sm text-gray-400 mt-1">Mapa tipo TradingView/Tradytics: precio, escala, hora, puntos de prints y concentración. Los BUY/SELL solo se muestran cuando la fuente aporta lado; de lo contrario se marca PRINT.</p></div><select onchange="window.__darkPoolTicker=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+sel+'</select></div><div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4"><div class="metric p-3"><span class="text-[9px] text-gray-500">PRECIO</span><b class="block text-lg">'+fmtNum(a.lastPrice,2)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">PRINTS</span><b class="block text-lg">'+(a.printCount||0)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">SHARES</span><b class="block text-lg">'+(+a.shareCount||0).toLocaleString('es-ES')+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">NOTIONAL</span><b class="block text-lg">'+fmtCompactMoney(a.notional)+'</b></div><div class="metric p-3"><span class="text-[9px] text-gray-500">OFF-EXCH</span><b class="block text-lg">'+(Number.isFinite(+dpx.offExchangePct)?(+dpx.offExchangePct).toFixed(1)+'%':'—')+'</b></div></div></div><div class="metric rounded-xl p-4">'+svg+'<div class="flex flex-wrap gap-4 text-[10px] mt-2"><span class="text-emerald-300">● BUY</span><span class="text-red-300">● SELL</span><span class="text-yellow-300">● PRINT / UNKNOWN</span><span class="text-gray-500">Punto = print; tamaño ≈ shares</span></div></div><div class="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4"><div class="metric rounded-xl p-4 overflow-x-auto"><div class="flex justify-between"><b class="text-sm text-white">PRINTS / EJECUCIONES VISIBLES</b><span class="mini-pill">TRF cuando fuente lo confirma</span></div><table class="w-full min-w-[760px] mt-2"><thead><tr class="border-b border-gray-800 text-[9px] text-gray-500 uppercase"><th class="text-left py-2 px-2">Lado</th><th class="text-left py-2 px-2">Hora</th><th class="text-right py-2 px-2">Precio</th><th class="text-right py-2 px-2">Shares</th><th class="text-right py-2 px-2">Notional</th><th class="text-left py-2 px-2">Venue</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="metric rounded-xl p-4"><b class="text-sm text-white">CONCENTRACIÓN POR VENUE</b><p class="text-[10px] text-gray-500 mt-1">No identifica comprador final. En proxies de índices se muestra el ETF, no el futuro.</p><div class="space-y-3 mt-4">'+(vc||'—')+'</div><p class="text-[9px] text-amber-300 mt-4">'+esc(a.note||'Los datos gratuitos pueden tener retraso.')+'</p></div></div></section>';
+}
+
+function renderRotationSection(){
+ const r=macroDatabase.__rotation||{sectors:[],styles:[],sentimentTraditional:{}};
+ const rows=(r.sectors||[]).map(x=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs font-semibold text-white">'+esc(x.name)+' <span class="text-[9px] text-gray-500">'+esc(x.symbol)+'</span></td><td class="text-xs text-white">'+fmtNum(x.last,2)+'</td><td class="text-xs '+(x.change1d>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1d)+'</td><td class="text-xs '+(x.change1w>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1w)+'</td><td class="text-xs '+(x.change1m>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1m)+'</td><td class="text-xs font-bold '+(x.changeYtd>=0?'risk-up':'risk-down')+'">'+fmtPct(x.changeYtd)+'</td><td class="text-xs '+(x.vsSpy1w>=0?'risk-up':'risk-down')+'">'+fmtPct(x.vsSpy1w)+'</td></tr>').join('');
+ const styles=(r.styles||[]).map(x=>'<div class="metric rounded-xl p-3"><div class="text-xs font-semibold text-white">'+esc(x.name)+'</div><div class="text-xs mt-2 '+(x.change1w>=0?'risk-up':'risk-down')+'">1S relativo: '+fmtPct(x.change1w)+'</div><div class="text-[10px] text-gray-500 mt-1">1D '+fmtPct(x.change1d)+' · 1M '+fmtPct(x.change1m)+' · YTD relativo '+fmtPct(x.changeYtd)+'</div></div>').join('');
+ return '<section id="sec-rotation" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Bolsa y rotación</div><h2 class="text-xl font-black text-white mt-1">MERCADOS & ROTACIÓN</h2><p class="text-sm text-gray-400 mt-1">Rendimiento sectorial con 1D, 1S, 1M y desde inicio de año (YTD). El YTD parte del primer cierre disponible del año natural.</p></div><span class="mini-pill">'+esc(r.updated||'—')+'</span></div></div><div class="glass rounded-2xl p-4 overflow-x-auto"><table class="w-full min-w-[850px]"><thead><tr class="text-[10px] text-gray-500 uppercase"><th class="text-left py-2 px-2">Sector / ticker</th><th>Precio</th><th>1D</th><th>1S</th><th>1M</th><th>YTD</th><th>vs SPY · 1S</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">'+styles+'</div></section>';
+}
+
+function renderCryptoBondSection(){
+ const fg=macroDatabase.__traditionalFearGreed||{}, aaii=macroDatabase.__traditionalSentiment||{}, c=macroDatabase.__cryptoSentiment||{}, b=macroDatabase.__bondMarket||{markets:[]}, crypto=c.fearGreed||{};
+ const score=Number(fg.score), angle=Number.isFinite(score)?-90+score*1.8:-90, hist=(fg.history||[]).slice(-60);
+ const histBars=hist.map(x=>'<div title="'+esc(x.date)+' · '+fmtNum(x.value,0)+'" class="bg-gradient-to-t from-red-500 via-amber-400 to-emerald-400" style="height:'+Math.max(4,Number(x.value)||0)+'%;flex:1;border-radius:2px 2px 0 0"></div>').join('');
+ const bar=(name,value,previous,colour)=>'<div class="space-y-1.5"><div class="flex justify-between text-[11px]"><span class="text-gray-300">'+name+'</span><b class="'+colour+'">'+fmtPct(value,1)+'</b></div><div class="h-3 bg-slate-800 rounded-full overflow-hidden"><div class="h-full '+colour.replace('text-','bg-')+'" style="width:'+Math.max(0,Math.min(100,Number(value)||0))+'%"></div></div><div class="text-[9px] text-gray-500">Semana anterior: '+fmtPct(previous,1)+'</div></div>';
+ const btcHist=(c.btcHistory||[]).filter(x=>Number.isFinite(Number(x.price))), prices=btcHist.map(x=>Number(x.price)), low=prices.length?Math.min(...prices):0, high=prices.length?Math.max(...prices):1, mid=(low+high)/2;
+ const X=56,W=792,T=38,B=232,H=B-T,x=i=>X+i*W/Math.max(btcHist.length-1,1),yb=p=>B-(Number(p)-low)/Math.max(high-low,1)*H,yf=v=>B-Number(v)/100*H;
+ const btcPts=btcHist.map((q,i)=>x(i).toFixed(1)+','+yb(q.price).toFixed(1)).join(' ');
+ const lastFg=btcHist.reduce((acc,q,i)=>Number.isFinite(Number(q.fearGreed))?i:acc,-1);
+ const fgPts=btcHist.map((q,i)=>i<=lastFg&&Number.isFinite(Number(q.fearGreed))?x(i).toFixed(1)+','+yf(q.fearGreed).toFixed(1):null).filter(Boolean).join(' ');
+ const dots=btcHist.map((q,i)=>Number.isFinite(Number(q.fearGreed))?'<circle cx="'+x(i).toFixed(1)+'" cy="'+yf(q.fearGreed).toFixed(1)+'" r="2" fill="#fff" stroke="#f59e0b"><title>'+esc(q.date)+' · BTC $'+fmtNum(q.price,0)+' · F&G '+fmtNum(q.fearGreed,0)+'</title></circle>':'').join('');
+ const dates=btcHist.filter((_,i)=>i===0||i===btcHist.length-1||i%Math.max(1,Math.floor(btcHist.length/4))===0).map(q=>{const i=btcHist.indexOf(q);return '<text x="'+x(i).toFixed(0)+'" y="255" text-anchor="middle" fill="#94a3b8" font-size="9">'+esc(String(q.date||'').slice(5).replace('-','/'))+'</text>';}).join('');
+ const cryptoReturns=[['BTC',c.btc],['ETH',c.eth]].filter(x=>x[1]).map(([name,q])=>'<div class="metric rounded-xl p-3"><b class="text-xs text-white">'+name+'</b><div class="text-xs mt-2">1D <span class="'+(q.change1d>=0?'risk-up':'risk-down')+'">'+fmtPct(q.change1d)+'</span> · 1S <span class="'+(q.change1w>=0?'risk-up':'risk-down')+'">'+fmtPct(q.change1w)+'</span> · 1M <span class="'+(q.change1m>=0?'risk-up':'risk-down')+'">'+fmtPct(q.change1m)+'</span></div></div>').join('');
+ const bonds=(b.markets||[]).map(q=>'<div class="metric rounded-xl p-3"><b class="text-xs text-white">'+esc(q.name)+'</b><div class="text-[10px] mt-2">1D '+fmtPct(q.change1d)+' · 1S '+fmtPct(q.change1w)+' · 1M '+fmtPct(q.change1m)+'</div></div>').join('');
+ return '<section id="sec-sentiment" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">MERCADO TRADICIONAL</div><h2 class="text-xl font-black text-white mt-1">SENTIMIENTO · FEAR & GREED</h2><p class="text-sm text-gray-400 mt-1">CNN Fear & Greed y AAII son dos lecturas complementarias del mismo mercado; no son el mismo indicador.</p></div><span class="mini-pill">'+esc(fg.sourceStatus||fg.updated||'—')+'</span></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5"><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">CNN FEAR & GREED INDEX</div><b class="text-white text-sm">Régimen de sentimiento</b></div><span class="mini-pill">REAL / DAILY</span></div><div class="relative mt-4"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg)"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><b class="text-3xl text-white">'+(Number.isFinite(score)?score.toFixed(0):'—')+'</b><div class="text-xs text-gray-400 uppercase">'+esc(fg.rating||'—')+'</div></div></div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]"><div>Ahora<br><b>'+fmtNum(fg.score,0)+'</b></div><div>Ayer<br><b>'+fmtNum(fg.previous_close,0)+'</b></div><div>1 semana<br><b>'+fmtNum(fg.previous_1_week,0)+'</b></div><div>1 mes<br><b>'+fmtNum(fg.previous_1_month,0)+'</b></div></div><div class="mt-4 h-16 flex items-end gap-[2px]">'+histBars+'</div><p class="text-[9px] text-gray-500 mt-1">0–24 Extreme Fear · 25–44 Fear · 45–55 Neutral · 56–74 Greed · 75–100 Extreme Greed.</p></div><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">AAII · ENCUESTA SEMANAL</div><b class="text-white text-sm">Alcistas / neutrales / bajistas</b></div><span class="mini-pill">REAL / WEEKLY</span></div><div class="space-y-5 mt-5">'+bar('Alcistas',aaii.bullishPct,aaii.previousBullishPct,'text-emerald-400')+bar('Neutrales',aaii.neutralPct,aaii.previousNeutralPct,'text-amber-400')+bar('Bajistas',aaii.bearishPct,aaii.previousBearishPct,'text-red-400')+'</div><div class="grid grid-cols-2 gap-3 mt-5"><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ALCISTAS − BAJISTAS</div><b class="'+(Number(aaii.bullBearSpread)>=0?'text-emerald-300':'text-red-300')+'">'+fmtPct(aaii.bullBearSpread,1)+'</b></div><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ÚLTIMA ENCUESTA</div><b>'+esc(aaii.week||aaii.updated||'—')+'</b></div></div></div></div></div><div class="glass rounded-2xl p-5"><div class="flex flex-wrap justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">CRYPTO · COINMARKETCAP</div><h2 class="text-xl font-black text-white mt-1">CRYPTO FEAR & GREED · BTC</h2><p class="text-sm text-gray-400 mt-1">BTC/USD (eje izquierdo) y Fear & Greed 0–100 (eje derecho), sincronizados por fecha.</p></div><div class="metric rounded-xl px-4 py-3"><div class="text-[9px] text-gray-500">ÍNDICE ACTUAL</div><b class="text-2xl text-white">'+(crypto.value??'—')+'</b><span class="ml-2 text-sm">'+esc(crypto.classification||'—')+'</span><div class="text-[9px] text-gray-500">Anterior '+(crypto.previous??'—')+'</div></div></div><div class="metric rounded-xl p-4 mt-4"><div class="flex justify-between text-[10px] text-gray-500"><span>BTC / USD</span><span>FEAR & GREED · 0–100</span></div><svg viewBox="0 0 980 265" class="w-full h-[290px] mt-2" role="img" aria-label="BTC USD y CoinMarketCap Fear Greed por fecha"><rect x="56" y="38" width="792" height="48" fill="#22c55e" opacity=".12"/><rect x="56" y="86" width="792" height="49" fill="#84cc16" opacity=".11"/><rect x="56" y="135" width="792" height="48" fill="#f59e0b" opacity=".11"/><rect x="56" y="183" width="792" height="49" fill="#ef4444" opacity=".12"/><path d="M56 38H848M56 86H848M56 135H848M56 183H848M56 232H848" stroke="#475569" stroke-dasharray="3 4"/><path d="M56 38V232M848 38V232" stroke="#64748b"/><text x="2" y="42" fill="#60a5fa" font-size="10">$'+fmtNum(high,0)+'</text><text x="2" y="139" fill="#60a5fa" font-size="10">$'+fmtNum(mid,0)+'</text><text x="2" y="236" fill="#60a5fa" font-size="10">$'+fmtNum(low,0)+'</text><text x="855" y="42" fill="#34d399" font-size="10">100 Extreme Greed</text><text x="855" y="90" fill="#a3e635" font-size="10">75 Greed</text><text x="855" y="139" fill="#fbbf24" font-size="10">50</text><text x="855" y="187" fill="#fb923c" font-size="10">25 Fear</text><text x="855" y="236" fill="#f87171" font-size="10">0 Extreme Fear</text><polyline points="'+btcPts+'" fill="none" stroke="#60a5fa" stroke-width="3.2"/><polyline points="'+fgPts+'" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6 4"/>'+dots+dates+'</svg><div class="flex flex-wrap gap-x-5 gap-y-1 text-[10px] mt-2"><span class="text-blue-300">● BTC / USD · eje izquierdo</span><span class="text-amber-300">● Fear & Greed · eje derecho</span><span class="text-gray-500">Fondos: Extreme Greed → Extreme Fear</span></div></div><div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">'+cryptoReturns+'</div></div><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA FIJA · ETF MARKET RETURN</div><h2 class="text-xl font-black text-white mt-1">BONOS · RETORNO DE MERCADO</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">'+bonds+'</div></div></section>';
+}
+        function renderGlobalMarkets(){
+ const g=macroDatabase.__globalMarkets||{regions:{},updated:'—'},regions=g.regions||{};
+ const regionBlock=(name)=>{const arr=regions[name]||[];return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between mb-3"><b class="text-sm text-white">'+name+'</b><span class="mini-pill">1D · 1S · 1M · YTD</span></div><div class="overflow-x-auto"><table class="w-full min-w-[620px]"><thead><tr class="text-[9px] text-gray-500 uppercase border-b border-gray-800"><th class="text-left py-2">Índice</th><th>Precio</th><th>1D</th><th>1S</th><th>1M</th><th>YTD</th></tr></thead><tbody>'+arr.map(x=>'<tr class="border-b border-gray-900/70"><td class="py-2 text-xs font-semibold text-white">'+esc(x.name)+'</td><td class="text-xs text-right">'+fmtNum(x.last,2)+'</td><td class="text-xs text-right '+(x.change1d>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1d)+'</td><td class="text-xs text-right '+(x.change1w>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1w)+'</td><td class="text-xs text-right '+(x.change1m>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1m)+'</td><td class="text-xs text-right font-bold '+(x.changeYtd>=0?'risk-up':'risk-down')+'">'+fmtPct(x.changeYtd)+'</td></tr>').join('')+'</tbody></table></div></div>';};
+ return '<section id="sec-global-markets" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA VARIABLE GLOBAL</div><h2 class="text-xl font-black text-white mt-1">ASIA + EUROPA · MAPA DE MERCADOS</h2><p class="text-sm text-gray-400 mt-1">Cinco referencias por región para detectar divergencias y amplitud geográfica. Es un monitor de contexto, no sustituye el gráfico de TradingView.</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+regionBlock('ASIA')+regionBlock('EUROPA')+'</div><div class="text-[9px] text-gray-600">Fuente: Yahoo Finance pública. YTD = variación desde el primer cierre disponible del año natural. Los índices regionales son referencias de mercado, no una medida directa de flujos de capital.</div></section>';
+}
+
+function renderGlobalView(){
+            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>{
+                const score=macroInterpretation(d).score;
+                return {d,score,bias:policyBias(score),expect:expectationLabel(d)};
+            });
+            const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
+            const avgBias=policyBias(avg);
+            return `<section id="sec-resumen" class="space-y-5">
+                <div class="glass rounded-2xl p-5">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Monitor Macro Global</div>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1">Panel Global</h2>
+                            <p class="text-sm text-gray-400 mt-1 max-w-5xl">Todo el contexto global está aquí: Risk On/Off, sentimiento tradicional y cripto, divisas/carry, COT, opciones, Dark Pools y rotación. Las economías se abren desde el lateral.</p>
+                        </div>
+                        <div class="metric rounded-xl px-4 py-3 min-w-[235px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo monetario agregado</div><div class="text-lg font-black ${avgBias.cls} mt-1">${avgBias.icon} ${avgBias.label}</div><div class="text-[10px] text-gray-500 mt-1">No es una etiqueta de bolsa alcista/bajista.</div></div>
+                    </div>
+                </div>
+                <div class="metric rounded-xl p-4">
+                    <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Leyenda · sesgo de política monetaria</div>
+                    <div class="flex flex-wrap gap-2 text-[10px]">
+                        <span class="mini-pill">↑↑ Claramente restrictivo · mayor presión para subir o mantener tipos altos</span>
+                        <span class="mini-pill">↑ Moderadamente restrictivo · presión hacia tipos más altos</span>
+                        <span class="mini-pill">→ Mixto / neutral · señales enfrentadas o sin dirección clara</span>
+                        <span class="mini-pill">↓ Moderadamente acomodaticio · presión hacia recortes</span>
+                        <span class="mini-pill">↓↓ Claramente acomodaticio · mayor presión hacia recortes</span>
+                    </div>
+                    <div class="text-[10px] text-gray-500 mt-2">Debajo de cada economía se separa este sesgo estructural del pricing de la próxima reunión: subida, mantener o bajada.</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    ${entries.map(({d,bias,expect})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
+                        <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-xs font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
+                        <div class="mt-3 space-y-2">
+                            <div class="mini-pill w-fit">Postura actual: ${esc(d.rates?.postureText||'Sin clasificar')}</div>
+                            <div class="text-xs ${expect.cls}">Próxima reunión: ${expect.label}</div>
+                        </div>
+                        <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official||'—')} · 2Y ${fmtNum((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield,2)} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div>
+                    </button>`).join('')}
+                </div>
+            </section>${renderRiskOnOff()}${renderFxComparator()}${renderGlobalMarkets()}${renderCotSection()}${renderOptionsSection()}${renderDarkPoolSection()}${renderRotationSection()}${renderCryptoBondSection()}`;
+        }
+        function renderContent() {
+            renderTopTabs();
+            const container = document.getElementById('mainDashboard');
+            if(currentCountryKey==='__global'){
+                document.getElementById('countryTitle').innerHTML='🌐 Monitor Macro Global';
+                document.getElementById('countrySubtitle').textContent='Régimen intermercado, divisas, carry, posicionamiento, opciones y actividad fuera de mercado.';
+                container.innerHTML=renderGlobalView();
+                return;
+            }
+            const data = macroDatabase[currentCountryKey];
+            document.getElementById('countryTitle').innerHTML = `${data.flag||'🌎'} Monitor ${esc(data.name||data.id||'Economía')}`;
+            document.getElementById('countrySubtitle').textContent = data.subtitle || 'Política monetaria, curva e indicadores macro.';
+
+            const expHtml = (data.rates?.expectations||[]).map(e => `\n                <div class="flex items-center justify-between py-1.5 border-b border-gray-900/80">\n                    <span class="text-xs text-gray-400">${esc(e.label)}</span>\n                    <span class="text-xs font-bold text-white">${esc(e.value)}</span>\n                </div>`).join('');
+            const keyPointsHtml = (data.conference?.keyPoints||[]).map(x => `<li class="text-xs md:text-sm text-gray-300 flex gap-2"><span class="text-blue-400">•</span><span>${esc(x)}</span></li>`).join('');
+            const watchFactorsHtml = (data.conference?.watchFactors||[]).map(x => `<li class="text-xs text-gray-300 flex gap-2"><span class="text-green-400">•</span><span>${esc(x)}</span></li>`).join('');
+            const bondOrder=['3M','1Y','2Y','5Y','10Y','20Y','30Y'];
+            const bondMap=Object.fromEntries((data.bonds?.tenors||[]).map(x=>[x.term,x]));
+            const pctCell=(v)=>Number.isFinite(Number(v))?((Number(v)>=0?'+':'')+Number(v).toFixed(2)+'%'):'—';
+            const tenorsHtml=bondOrder.map(term=>{const y=bondMap[term];const n=parseFloat(String(y?.yield??'').replace('%','').replace(',','.'));const val=Number.isFinite(n)?n.toFixed(2)+'%':'N/D';return `<div class="metric p-3 rounded-xl"><div class="flex justify-between"><div class="text-[10px] text-gray-500">${term}</div><div class="text-sm font-black text-white">${val}</div></div><div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span>1D <b>${pctCell(y?.change1d)}</b></span><span>1S <b>${pctCell(y?.change1w)}</b></span><span>1M <b>${pctCell(y?.change1m)}</b></span></div></div>`}).join('');
+            const spreadsHtml = (data.bonds?.spreads||[]).map(s => `<div class="metric p-4 rounded-xl"><div class="text-xs font-semibold text-gray-400">${esc(s.label)}</div><div class="text-xl font-black text-white mt-1">${esc(s.value)}</div><div class="text-[10px] text-gray-600 mt-1">${esc(s.desc||'')}</div></div>`).join('');
+            const indicatorsHtml = (data.indicators||[]).map(ind => `<tr class="border-b border-gray-900/70 row-hover"><td class="py-3 px-3 text-xs text-gray-500">${esc(ind.cat||'')}</td><td class="py-3 px-3 text-xs font-semibold text-gray-200">${esc(ind.name||'')}</td><td class="py-3 px-3 text-xs text-white">${esc(ind.actual||'')}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(ind.est||'')}</td><td class="py-3 px-3 text-xs ${parseNum(ind.surprise)<0?'effect-dovish':parseNum(ind.surprise)>0?'effect-hawkish':'effect-neutral'}">${esc(ind.surprise||'—')}</td><td class="py-3 px-3 text-xs">${effectForIndicator(ind)}</td><td class="py-3 px-3 text-xs text-gray-500">${esc(ind.date||'')}</td><td class="py-3 px-3 text-xs text-amber-300">${esc(ind.imp||'')}</td></tr>`).join('');
+
+            const mNow = macroInterpretation(data);
+            const interpretationPanelHtml = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="metric rounded-xl p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="text-[10px] uppercase tracking-wider text-gray-500">Política monetaria</div>
+                            <span class="mini-pill">Confianza ${mNow.confidence}/100</span>
+                        </div>
+                        <div class="text-lg font-black ${mNow.score>0.9?'bias-up':mNow.score<-0.9?'bias-down':'bias-flat'} mt-1">${esc(mNow.label)}</div>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="score-chip">Banco central ${mNow.central>0?'↑':mNow.central<0?'↓':'→'}</span>
+                            <span class="score-chip">Inflación ${mNow.groups.inflation>0?'↑':mNow.groups.inflation<0?'↓':'→'}</span>
+                            <span class="score-chip">Empleo ${mNow.groups.employment>0?'↑':mNow.groups.employment<0?'↓':'→'}</span>
+                            <span class="score-chip">Crecimiento ${mNow.groups.growth>0?'↑':mNow.groups.growth<0?'↓':'→'}</span>
+                        </div>
+                        <div class="text-[10px] text-gray-600 mt-2">No convierte automáticamente un dato económico fuerte en una compra de divisa.</div>
+                    </div>
+                    <div class="metric rounded-xl p-4">
+                        <div class="text-[10px] uppercase tracking-wider text-gray-500">Expectativas de tipos</div>
+                        <div class="text-lg font-black ${mNow.exp>0.08?'effect-hawkish':mNow.exp<-0.08?'effect-dovish':'effect-neutral'} mt-1">${mNow.exp>0.08?'Más presión alcista ↑':mNow.exp<-0.08?'Más presión bajista ↓':'Sin señal clara →'}</div>
+                        <div class="text-xs text-gray-500 mt-1">Se usa la distribución de subidas/bajadas como señal de pricing, no como verdad absoluta.</div>
+                    </div>
+                    <div class="metric rounded-xl p-4">
+                        <div class="text-[10px] uppercase tracking-wider text-gray-500">Confirmación mercado</div>
+                        <div class="text-lg font-black ${mNow.bond>0.12?'effect-hawkish':mNow.bond<-0.12?'effect-dovish':'effect-neutral'} mt-1">2Y ${mNow.bond>0.12?'apoya ↑':mNow.bond<-0.12?'apoya ↓':'sin confirmación →'}</div>
+                        <div class="text-xs text-gray-500 mt-1">El 2Y es la referencia del tramo que más refleja expectativas sobre la política de tipos en los próximos ~1–2 años. Si sube con una lectura restrictiva, confirma; si cae, el mercado puede estar descontando menos endurecimiento. Es confirmación, no señal aislada.</div>
+                    </div>
+                </div>
+
+                <div class="card p-6 rounded-2xl shadow-xl">
+                    <div class="flex items-center justify-between mb-4 gap-3">
+                        <div>
+                            <h2 class="text-lg font-bold text-white">Por qué sale este sesgo</h2>
+                            <p class="text-xs text-gray-500 mt-1">Separa lo que empuja hacia más tipos de lo que empuja hacia menos tipos.</p>
+                        </div>
+                        ${mNow.confidence<55?'<span class="mini-pill">Lectura de baja convicción</span>':mNow.confidence<70?'<span class="mini-pill">Lectura de convicción media</span>':'<span class="mini-pill">Lectura relativamente consistente</span>'}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="metric rounded-xl p-4">
+                            <div class="text-[10px] uppercase tracking-wider text-gray-500">A favor de una política más dura</div>
+                            <div class="space-y-2 mt-3">
+                                ${(mNow.positives.length?mNow.positives.map(x=>`<div class="flex justify-between gap-3 text-xs"><span class="text-gray-300">${esc(x.name)}</span><span class="effect-hawkish font-semibold">${x.score>1?'fuerte':'moderado'}</span></div>`).join(''):'<div class="text-xs text-gray-600">Sin contribuciones relevantes.</div>')}
+                            </div>
+                        </div>
+                        <div class="metric rounded-xl p-4">
+                            <div class="text-[10px] uppercase tracking-wider text-gray-500">A favor de una política más suave</div>
+                            <div class="space-y-2 mt-3">
+                                ${(mNow.negatives.length?mNow.negatives.map(x=>`<div class="flex justify-between gap-3 text-xs"><span class="text-gray-300">${esc(x.name)}</span><span class="effect-dovish font-semibold">${x.score<-1?'fuerte':'moderado'}</span></div>`).join(''):'<div class="text-xs text-gray-600">Sin contribuciones relevantes.</div>')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-xl border border-gray-800 bg-gray-950/40 text-xs text-gray-400">
+                        ${mNow.conflict>0.28?'Hay señales importantes enfrentadas. Por eso el sistema reduce la confianza y evita una lectura extrema.':'Las señales principales están relativamente alineadas, aunque siguen siendo una lectura de régimen y no una señal de entrada.'}
+                    </div>
+                </div>
+
+                <div class="card p-6 rounded-2xl shadow-xl">
+                    <div class="text-[10px] uppercase tracking-wider text-gray-500">Sesgo de divisa</div>
+                    <div class="text-lg font-black mt-1 ${mNow.score>0.9?'bias-up':mNow.score<-0.9?'bias-down':'bias-flat'}">${mNow.label}</div>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">Esta etiqueta describe el régimen monetario doméstico. Para convertirla en un verdadero sesgo de divisa hay que compararla contra el régimen de la otra moneda del cruce.</p>
+                </div>
+            `;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="sec-tipos">
+                    <div class="card p-5 rounded-2xl shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-percent text-blue-500"></i> Tipos de Interés
+                                </h2>
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-md ${data.rates.postureBadge}">
+                                    ${data.rates.postureText}
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800">
+                                    <div class="text-[11px] text-gray-400">Tipo oficial</div>
+                                    <div class="text-2xl font-black text-white mt-0.5">${data.rates.official}</div>
+                                </div>
+                                <div class="bg-gray-900/80 p-3 rounded-xl border border-gray-800">
+                                    <div class="text-[11px] text-gray-400">Tipo real</div>
+                                    <div class="text-2xl font-black text-white mt-0.5">${data.rates.real}</div>
+                                </div>
+                            </div>
+                            <div class="text-xs font-medium text-gray-400 mb-2">
+                                Probabilidades próxima reunión (${data.rates.nextMeeting})
+                            </div>
+                            <div class="space-y-0.5">${expHtml}</div>
+                        </div>
+                    </div>
+
+                    <div class="card p-5 rounded-2xl shadow-xl lg:col-span-2">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-align-left text-blue-500"></i> Resumen General de la Decisión
+                            </h2>
+                            <span class="text-xs font-semibold px-3 py-1 rounded-md ${data.conference.toneBadge}">
+                                ${data.conference.tone}
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span class="mini-pill">3 reuniones</span>
+                            <span class="mini-pill">${data.sourceStatus || 'Estructura preparada para sincronización'}</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-blue-400 mb-2">${data.conference.title}</h3>
+                        <p class="text-xs md:text-sm text-gray-300 leading-relaxed bg-gray-950/40 p-3.5 rounded-xl border border-gray-800/80">
+                            ${data.conference.summary}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card p-6 rounded-2xl shadow-xl space-y-6" id="sec-conferencia">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-blue-500"></i> Últimas Reuniones y Desglose de Rueda de Prensa (${data.conference.date})
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        ${renderMeetingHistory(data)}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="metric rounded-xl p-4">
+                            <div class="text-[10px] uppercase tracking-wider text-gray-500">Lectura para divisa</div>
+                            <div class="text-lg font-black ${biasClass(macroInterpretation(data).score)} mt-1">${dirIcon(macroInterpretation(data).score)} ${macroInterpretation(data).label}</div>
+                            <div class="text-xs text-gray-500 mt-1">Separa política monetaria y divisa; la divisa debe compararse contra su contraparte.</div>
+                        </div>
+                        <div class="metric rounded-xl p-4">
+                            <div class="text-[10px] uppercase tracking-wider text-gray-500">Qué puede cambiar el sesgo</div>
+                            <div class="text-sm font-bold text-white mt-1">${esc((data.conference.watchFactors||[])[0] || 'Nuevos datos macro')}</div>
+                            <div class="text-xs text-gray-500 mt-1">El siguiente dato relevante debe evaluarse frente a la función de reacción del banco central.</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-key text-amber-400"></i> Los 4 Puntos Clave
+                            </h3>
+                            <ul class="space-y-2.5 bg-gray-950/50 p-4 rounded-xl border border-gray-800/80">
+                                ${keyPointsHtml}
+                            </ul>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-2">
+                                    <i class="fa-solid fa-gauge-high text-blue-400"></i> El Tono del Banco Central
+                                </h3>
+                                <p class="text-xs md:text-sm text-gray-300 bg-gray-950/50 p-3.5 rounded-xl border border-gray-800/80 leading-relaxed">
+                                    ${data.conference.toneDescription}
+                                </p>
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-2">
+                                    <i class="fa-solid fa-eye text-green-400"></i> Factores a Monitorear (Próximos Gatillos)
+                                </h3>
+                                <ul class="space-y-2 bg-gray-950/50 p-3.5 rounded-xl border border-gray-800/80">
+                                    ${watchFactorsHtml}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${interpretationPanelHtml}
+
+                <div class="card p-6 rounded-2xl shadow-xl" id="sec-bonos">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-blue-500"></i> Curva de Bonos Sovereign
+                            </h2>
+                            <p class="text-xs text-gray-400 mt-1">${data.bonds.shapeDesc}</p>
+                        </div>
+                        <span class="text-xs bg-blue-950 text-blue-300 border border-blue-800 px-3 py-1 rounded-full w-fit font-semibold">
+                            ${data.bonds.shape}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3 mb-6">
+                        ${tenorsHtml}
+                    </div>
+                    <div class="mb-6">
+                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Gráfico de la curva</div>
+                        ${renderCurveChart(data)}
+                    </div>
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Análisis de Spreads Clave</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${spreadsHtml}
+                    </div>
+                </div>
+
+                <div class="card p-6 rounded-2xl shadow-xl" id="sec-indicadores">
+                    <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-500"></i> Catálogo de Indicadores Macroeconómicos
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wider">
+                                    <th class="py-3 px-3">Categoría</th>
+                                    <th class="py-3 px-3">Indicador</th>
+                                    <th class="py-3 px-3">Último</th>
+                                    <th class="py-3 px-3">Estimado</th>
+                                    <th class="py-3 px-3">Sorpresa</th>
+                                    <th class="py-3 px-3">Efecto tipos</th>
+                                    <th class="py-3 px-3">Fecha</th>
+                                    <th class="py-3 px-3">Imp.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${indicatorsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] text-gray-500">
+                        <span>Última actualización visible: ${esc(data.updated || 'Datos de referencia')} · Interpretación automática basada en datos disponibles</span>
+                        <span>Fuente: <a class="source-link" href="${esc(data.sourceUrl || '#')}" target="_blank" rel="noopener">${esc(data.sourceName || 'fuente oficial')}</a></span>
+                    </div>
+            </div>
+            `;
+        }
+
+        function scrollToSection(id) {
+            const el=document.getElementById(id), scroller=document.querySelector('main');
+            if(!el) return;
+            if(!scroller){el.scrollIntoView({behavior:'smooth'});return;}
+            const top=el.getBoundingClientRect().top-scroller.getBoundingClientRect().top+scroller.scrollTop-70;
+            scroller.scrollTo({top,behavior:'smooth'});
+        }
+
+        // El archivo macro-feed.json debe permanecer en la misma carpeta que este HTML.
+        // En HTTP/HTTPS se recarga al abrir y cada 15 min; en file:// se usa el respaldo interno.
+                async function loadExternalFeed(){
+            if(!['http:','https:'].includes(location.protocol)){
+                setFeedStatus('Modo local · usando datos integrados', false);
+                return false;
+            }
+            try{
+                const res=await fetch('./macro-feed.json?ts='+Date.now(), {cache:'no-store'});
+                if(!res.ok) throw new Error('feed no disponible');
+                const feed=await res.json();
+                if(feed && feed.economies){
+                    Object.entries(feed.economies).forEach(([k,v])=>{
+                        if(!macroDatabase[k]) macroDatabase[k]={};
+                        macroDatabase[k]={...macroDatabase[k],...v};
+                        if(v.rates) macroDatabase[k].rates={...macroDatabase[k].rates,...v.rates};
+                        if(v.conference) macroDatabase[k].conference={...macroDatabase[k].conference,...v.conference};
+                        if(v.bonds) macroDatabase[k].bonds={...macroDatabase[k].bonds,...v.bonds};
+                        if(Array.isArray(v.indicators) && v.indicators.length) macroDatabase[k].indicators=v.indicators;
+                    });
+                    if(feed.riskOnOff) macroDatabase.__riskOnOff = feed.riskOnOff;
+                    if(feed.cot) macroDatabase.__cot = feed.cot;
+                    if(feed.options) macroDatabase.__options = feed.options;
+                    if(feed.fx) macroDatabase.__fx = feed.fx;
+                    if(feed.darkPools) macroDatabase.__darkPools = feed.darkPools;
+                    if(feed.darkPoolPrints) macroDatabase.__darkPoolPrints = feed.darkPoolPrints;
+                    if(feed.darkFlowRadar) macroDatabase.__darkFlowRadar = feed.darkFlowRadar;
+                    if(feed.squawkFlow) macroDatabase.__squawkFlow = feed.squawkFlow;
+                    if(feed.traditionalSentiment) macroDatabase.__traditionalSentiment = feed.traditionalSentiment;
+                    if(feed.traditionalFearGreed) macroDatabase.__traditionalFearGreed = feed.traditionalFearGreed;
+                    if(feed.optionsStats) macroDatabase.__optionsStats = feed.optionsStats;
+                    if(feed.rotation) macroDatabase.__rotation = feed.rotation;
+                    if(feed.cryptoSentiment) macroDatabase.__cryptoSentiment = feed.cryptoSentiment;
+                    if(feed.bondMarket) macroDatabase.__bondMarket = feed.bondMarket;
+                    setFeedStatus('Feed externo sincronizado', true);
+                    renderSidebar();
+                    renderContent();
+                    return true;
+                }
+            }catch(e){
+                setFeedStatus('Feed externo no disponible · usando respaldo local', false);
+            }
+            return false;
+        }
+
+        function setFeedStatus(text, ok){
+            const s=document.getElementById('feedStatus');
+            const d=document.getElementById('feedDot');
+            if(s) s.textContent=text;
+            if(d) d.className='w-2 h-2 rounded-full '+(ok?'bg-green-500':'bg-yellow-500');
+        }
+
+        function manualRefresh(){
+            setFeedStatus('Buscando feed…', false);
+            loadExternalFeed();
+        }
+
+        macroDatabase.__riskOnOff = macroDatabase.__riskOnOff || {label:'SIN SINCRONIZAR',score:null,confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
+        macroDatabase.__cot = macroDatabase.__cot || {updated:'—',markets:[]};
+        macroDatabase.__options = macroDatabase.__options || {updated:'—',markets:[]};
+        macroDatabase.__fx = macroDatabase.__fx || {updated:'—',currencies:{}};
+        macroDatabase.__darkPools = macroDatabase.__darkPools || {updated:'—',markets:[],history:{}};
+        macroDatabase.__darkPoolPrints = macroDatabase.__darkPoolPrints || {updated:'—',prints:[]};
+        macroDatabase.__darkFlowRadar = macroDatabase.__darkFlowRadar || {};
+        macroDatabase.__squawkFlow = macroDatabase.__squawkFlow || {};
+        macroDatabase.__rotation = macroDatabase.__rotation || {updated:'—',sectors:[],styles:[],sentimentTraditional:{}};
+        macroDatabase.__cryptoSentiment = macroDatabase.__cryptoSentiment || {};
+        macroDatabase.__bondMarket = macroDatabase.__bondMarket || {markets:[]};
+        macroDatabase.__traditionalSentiment = macroDatabase.__traditionalSentiment || {};
+        macroDatabase.__traditionalFearGreed = macroDatabase.__traditionalFearGreed || {};
+        macroDatabase.__optionsStats = macroDatabase.__optionsStats || {};
+
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            renderSidebar();
+            renderContent();
+            setTimeout(loadExternalFeed, 200);
+            setInterval(loadExternalFeed, 15*60*1000);
+        });
+    </script>
+
+</body>
+</html>
