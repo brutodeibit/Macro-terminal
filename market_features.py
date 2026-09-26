@@ -75,26 +75,28 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  co=sum(float(x.get("openInterest",0) or 0) for x in calls); po=sum(float(x.get("openInterest",0) or 0) for x in puts)
  cv=sum(float(x.get("volume",0) or 0) for x in calls); pv=sum(float(x.get("volume",0) or 0) for x in puts)
  gp=_option_gex(calls,puts,spot)
- atm_calls=sorted(calls,key=lambda x:abs(float(x.get("strike") or 0)-spot))[:3]
- atm_puts=sorted(puts,key=lambda x:abs(float(x.get("strike") or 0)-spot))[:3]
- ivs=[float(x.get("iv") or 0) for x in (atm_calls[:1]+atm_puts[:1]) if float(x.get("iv") or 0)>0]
+ total_oi=co+po
+ above_oi=sum(float(x.get("openInterest",0) or 0) for x in rows if float(x.get("strike") or 0)>spot)
+ below_oi=sum(float(x.get("openInterest",0) or 0) for x in rows if float(x.get("strike") or 0)<spot)
+ at_oi=max(0,total_oi-above_oi-below_oi)
+ atm=sorted(rows,key=lambda x:abs(float(x.get("strike") or 0)-spot))[:4]
+ ivs=[float(x.get("iv") or 0) for x in atm if float(x.get("iv") or 0)>0]
  iv_atm=sum(ivs)/len(ivs) if ivs else None
  if iv_atm and iv_atm>3:iv_atm/=100.0
- expected=spot*iv_atm*math.sqrt(max(ex,0)/365.0) if iv_atm else None
+ expected=spot*iv_atm*math.sqrt(max(ex,0)/365.0) if iv_atm and ex>0 else None
  max_pain=_max_pain(calls,puts)
- dex=None;vanna=None;charm_vals=[];total_oi=co+po;gex_by=[]
+ dex=None;vanna=None;charm_vals=[];gex_by=[]
  for x in rows:
   oi=float(x.get("openInterest",0) or 0); delta=x.get("delta"); gamma=float(x.get("gamma",0) or 0)
   if delta is not None:dex=(dex or 0)+oi*float(delta)*spot*100.0
   iv=float(x.get("iv") or 0); k=float(x.get("strike") or 0)
-  if x.get("vanna") is not None:
-   vanna=(vanna or 0)+oi*float(x["vanna"])*100.0
+  if x.get("vanna") is not None:vanna=(vanna or 0)+oi*float(x["vanna"])*100.0
   else:
    vp=_vanna_proxy(spot,k,iv,max(ex,0)/365.0)
    if vp is not None:vanna=(vanna or 0)+oi*vp*100.0
   if x.get("charm") is not None:charm_vals.append(oi*float(x["charm"])*100.0)
   sign=1 if x.get("type")=="C" else -1
-  gex_by.append({"strike":x.get("strike"),"gex":sign*oi*gamma*(spot**2)*0.01*100.0})
+  gex_by.append({"strike":x.get("strike"),"gex":sign*oi*gamma*(spot**2)*0.01*100.0,"oi":oi,"volume":float(x.get("volume",0) or 0),"type":x.get("type")})
  oi_delta=None;largest_oi_change=None
  if oi_prev:
   oi_delta=sum(float(x.get("openInterest",0) or 0)-float(oi_prev.get(x.get("key"),0) or 0) for x in rows)
@@ -102,25 +104,33 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   for x in rows:
    k=x.get("key")
    if k in oi_prev:
-    d=float(x.get("openInterest",0) or 0)-float(oi_prev.get(k,0) or 0)
-    changes.append({"strike":x.get("strike"),"type":x.get("type"),"change":d})
+    d=float(x.get("openInterest",0) or 0)-float(oi_prev.get(k,0) or 0);changes.append({"strike":x.get("strike"),"type":x.get("type"),"change":d})
   if changes:largest_oi_change=max(changes,key=lambda z:abs(z["change"]))
  charm=sum(charm_vals) if charm_vals else None
+ calls25=[x for x in calls if x.get("delta") is not None and float(x.get("iv") or 0)>0]
+ puts25=[x for x in puts if x.get("delta") is not None and float(x.get("iv") or 0)>0]
+ c25=min(calls25,key=lambda x:abs(float(x.get("delta"))-0.25)) if calls25 else None
+ p25=min(puts25,key=lambda x:abs(float(x.get("delta"))+0.25)) if puts25 else None
+ iv25c=float(c25.get("iv")) if c25 else None;iv25p=float(p25.get("iv")) if p25 else None
+ if iv25c and iv25c>3:iv25c/=100.0
+ if iv25p and iv25p>3:iv25p/=100.0
+ rr25=(iv25c-iv25p)*100 if iv25c is not None and iv25p is not None else None
+ call_oi_wall=max(calls,key=lambda x:float(x.get("openInterest",0) or 0)) if calls else None
+ put_oi_wall=max(puts,key=lambda x:float(x.get("openInterest",0) or 0)) if puts else None
  return {
   "expiration":expiration.date().isoformat(),"daysToExpiry":round(ex,2),
-  "callOi":co,"putOi":po,"putCallOi":po/co if co else None,
-  "callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,
-  "totalVolume":cv+pv,"totalOpenInterest":total_oi,
-  "ivAtm":iv_atm*100 if iv_atm else None,"expectedMove":expected,
-  "expectedMovePct":(expected/spot*100) if expected and spot else None,
-  "maxPain":max_pain,"maxPainDistance":(max_pain-spot) if max_pain is not None else None,
-  "maxPainDistancePct":((max_pain-spot)/spot*100) if max_pain is not None and spot else None,
-  "dexProxy":dex,"vannaProxy":vanna,"charm":charm,
-  "oiChange":oi_delta,"largestOiChange":largest_oi_change,
-  **gp,
-  "gammaFlipDistance":(gp.get("gammaFlip")-spot) if gp.get("gammaFlip") is not None else None,
-  "gammaFlipDistancePct":((gp.get("gammaFlip")-spot)/spot*100) if gp.get("gammaFlip") is not None and spot else None,
-  "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:10]
+  "callOi":co,"putOi":po,"putCallOi":po/co if co else None,"callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,"putCallVol":pv/cv if cv else None,"totalVolume":cv+pv,"totalOpenInterest":total_oi,
+  "oiAboveSpot":above_oi,"oiBelowSpot":below_oi,"oiAtSpot":at_oi,"oiAbovePct":above_oi/total_oi*100 if total_oi else None,"oiBelowPct":below_oi/total_oi*100 if total_oi else None,
+  "ivAtm":iv_atm*100 if iv_atm else None,"expectedMove":expected,"expectedMovePct":expected/spot*100 if expected and spot else None,
+  "iv25dCall":iv25c*100 if iv25c else None,"iv25dPut":iv25p*100 if iv25p else None,"riskReversal25d":rr25,"skew25d":rr25,
+  "call25dStrike":c25.get("strike") if c25 else None,"put25dStrike":p25.get("strike") if p25 else None,
+  "maxPain":max_pain,"maxPainDistance":max_pain-spot if max_pain is not None else None,"maxPainDistancePct":(max_pain-spot)/spot*100 if max_pain is not None and spot else None,
+  "callWallOi":call_oi_wall.get("strike") if call_oi_wall else None,"callWallOiValue":call_oi_wall.get("openInterest") if call_oi_wall else None,"callWallVolume":call_oi_wall.get("volume") if call_oi_wall else None,
+  "putWallOi":put_oi_wall.get("strike") if put_oi_wall else None,"putWallOiValue":put_oi_wall.get("openInterest") if put_oi_wall else None,"putWallVolume":put_oi_wall.get("volume") if put_oi_wall else None,
+  "dexProxy":dex,"vannaProxy":vanna,"charm":charm,"oiChange":oi_delta,"largestOiChange":largest_oi_change,
+  **gp,"gammaFlipDistance":(gp.get("gammaFlip")-spot) if gp.get("gammaFlip") is not None else None,"gammaFlipDistancePct":(gp.get("gammaFlip")-spot)/spot*100 if gp.get("gammaFlip") is not None and spot else None,
+  "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:16],
+  "sourceWindow":"Public delayed chain · OI/volume/IV; Greeks calculated with Black-Scholes"
  }
 
 def _norm_pdf(x): return math.exp(-0.5*x*x)/math.sqrt(2*math.pi)
@@ -150,18 +160,29 @@ def opt(sym):
   if not base:return None
   spot=num(base.get("quote",{}).get("regularMarketPrice") or base.get("quote",{}).get("postMarketPrice"))
   expirations=[int(x) for x in (base.get("expirationDates") or [])]
-  now=datetime.now(timezone.utc)
-  expirations=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc)>now]
+  now=datetime.now(timezone.utc);expirations=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc)>now]
   if not spot or not expirations:return None
-  monthly=[]
+  monthly=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc).weekday()==4 and 15<=datetime.fromtimestamp(x,tz=timezone.utc).day<=21]
+  # Keep a compact but useful horizon: 0DTE (when available), next, 7-30D and 30-90D.
+  buckets=[]
+  today=datetime.now(timezone.utc).date()
   for ex in expirations:
-   d=datetime.fromtimestamp(ex,tz=timezone.utc)
-   if d.weekday()==4 and 15<=d.day<=21:monthly.append(ex)
-  selected=[expirations[0]]
-  if monthly and monthly[0] not in selected:selected.append(monthly[0])
-  profiles=[]
-  all_raw=[]
-  for ex in selected:
+   d=datetime.fromtimestamp(ex,tz=timezone.utc);days=(d.date()-today).days
+   if days==0 or days<=2: bucket="0DTE"
+   elif days<=7: bucket="NEXT"
+   elif days<=30: bucket="7-30D"
+   elif days<=90: bucket="30-90D"
+   else: bucket=None
+   if bucket and bucket not in [b[0] for b in buckets]:buckets.append((bucket,ex))
+  if not buckets:buckets=[("NEXT",expirations[0])]
+  selected=[]
+  for label,ex in buckets:
+   if ex not in selected:selected.append(ex)
+  if monthly:
+   mex=monthly[0]
+   if mex not in selected and len(selected)<4:selected.append(mex)
+  profiles=[];all_raw=[]
+  for ex in selected[:4]:
    chain=_yahoo_option_chain(sym,ex)
    if not chain:continue
    rows=[]
@@ -171,29 +192,18 @@ def opt(sym):
      if not K:continue
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
      delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv,0.04,typ)
-     rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"type":typ,"expiration":ex})
+     rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
    if rows:
-    profiles.append(_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc)))
-    all_raw.extend(rows)
+    p=_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc));p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER");profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
-  # Add actual call/put OI and volume ratios to the nearest profile.
   for p in profiles:
-   ex=int(datetime.fromisoformat(p["expiration"]).replace(tzinfo=timezone.utc).timestamp())
-   rr=[x for x in all_raw if x["expiration"]==ex]
-   coi=sum(x["openInterest"] for x in rr if x["type"]=="C");poi=sum(x["openInterest"] for x in rr if x["type"]=="P")
-   cv=sum(x["volume"] for x in rr if x["type"]=="C");pv=sum(x["volume"] for x in rr if x["type"]=="P")
-   p["putCallOi"]=poi/coi if coi else None;p["putCallVolume"]=pv/cv if cv else None
-   p["putCallVol"]=p["putCallVolume"]  # compatibility with existing saved snapshots
-   p["totalVolume"]=cv+pv
-  monthly_exp=monthly[0] if monthly else selected[-1]
-  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,
-    "expiration":datetime.fromtimestamp(selected[0],tz=timezone.utc).date().isoformat(),
-    "monthlyExpiration":datetime.fromtimestamp(monthly_exp,tz=timezone.utc).date().isoformat(),
-    "profiles":profiles,"method":"Yahoo Finance option chain · OI/volume + Black-Scholes Greeks; GEX/DEX/Vanna/Charm are modelled proxies, not observed dealer positioning.",
-    "source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/"+sym+"/options/",
-    "gammaNote":"Gamma/DEX/Vanna/Charm are calculated from public OI, IV and model Greeks. Dealer side is not directly observable."}
+   ex=int(datetime.fromisoformat(p["expiration"]).replace(tzinfo=timezone.utc).timestamp());rr=[x for x in all_raw if x["expiration"]==ex]
+   coi=sum(x["openInterest"] for x in rr if x["type"]=="C");poi=sum(x["openInterest"] for x in rr if x["type"]=="P");cv=sum(x["volume"] for x in rr if x["type"]=="C");pv=sum(x["volume"] for x in rr if x["type"]=="P")
+   p["putCallOi"]=poi/coi if coi else None;p["putCallVolume"]=pv/cv if cv else None;p["putCallVol"]=p["putCallVolume"];p["totalVolume"]=cv+pv
+  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,"expiration":datetime.fromtimestamp(selected[0],tz=timezone.utc).date().isoformat(),"monthlyExpiration":datetime.fromtimestamp(monthly[0],tz=timezone.utc).date().isoformat() if monthly else None,"profiles":profiles,"method":"Yahoo Finance public option chain · OI/volume/IV + Black-Scholes Greeks. GEX/Gamma Flip/DEX/Vanna/Charm are modeled proxies, not observed dealer positioning.","source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/"+sym+"/options/","gammaNote":"GEX by strike is an exposure model based on public OI, IV and model gamma; call/put walls are OI concentrations and do not guarantee support/resistance."}
  except Exception as e:
   print("OPTIONS_CHAIN",sym,type(e).__name__,str(e)[:180]); return None
+
 
 
 H={"User-Agent":"MacroTerminal/6.0","Accept-Language":"en-US,en;q=0.9"}; T=25
@@ -392,34 +402,73 @@ def finra_access_token():
   print("FINRA AUTH",type(e).__name__,str(e)[:180])
   return None
 
+def _deribit_options(currency):
+ out=[]
+ try:
+  instruments=get("https://www.deribit.com/api/v2/public/get_instruments",{"currency":currency,"kind":"option","expired":"false"}).json().get("result",[])
+  idx=get("https://www.deribit.com/api/v2/public/get_index_price",{"index_name":currency.lower()+"_usd"}).json().get("result",{}).get("index_price")
+  summaries=get("https://www.deribit.com/api/v2/public/get_book_summary_by_currency",{"currency":currency,"kind":"option"}).json().get("result",[])
+  if idx is None or not summaries:return None
+  by_name={str(x.get("instrument_name")):x for x in summaries}
+  now=datetime.now(timezone.utc);groups={"0DTE":[] ,"NEXT":[],"7-30D":[],"30-90D":[]}
+  for ins in instruments:
+   name=str(ins.get("instrument_name") or "");exp=ins.get("expiration_timestamp")
+   if not name or not exp:continue
+   d=datetime.fromtimestamp(float(exp)/1000,tz=timezone.utc);days=(d-now).total_seconds()/86400
+   if days<0:continue
+   b="0DTE" if days<1 else "NEXT" if days<=7 else "7-30D" if days<=30 else "30-90D" if days<=90 else None
+   if b:groups[b].append((d,ins,by_name.get(name,{})))
+  for bucket,items in groups.items():
+   if not items:continue
+   exp,ins,sm=min(items,key=lambda x:x[0])
+   calls=[x for x in items if str(x[1].get("option_type","" )).lower()=="call"];puts=[x for x in items if str(x[1].get("option_type","" )).lower()=="put"]
+   # Build strike clusters directly from Deribit public OI; IV is attached when the summary exposes it.
+   clusters=[]
+   for d0,ii,ss in items:
+    oi=float(ss.get("open_interest") or 0);iv=float(ss.get("mark_iv") or 0);strike=float(ii.get("strike") or 0)
+    if not oi or not strike:continue
+    gamma=None;T=max((d0-now).total_seconds()/31536000,1/3650);typ="C" if str(ii.get("option_type","")).lower()=="call" else "P"
+    _,gamma,_,_=_bs_greeks(float(idx),strike,T,iv/100 if iv>3 else iv,0.04,typ) if iv else (None,None,None,None)
+    g=(1 if typ=="C" else -1)*oi*(gamma or 0)*float(idx)**2*0.01*1.0
+    clusters.append({"strike":strike,"gex":g,"oi":oi,"volume":float(ss.get("volume") or 0),"type":typ,"iv":iv})
+   call_clusters=[x for x in clusters if x["type"]=="C"];put_clusters=[x for x in clusters if x["type"]=="P"]
+   callwall=max(call_clusters,key=lambda x:x["oi"],default=None);putwall=max(put_clusters,key=lambda x:x["oi"],default=None)
+   net=sum(x["gex"] for x in clusters)
+   strikes=sorted({x["strike"] for x in clusters});cum=0;flip=None;prev=None
+   byk={k:sum(x["gex"] for x in clusters if x["strike"]==k) for k in strikes}
+   for k in strikes:
+    nxt=cum+byk[k]
+    if prev is not None and ((cum<0<=nxt) or (cum>0>=nxt)):flip=prev;break
+    prev=k;cum=nxt
+   out.append({"ticker":currency+" · Deribit","name":currency+" Options · Deribit","source":"Deribit public options","sourceUrl":"https://www.deribit.com/options","spot":float(idx),"expiration":exp.date().isoformat(),"daysToExpiry":round((exp-now).total_seconds()/86400,2),"bucket":bucket,"gammaNet":net,"gammaFlip":flip,"callWall":callwall.get("strike") if callwall else None,"putWall":putwall.get("strike") if putwall else None,"callWallOiValue":callwall.get("oi") if callwall else None,"putWallOiValue":putwall.get("oi") if putwall else None,"topGexStrikes":sorted(clusters,key=lambda x:abs(x["gex"]),reverse=True)[:16],"note":"Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."})
+  return {"ticker":currency,"name":currency+" Options · Deribit","spot":float(idx),"profiles":out,"source":"Deribit public options","sourceUrl":"https://www.deribit.com/options","method":"Public option instruments/book summaries; BTC/ETH kept separate from CME and IBIT."} if out else None
+ except Exception as e:
+  print("DERIBIT OPTIONS",currency,type(e).__name__,str(e)[:180]);return None
+
 def update_options(feed):
  previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
- previous_markets=previous.get("markets",[])
  out=[]
- for sym in ("SPY","QQQ","QQQM","TQQQ","DIA","IWM","GLD","IAU","GDX","SLV","USO","BNO","UUP","FXE","AAPL","NVDA"):
+ # Free Yahoo layer: direct ETF/stock option chains. SPX/NDX are reference indices; options are not silently substituted with ETF data.
+ for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
   try:
    x=opt(sym)
    if x:out.append(x)
   except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:180])
+ for cur in ("BTC","ETH"):
+  try:
+   x=_deribit_options(cur)
+   if x:out.append(x)
+  except Exception as e:print("OPTIONS DERIBIT",cur,type(e).__name__,str(e)[:160])
  if not out:
-  # Never erase a valid option snapshot merely because Yahoo blocks one refresh.
-  if previous_markets:
-   previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained"
-   previous["updatedAttempt"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-   feed["options"]=previous
+  if previous.get("markets"):previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained";previous["updatedAttempt"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC");feed["options"]=previous
   return
- hist=dict(previous.get("history") or {})
- stamp=datetime.now(timezone.utc).isoformat()
+ hist=dict(previous.get("history") or {});stamp=datetime.now(timezone.utc).isoformat()
  for m in out:
-  p=(m.get("profiles") or [{}])[0]
-  arr=hist.get(m["ticker"],[])
-  snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),
-        "gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),
-        "maxPain":p.get("maxPain"),"callWall":p.get("callWall"),"putWall":p.get("putWall"),
-        "ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove")}
-  arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10] and abs(float(h.get("spot") or 0)-float(snap.get("spot") or 0))<0.0001)]
-  arr.append(snap);hist[m["ticker"]]=arr[-64:]
- feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/SPY/options/","sourceStatus":"REAL / DELAYED · public chain snapshot","publication":"Último snapshot de cadena pública disponible en la actualización; el mercado de opciones puede estar cerrado.","note":"Max Pain usa OI público. GEX/Gamma Flip/DEX/Vanna/Charm son proxies calculados con OI/IV y Black-Scholes; no son posicionamiento observado de dealers."}
+  if m.get("ticker") in ("BTC","ETH"):continue
+  p=(m.get("profiles") or [{}])[0];arr=hist.get(m.get("ticker"),[]);snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),"gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),"callWall":p.get("callWall"),"putWall":p.get("putWall"),"ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
+  arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10])];arr.append(snap);hist[m.get("ticker")]=arr[-180:]
+ feed["options"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"history":hist,"source":"Yahoo Finance public option chain + Deribit public BTC/ETH options","sourceUrl":"https://finance.yahoo.com/markets/options/","sourceStatus":"REAL / DELAYED · public chain snapshots","publication":"Yahoo options are delayed; Deribit public options are separate. No CME chain is invented when unavailable.","note":"Max Pain uses OI. GEX/Gamma Flip/DEX/Vanna/Charm are modeled proxies. Call/Put Wall = largest OI concentration by side; GEX clusters show modeled exposure by strike. SPY/QQQ are ETF option layers for S&P 500/Nasdaq-100 reference exposure."}
+
 
 def update_dark_pools(feed):
     token=finra_access_token()
