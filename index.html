@@ -1157,6 +1157,24 @@ const INSTRUMENT_NAMES={
  return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-col md:flex-row md:items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">DERIVATIVES DESK · PUBLIC / DELAYED</div><h2 class="text-xl font-black text-white mt-1">OPTIONS · GEX / OI / FLOW STRUCTURE</h2><div class="text-xs text-gray-400 mt-1">'+instrumentName(selected)+' · <b>'+esc(selected)+'</b></div><p class="text-sm text-gray-400 mt-1">Max Pain, Call Wall, Put Wall, GEX y, cuando existe, griegas/volatilidad básicas. Sin cajas vacías de métricas que no aporten datos.</p></div><select onchange="window.__optTicker=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+select+'</select></div><div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">'+metric('SPOT',fmtNum(m.spot,2))+metric('MAX PAIN',lvl(p.maxPain))+metric('GAMMA FLIP',lvl(p.gammaFlip??p.zeroGamma))+metric('GEX NET · MODELED',fmtCompactMoney(p.gammaNet))+metric('CALL WALL · OI',lvl(p.callWallOi??p.callWall))+metric('PUT WALL · OI',lvl(p.putWallOi??p.putWall))+'</div></div>'+btcLayers+'<div class="metric rounded-xl p-4"><div class="text-[9px] text-gray-500 uppercase">ACTIVOS CON CADENA PÚBLICA</div><div class="text-xs text-gray-400 mt-2">SPY · QQQ · DIA · IWM · GLD · IAU · USO · BNO · AAPL · NVDA · HYG · TLT · IBIT · BTC · ETH</div></div><div class="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-4"><div class="metric rounded-xl p-5"><b class="text-sm text-white">GEX CLUSTERS · POR STRIKE</b><div class="text-[10px] text-gray-500 mt-1">Exposición gamma modelada por strike.</div><div class="space-y-2 mt-5">'+(gexBars||'<div class="text-xs text-gray-500">No hay clusters GEX públicos.</div>')+'</div></div><div class="metric rounded-xl p-5"><b class="text-sm text-white">OI CLUSTERS · STRIKE</b><div class="text-[10px] text-gray-500 mt-1">Concentración de Open Interest.</div><div class="space-y-2 mt-4">'+(oiBars||'<div class="text-xs text-gray-500">No hay OI público.</div>')+'</div></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">'+profilesHtml+'</div><div class="metric rounded-xl p-4"><b class="text-sm text-white">LECTURA</b><p class="text-xs text-gray-400 mt-2">Max Pain se calcula con OI. Call/Put Wall son concentraciones de OI. GEX y Gamma Flip son modelos de la cadena. Vanna/Charm/DEX no se muestran como cajas principales; las griegas básicas solo aparecen cuando hay datos utilizables.</p></div></section>';
 }
 
+function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
+
+        function fmtPct(v,d=2){ const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }
+        function fmtNum(v,d=2){ const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }
+        function fxBiasLabel(score){ if(score>=2) return 'Muy alcista'; if(score>=0.9) return 'Alcista'; if(score>=0.35) return 'Levemente alcista'; if(score<=-2) return 'Muy bajista'; if(score<=-0.9) return 'Bajista'; if(score<=-0.35) return 'Levemente bajista'; return 'Neutral'; }
+        function fxBiasClass(score){ return score>0.35?'bias-up':score<-0.35?'bias-down':'bias-flat'; }
+        function parseRate(v){ const s=String(v??'').replace(',','.').replace('%','').replace('–','-'); const nums=s.match(/-?\d+(?:\.\d+)?/g); if(!nums) return NaN; return nums.length===2?(Number(nums[0])+Number(nums[1]))/2:Number(nums[0]); }
+        function buildFxComparator(){
+            const fx=macroDatabase.__fx||{currencies:{}};
+            const all=Object.values(macroDatabase).filter(d=>d&&d.id);
+            const rows=all.map(d=>{ const code=d.id==='us'?'USD':d.id==='eu'||d.id==='de'?'EUR':d.id==='uk'?'GBP':d.id==='jp'?'JPY':d.id==='au'?'AUD':d.id==='nz'?'NZD':d.id==='ca'?'CAD':'CHF'; const m=fx.currencies?.[code]||{}; return {id:d.id,code,name:d.name,pol:macroInterpretation(d).score,rate:parseRate(d.rates?.official),y2:parseRate((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield),real:parseRate(d.rates?.real),tr5:Number(m.change1w)||0,tr15:Number(m.change15d)||0,tr20:Number(m.change1m)||0}; });
+            const by=Object.fromEntries(rows.map(x=>[x.code,x]));
+            function score(a,b){ const A=by[a],B=by[b]; if(!A||!B) return 0; return 0.95*(A.pol-B.pol)+0.75*((A.y2||0)-(B.y2||0))+0.45*((A.real||0)-(B.real||0))+0.32*(A.tr5-B.tr5)+0.14*(A.tr20-B.tr20); }
+            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); return {...x,score:sc,label:fxBiasLabel(sc)};});
+            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD']; const matrix=codes.map(base=>({base,cols:codes.map(q=>base===q?null:score(base,q))}));
+            return {updated:fx.updated||'—',rows:vsUsd,matrix};
+        }
+
 function renderFxComparator(){
             const fx=buildFxComparator();
             const rows=fx.rows.map(x=>`<tr class="border-b border-gray-900/70"><td class="py-3 px-3 text-sm font-bold text-white">${x.code}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(x.name||'')}</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.rate,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y2,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr5,2)}</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr15,2)}</td><td class="py-3 px-3 text-sm text-white">${fmtPct(x.tr20,2)}</td><td class="py-3 px-3 text-sm font-black ${fxBiasClass(x.score)}">${x.label}</td></tr>`).join('');
@@ -1538,6 +1556,7 @@ function renderGlobalView(){
                     if(feed.traditionalSentiment) macroDatabase.__traditionalSentiment = feed.traditionalSentiment;
                     if(feed.traditionalFearGreed) macroDatabase.__traditionalFearGreed = feed.traditionalFearGreed;
                     if(feed.optionsStats) macroDatabase.__optionsStats = feed.optionsStats;
+                    if(feed.globalMarkets) macroDatabase.__globalMarkets = feed.globalMarkets;
                     if(feed.rotation) macroDatabase.__rotation = feed.rotation;
                     if(feed.cryptoSentiment) macroDatabase.__cryptoSentiment = feed.cryptoSentiment;
                     if(feed.bondMarket) macroDatabase.__bondMarket = feed.bondMarket;
