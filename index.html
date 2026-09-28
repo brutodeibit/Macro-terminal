@@ -1221,47 +1221,43 @@ function renderCryptoBondSection(){
  return '<section id="sec-global-markets" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA VARIABLE GLOBAL</div><h2 class="text-xl font-black text-white mt-1">ASIA + EUROPA · MAPA DE MERCADOS</h2><p class="text-sm text-gray-400 mt-1">Cinco referencias por región con precio y variación 1D / 1S / 1M.</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+regionBlock('ASIA')+regionBlock('EUROPA')+'</div><div class="text-[9px] text-gray-600">Fuente: Yahoo Finance pública. Las variaciones se calculan sobre cierres disponibles.</div></section>';
 }
 
+function safeGlobalSection(label,fn){
+ try{return fn();}
+ catch(e){
+  console.error('Global panel · '+label,e);
+  return '<section class="metric rounded-xl p-4 border-amber-500/30"><div class="text-[10px] uppercase text-amber-300">'+esc(label)+' · DATOS NO DISPONIBLES</div><div class="text-xs text-gray-500 mt-1">Este módulo no pudo pintarse en esta actualización; el resto del Panel Global sigue disponible.</div></section>';
+ }
+}
 function renderGlobalView(){
-            const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>{
-                const score=macroInterpretation(d).score;
-                return {d,score,bias:policyBias(score),expect:expectationLabel(d)};
-            });
-            const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0;
-            const avgBias=policyBias(avg);
-            return `<section id="sec-resumen" class="space-y-5">
-                <div class="glass rounded-2xl p-5">
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Monitor Macro Global</div>
-                            <h2 class="text-xl md:text-2xl font-black text-white mt-1">Panel Global</h2>
-                            <p class="text-sm text-gray-400 mt-1 max-w-5xl">Todo el contexto global está aquí: Risk On/Off, sentimiento tradicional y cripto, divisas/carry, COT, opciones, Dark Pools y rotación. Las economías se abren desde el lateral.</p>
-                        </div>
-                        <div class="metric rounded-xl px-4 py-3 min-w-[235px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo monetario agregado</div><div class="text-lg font-black ${avgBias.cls} mt-1">${avgBias.icon} ${avgBias.label}</div><div class="text-[10px] text-gray-500 mt-1">No es una etiqueta de bolsa alcista/bajista.</div></div>
-                    </div>
-                </div>
-                <div class="metric rounded-xl p-4">
-                    <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Leyenda · sesgo de política monetaria</div>
-                    <div class="flex flex-wrap gap-2 text-[10px]">
-                        <span class="mini-pill">↑↑ Claramente restrictivo · mayor presión para subir o mantener tipos altos</span>
-                        <span class="mini-pill">↑ Moderadamente restrictivo · presión hacia tipos más altos</span>
-                        <span class="mini-pill">→ Mixto / neutral · señales enfrentadas o sin dirección clara</span>
-                        <span class="mini-pill">↓ Moderadamente acomodaticio · presión hacia recortes</span>
-                        <span class="mini-pill">↓↓ Claramente acomodaticio · mayor presión hacia recortes</span>
-                    </div>
-                    <div class="text-[10px] text-gray-500 mt-2">Debajo de cada economía se separa este sesgo estructural del pricing de la próxima reunión: subida, mantener o bajada.</div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    ${entries.map(({d,bias,expect})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
-                        <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-xs font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
-                        <div class="mt-3 space-y-2">
-                            <div class="mini-pill w-fit">Postura actual: ${esc(d.rates?.postureText||'Sin clasificar')}</div>
-                            <div class="text-xs ${expect.cls}">Próxima reunión: ${expect.label}</div>
-                        </div>
-                        <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official||'—')} · 2Y ${fmtNum((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield,2)} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div>
-                    </button>`).join('')}
-                </div>
-            </section>${renderRiskOnOff()}${renderFxComparator()}${renderGlobalMarkets()}${renderCotSection()}${renderOptionsSection()}${renderDarkPoolSection()}${renderRotationSection()}${renderCryptoBondSection()}`;
-        }
-        function renderContent() {
+ const entries=Object.values(macroDatabase).filter(d=>d&&d.id).map(d=>{const score=macroInterpretation(d).score;return {d,score,bias:policyBias(score),expect:expectationLabel(d)};});
+ const avg=entries.length?entries.reduce((a,x)=>a+x.score,0)/entries.length:0,avgBias=policyBias(avg);
+ const blocks=[
+  ['RISK ON/OFF',renderRiskOnOff],['DIVISAS / CARRY',renderFxComparator],['MERCADOS REGIONALES',renderGlobalMarkets],
+  ['COT',renderCotSection],['OPCIONES / GAMMA',renderOptionsSection],['DARK POOLS / OTC',renderDarkPoolSection],
+  ['MERCADOS & ROTACIÓN',renderRotationSection],['SENTIMIENTO / BONOS',renderCryptoBondSection]
+ ];
+ const sections=blocks.map(([label,fn])=>safeGlobalSection(label,fn)).join('');
+ return `<section id="sec-resumen" class="space-y-5">
+  <div class="glass rounded-2xl p-5"><div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+   <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-earth-europe text-blue-400"></i> Monitor Macro Global</div>
+    <h2 class="text-xl md:text-2xl font-black text-white mt-1">Panel Global</h2>
+    <p class="text-sm text-gray-400 mt-1 max-w-5xl">Contexto global intermercado: Risk On/Off, divisas/carry, COT, opciones, Dark Pools, rotación, sentimiento y bonos.</p>
+   </div>
+   <div class="metric rounded-xl px-4 py-3 min-w-[235px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo monetario agregado</div><div class="text-lg font-black ${avgBias.cls} mt-1">${avgBias.icon} ${avgBias.label}</div><div class="text-[10px] text-gray-500 mt-1">${entries.length} economías cargadas.</div></div>
+  </div></div>
+  <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Estado de carga</div>
+   <div class="flex flex-wrap gap-2 text-[10px]"><span class="mini-pill">Feed ${esc(macroDatabase.__riskOnOff?.updated||macroDatabase.__cot?.updated||'—')}</span><span class="mini-pill">Módulos aislados</span><span class="mini-pill">Una fuente caída no oculta el Panel completo</span></div>
+  </div>
+  <div class="glass rounded-2xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">MAPA MACRO · ECONOMÍAS</div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+   ${entries.map(({d,bias,expect})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-xl p-3 row-hover transition">
+    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-[10px] font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
+    <div class="mt-2 text-[10px] text-gray-500">Tipo ${esc(d.rates?.official||'—')} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div>
+    <div class="mt-2 text-[10px] ${expect.cls}">${esc(expect.label)}</div>
+   </button>`).join('')}
+  </div></div>
+ </section>${sections}`;
+}
+function renderContent() {
             renderTopTabs();
             const container = document.getElementById('mainDashboard');
             if(currentCountryKey==='__global'){
