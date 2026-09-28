@@ -24,6 +24,11 @@ def med(x):
  x=[v for v in x if v is not None and math.isfinite(v)]; return statistics.median(x) if x else None
 def mean(x):
  x=[v for v in x if v is not None and math.isfinite(v)]; return sum(x)/len(x) if x else None
+def percentile(x,q):
+ x=sorted(v for v in x if v is not None and math.isfinite(v))
+ if not x:return None
+ k=(len(x)-1)*q;f=math.floor(k);c=math.ceil(k)
+ return x[f] if f==c else x[f]+(x[c]-x[f])*(k-f)
 def ret(a,b): return (a/b-1)*100 if b else None
 def stats(r):
  c=[x["close"] for x in r]; rg=[(x["high"]-x["low"])/x["close"]*100 for x in r]; rt=[None]+[ret(c[i],c[i-1]) for i in range(1,len(c))]
@@ -48,14 +53,17 @@ def stats(r):
  seas=[]
  for k,v in sorted(dm.items(),key=lambda z:int(z[0])):
   v=[z for z in v if z is not None]; seas.append({"day":int(k),"avgPct":round(mean(v),3),"positivePct":round(sum(z>0 for z in v)/max(1,len(v))*100,1),"n":len(v)})
- return {"observations":len(r),"firstDate":datetime.fromtimestamp(r[0]["ts"],timezone.utc).date().isoformat(),"lastDate":datetime.fromtimestamp(r[-1]["ts"],timezone.utc).date().isoformat(),"last":c[-1],"return1d":rt[-1],"return1w":ret(c[-1],c[-6]) if len(c)>=6 else None,"return1m":ret(c[-1],c[-22]) if len(c)>=22 else None,"maxDrawdownPct":round(dd,2),"avgDailyRangePct":round(mean(rg),3),"pullbackCount":len(pb),"pullbackRecoveryPct":round(sum(x["recovered"] for x in pb)/max(1,len(pb))*100,1),"pullbackMedianDepthPct":round(med([x["depthPct"] for x in pb]) or 0,2),"impulses":imp[-100:],"explosiveDays":exp[-100:],"seasonalityByDayOfMonth":seas}
+ return {"observations":len(r),"firstDate":datetime.fromtimestamp(r[0]["ts"],timezone.utc).date().isoformat(),"lastDate":datetime.fromtimestamp(r[-1]["ts"],timezone.utc).date().isoformat(),"last":c[-1],"return1d":rt[-1],"return1w":ret(c[-1],c[-6]) if len(c)>=6 else None,"return1m":ret(c[-1],c[-22]) if len(c)>=22 else None,"maxDrawdownPct":round(dd,2),"avgDailyRangePct":round(mean(rg),3),"pullbackCount":len(pb),"pullbackRecoveryPct":round(sum(x["recovered"] for x in pb)/max(1,len(pb))*100,1),"pullbackMedianDepthPct":round(med([x["depthPct"] for x in pb]) or 0,2),
+"pullbackRecoveredCount":sum(1 for x in pb if x["recovered"]),
+"pullbackNotRecoveredCount":sum(1 for x in pb if not x["recovered"]),
+"pullbackDepthDistribution":{"p25":round(percentile([x["depthPct"] for x in pb],.25) or 0,2),"p50":round(percentile([x["depthPct"] for x in pb],.50) or 0,2),"p75":round(percentile([x["depthPct"] for x in pb],.75) or 0,2)},"impulses":imp[-100:],"explosiveDays":exp[-100:],"seasonalityByDayOfMonth":seas}
 def liquidity(r):
  ny=ZoneInfo("America/New_York"); b={}
  for x in r:
   d=datetime.fromtimestamp(x["ts"],timezone.utc).astimezone(ny);m=d.hour*60+d.minute
   k="NY_OPEN_09:30-10:00" if 570<=m<600 else "NY_10:00-10:30" if 600<=m<630 else "NY_MIDDAY_11:30-13:00" if 690<=m<780 else "NY_AFTERNOON_13:00-15:00" if 780<=m<900 else "NY_CLOSE_15:00-16:00" if 900<=m<960 else "OUTSIDE_REGULAR_NY"
   b.setdefault(k,[]).append((x["high"]-x["low"])/x["close"]*100)
- return {"status":"PARTIAL_INTRADAY_SAMPLE","sampleDays":len(r),"timezone":"America/New_York","note":"Muestra intradía pública disponible; todavía no es el backtest de 1–3 años.","windows":[{"window":k,"observations":len(v),"avgRangePct":round(mean(v),4),"medianRangePct":round(med(v),4)} for k,v in b.items()]}
+ return {"status":"PARTIAL_INTRADAY_SAMPLE","observations":len(r),"timezone":"America/New_York","dateRange":(datetime.fromtimestamp(r[0]["ts"],timezone.utc).date().isoformat()+" → "+datetime.fromtimestamp(r[-1]["ts"],timezone.utc).date().isoformat()) if r else "—","note":"Muestra intradía pública disponible; todavía no es el backtest de 1–3 años.","windows":[{"window":k,"observations":len(v),"avgRangePct":round(mean(v),4),"medianRangePct":round(med(v),4)} for k,v in b.items()]}
 def main():
  try:f=json.loads(OUT.read_text())
  except:f={"version":1,"assets":{},"liquidity":{}}
