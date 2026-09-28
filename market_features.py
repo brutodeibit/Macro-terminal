@@ -623,71 +623,187 @@ def _cme_btc_option_layer():
  except Exception as e:
   print("CME BTC OPTIONS",type(e).__name__,str(e)[:180]);return None
 
+OPTION_CATALOG=[
+ {"family":"S&P 500","code":"SPX","label":"S&P 500 Index","kind":"index","yahoo":"^GSPC","source":"Yahoo Finance · índice de referencia","sourceUrl":"https://finance.yahoo.com/quote/%5EGSPC/"},
+ {"family":"S&P 500","code":"SPY","label":"SPDR S&P 500 ETF","kind":"etf","yahoo":"SPY","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/SPY/"},
+ {"family":"S&P 500","code":"ES","label":"E-mini S&P 500 Futures","kind":"future","yahoo":"ES=F","source":"CME / Yahoo Finance · futuro","sourceUrl":"https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.html"},
+ {"family":"Nasdaq-100","code":"NDX","label":"Nasdaq-100 Index","kind":"index","yahoo":"^NDX","source":"Nasdaq · índice de referencia","sourceUrl":"https://www.nasdaq.com/market-activity/index/ndx"},
+ {"family":"Nasdaq-100","code":"QQQ","label":"Invesco QQQ ETF","kind":"etf","yahoo":"QQQ","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/QQQ/"},
+ {"family":"Nasdaq-100","code":"NQ","label":"E-mini Nasdaq-100 Futures","kind":"future","yahoo":"NQ=F","source":"CME / Yahoo Finance · futuro","sourceUrl":"https://www.cmegroup.com/markets/equities/nasdaq/nasdaq-100-futures.html"},
+ {"family":"Dow Jones","code":"DJI","label":"Dow Jones Industrial Average","kind":"index","yahoo":"^DJI","source":"Yahoo Finance · índice de referencia","sourceUrl":"https://finance.yahoo.com/quote/%5EDJI/"},
+ {"family":"Dow Jones","code":"DIA","label":"SPDR Dow Jones ETF","kind":"etf","yahoo":"DIA","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/DIA/"},
+ {"family":"Dow Jones","code":"YM","label":"E-mini Dow Futures","kind":"future","yahoo":"YM=F","source":"CME / Yahoo Finance · futuro","sourceUrl":"https://www.cmegroup.com/markets/equities/dow-jones.html"},
+ {"family":"Russell 2000","code":"RUT","label":"Russell 2000 Index","kind":"index","yahoo":"^RUT","source":"Yahoo Finance · índice de referencia","sourceUrl":"https://finance.yahoo.com/quote/%5ERUT/"},
+ {"family":"Russell 2000","code":"IWM","label":"iShares Russell 2000 ETF","kind":"etf","yahoo":"IWM","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/IWM/"},
+ {"family":"Russell 2000","code":"RTY","label":"E-mini Russell 2000 Futures","kind":"future","yahoo":"RTY=F","source":"CME / Yahoo Finance · futuro","sourceUrl":"https://www.cmegroup.com/markets/equities/russell-2000.html"},
+ {"family":"DAX","code":"DAX","label":"DAX Index","kind":"index","yahoo":"^GDAXI","source":"Deutsche Börse / Yahoo Finance · índice","sourceUrl":"https://finance.yahoo.com/quote/%5EGDAXI/"},
+ {"family":"DAX","code":"FDAX","label":"DAX Futures","kind":"future","eurex":"https://www.eurex.com/ex-en/markets/idx/dax/DAX-Futures-34642","source":"Eurex · FDAX","sourceUrl":"https://www.eurex.com/ex-en/markets/idx/dax/DAX-Futures-34642"},
+ {"family":"DAX","code":"ODAX","label":"DAX Options","kind":"option_index","eurex":"https://www.eurex.com/ex-en/markets/idx/dax/DAX-Options-139884","source":"Eurex · ODAX","sourceUrl":"https://www.eurex.com/ex-en/markets/idx/dax/DAX-Options-139884"},
+ {"family":"EURO STOXX 50","code":"SX5E","label":"EURO STOXX 50 Index","kind":"index","yahoo":"^STOXX50E","source":"Yahoo Finance · índice de referencia","sourceUrl":"https://finance.yahoo.com/quote/%5ESTOXX50E/"},
+ {"family":"EURO STOXX 50","code":"FESX","label":"EURO STOXX 50 Futures","kind":"future","eurex":"https://www.eurex.com/ex-en/markets/idx/stx/euro-stoxx-50-derivatives/products/EURO-STOXX-50-Index-Futures-34652","source":"Eurex · FESX","sourceUrl":"https://www.eurex.com/ex-en/markets/idx/stx/euro-stoxx-50-derivatives/products/EURO-STOXX-50-Index-Futures-34652"},
+ {"family":"EURO STOXX 50","code":"OESX","label":"EURO STOXX 50 Options","kind":"option_index","eurex":"https://www.eurex.com/ex-en/markets/idx/stx/euro-stoxx-50-derivatives/products/EURO-STOXX-50-Index-Options-46548","source":"Eurex · OESX","sourceUrl":"https://www.eurex.com/ex-en/markets/idx/stx/euro-stoxx-50-derivatives/products/EURO-STOXX-50-Index-Options-46548"},
+ {"family":"Gold","code":"XAU","label":"Gold Spot · referencia","kind":"spot_reference","source":"Referencia spot · sin cadena propia aquí","sourceUrl":"https://www.cmegroup.com/markets/metals/precious/gold.html"},
+ {"family":"Gold","code":"GC","label":"COMEX Gold Futures","kind":"future","yahoo":"GC=F","source":"CME / Yahoo Finance · futuro","sourceUrl":"https://www.cmegroup.com/markets/metals/precious/gold.html"},
+ {"family":"Gold","code":"GLD","label":"SPDR Gold Shares ETF","kind":"etf","yahoo":"GLD","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/GLD/"},
+ {"family":"Gold","code":"IAU","label":"iShares Gold Trust ETF","kind":"etf","yahoo":"IAU","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/IAU/"},
+ {"family":"Silver","code":"SI","label":"COMEX Silver Futures","kind":"future","yahoo":"SI=F","source":"CME / Yahoo Finance · futuro","sourceUrl":"https://www.cmegroup.com/markets/metals/precious/silver.html"},
+ {"family":"Silver","code":"SLV","label":"iShares Silver Trust ETF","kind":"etf","yahoo":"SLV","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/SLV/"},
+ {"family":"WTI","code":"CL","label":"WTI Crude Futures","kind":"future","yahoo":"CL=F","source":"NYMEX/CME · futuro","sourceUrl":"https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html"},
+ {"family":"WTI","code":"USO","label":"United States Oil Fund ETF","kind":"etf","yahoo":"USO","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/USO/"},
+ {"family":"Brent","code":"BZ","label":"Brent Crude Futures","kind":"future","yahoo":"BZ=F","source":"ICE / Yahoo Finance · futuro","sourceUrl":"https://www.theice.com/products/219/Brent-Crude-Futures"},
+ {"family":"Brent","code":"BNO","label":"United States Brent Oil Fund ETF","kind":"etf","yahoo":"BNO","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/BNO/"},
+ {"family":"Volatilidad","code":"VIX","label":"Cboe Volatility Index","kind":"index","yahoo":"^VIX","source":"Cboe · índice de volatilidad","sourceUrl":"https://www.cboe.com/tradable_products/vix/"},
+ {"family":"Cripto","code":"BTC","label":"Bitcoin","kind":"crypto","yahoo":"BTC-USD","source":"Yahoo Finance · spot proxy","sourceUrl":"https://finance.yahoo.com/quote/BTC-USD/"},
+ {"family":"Cripto","code":"ETH","label":"Ethereum","kind":"crypto","yahoo":"ETH-USD","source":"Yahoo Finance · spot proxy","sourceUrl":"https://finance.yahoo.com/quote/ETH-USD/"},
+ {"family":"Acciones referencia","code":"AAPL","label":"Apple","kind":"stock","yahoo":"AAPL","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/AAPL/"},
+ {"family":"Acciones referencia","code":"NVDA","label":"NVIDIA","kind":"stock","yahoo":"NVDA","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/NVDA/"},
+ {"family":"Macro · Crédito","code":"HYG","label":"iShares High Yield Corporate Bond ETF","kind":"etf","yahoo":"HYG","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/HYG/"},
+ {"family":"Macro · Duración","code":"TLT","label":"iShares 20+ Year Treasury Bond ETF","kind":"etf","yahoo":"TLT","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/TLT/"}
+]
+
+def _latest_yahoo_quote(sym):
+ try:
+  r=chart(sym)
+  if not r:return None
+  ts=r.get("timestamp") or [];q=(r.get("indicators",{}).get("quote") or [{}])[0].get("close") or []
+  vals=[(t,v) for t,v in zip(ts,q) if v is not None]
+  if not vals:return None
+  t,v=vals[-1]
+  dt=datetime.fromtimestamp(float(t),tz=timezone.utc)
+  prev=vals[-2][1] if len(vals)>1 else None
+  return {"last":float(v),"previousClose":float(prev) if prev is not None else None,
+          "change1d":(float(v)/float(prev)-1)*100 if prev not in (None,0) else None,
+          "asOf":dt.isoformat(),"date":dt.date().isoformat(),"delayNote":"Último cierre disponible desde Yahoo Finance; puede estar retrasado fuera de sesión."}
+ except Exception as e:
+  print("REFERENCE QUOTE",sym,type(e).__name__,str(e)[:120]);return None
+
+def _barchart_option_overview(sym):
+ try:
+  html=get("https://www.barchart.com/stocks/quotes/"+requests.utils.quote(sym,safe="")+"/overview").text
+  text=" ".join(BeautifulSoup(html,"html.parser").stripped_strings)
+  pats={
+   "iv":"Implied Volatility\\s+([0-9.]+)%",
+   "ivPercentile":"IV Percentile\\s+([0-9.]+)%",
+   "ivRank":"IV Rank\\s+([0-9.]+)%",
+   "ivHigh":"IV High\\s+([0-9.]+)%",
+   "ivLow":"IV Low\\s+([0-9.]+)%",
+   "putCallVol":"Put/Call Vol Ratio\\s+([0-9.]+)",
+   "putCallOi":"Put/Call OI Ratio\\s+([0-9.]+)",
+   "expectedMove":"Expected Move \\(DTE [0-9]+\\)\\s+([0-9.]+)",
+   "expectedMovePct":"Expected Move \\(DTE [0-9]+\\)\\s+[0-9.]+ \\(([0-9.]+)%\\)"
+  }
+  out={}
+  for k,p in pats.items():
+   m=re.search(p,text,re.I)
+   if(m):out[k]=float(m.group(1))
+  if not out:return None
+  out["source"]="Barchart · Options Overview";const["sourceUrl"]="https://www.barchart.com/stocks/quotes/"+sym+"/overview";const["dataStatus"]="REAL / DELAYED · Barchart";const["asOf"]="Último snapshot visible de Barchart"
+  return out
+ except Exception as e:
+  print("BARCHART OPTIONS",sym,type(e).__name__,str(e)[:140]);return None
+
+def _eurex_snapshot(entry):
+ try:
+  html=get(entry["eurex"]).text
+  text=" ".join(BeautifulSoup(html,"html.parser").stripped_strings)
+  out={"source":entry["source"],"sourceUrl":entry["sourceUrl"],"dataStatus":"REAL / DELAYED · Eurex","asOfDate":None}
+  m=re.search(r"Trading Date\s+(\\d{2}/\\d{2}/\\d{4})",text)
+  if m:out["asOfDate"]=m.group(1)
+  for key,label in (("volume","Volume"),("openInterest","Open Interest"),("putCallRatio","Put/Call ratio"),("underlyingClose","Underlying closing price")):
+   m=re.search(re.escape(label)+r"\\s+([0-9][0-9,]*(?:\\.[0-9]+)?)",text,re.I)
+   if m:
+    v=_farside_num(m.group(1))
+    if v is not None:out[key]=v
+  rows=[]
+  rgx=re.compile(r"(W|M|E|Q|S|Y)\\s+(\\d{2}/\\d{2}/\\d{4})\\s+([0-9,]+)\\s+([0-9,]+)\\s+([0-9,]+)\\s+([0-9,]+)\\s+([0-9.]+|n/a)",re.I)
+  for m in rgx.finditer(text):
+   rows.append({"type":m.group(1),"date":m.group(2),"callVolume":_farside_num(m.group(3)),"callOI":_farside_num(m.group(4)),"putVolume":_farside_num(m.group(5)),"putOI":_farside_num(m.group(6)),"putCall":_farside_num(m.group(7))})
+  if rows:out["expiryStats"]=rows[:12]
+  return out if len(out)>3 else None
+ except Exception as e:
+  print("EUREX SNAPSHOT",entry.get("code"),type(e).__name__,str(e)[:140]);return None
+
+def _option_reference_entry(entry):
+ q=_latest_yahoo_quote(entry["yahoo"]) if entry.get("yahoo") else None
+ if not q:return None
+ out={**entry,"ticker":entry["code"],"name":entry["label"],"referenceOnly":True,"spot":q["last"],"quote":q,"source":entry["source"],"sourceUrl":entry["sourceUrl"],
+      "dataStatus":"REAL / DELAYED · último dato disponible","asOf":q["asOf"],"method":"Referencia de precio; la cadena de opciones no está disponible públicamente en esta capa."}
+ if entry["code"] in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT"):
+  stats=_barchart_option_overview(entry["code"])
+  if stats:out["stats"]=stats
+ return out
+
 def update_options(feed):
  previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
- out=[]
+ old_by={m.get("ticker"):m for m in previous.get("markets",[]) if isinstance(m,dict) and m.get("ticker")}
+ detailed={}
  for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
   try:
    x=opt(sym)
-   if x:out.append(x)
+   if x:detailed[sym]=x
   except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:160])
 
- deribit={}
- for cur in ("BTC","ETH"):
-  try:
-   x=_deribit_options(cur)
-   if x:deribit[cur]=x
-  except Exception as e:print("OPTIONS DERIBIT",cur,type(e).__name__,str(e)[:160])
+ out=[]
+ for entry in OPTION_CATALOG:
+  code=entry["code"]
+  x=detailed.get(code)
+  if x:
+   stats=_barchart_option_overview(code)
+   if stats:
+    x["stats"]=stats
+    p0=(x.get("profiles") or [{}])[0]
+    for k in ("ivRank","ivPercentile","iv","putCallVol","putCallOi","expectedMove","expectedMovePct"):
+     if stats.get(k) is not None:p0[k]=stats[k]
+   x["family"]=entry["family"];x["instrumentCode"]=code;x["instrumentKind"]=entry["kind"];x["sourceDate"]=x.get("updated") or datetime.now(timezone.utc).isoformat()
+   out.append(x);continue
+  if entry.get("eurex"):
+   ex=_eurex_snapshot(entry)
+   if ex:
+    q=ex.get("underlyingClose")
+    out.append({**entry,"ticker":code,"name":entry["label"],"referenceOnly":True,"spot":q,
+                "quote":ex,"stats":ex,"dataStatus":ex.get("dataStatus"),"asOf":ex.get("asOfDate"),
+                "method":"Eurex: último snapshot público disponible. Para ODAX/OESX se muestran estadísticas agregadas; sin cadena de strikes no se inventan Max Pain/GEX."})
+    continue
+  if entry.get("yahoo"):
+   ref=_option_reference_entry(entry)
+   if ref:out.append(ref)
 
- cme_btc=None
- try:cme_btc=_cme_btc_option_layer()
- except Exception as e:print("OPTIONS CME BTC",type(e).__name__,str(e)[:160])
-
- etf_flow=None
- try:etf_flow=_bitcoin_etf_flows()
- except Exception as e:print("OPTIONS ETF FLOW",type(e).__name__,str(e)[:160])
-
- if deribit.get("BTC") or cme_btc or etf_flow:
-  d=deribit.get("BTC") or {}
-  out.append({
-   "ticker":"BTC","name":"Bitcoin · Opciones / Flujos · 3 capas",
-   "spot":d.get("spot") or (cme_btc or {}).get("spot"),
-   "profiles":d.get("profiles") or (cme_btc or {}).get("profiles") or [],
-   "source":"CME futures options + spot BTC ETF flows + Deribit public options",
-   "sourceStatus":"REAL / DELAYED · capas separadas",
-   "btcPerspective":True,
-   "layers":{"cme":cme_btc,"spotEtfFlows":etf_flow,"deribit":d},
-   "method":"BTC separado en CME (opciones sobre futuros), ETF spot (flujo neto agregado) y Deribit (cadena cripto nativa)."
-  })
- if deribit.get("ETH"):out.append(deribit["ETH"])
+ # Preserve a previously valid detailed chain when the provider is temporarily unavailable.
+ for code,m in old_by.items():
+  if code not in {x.get("ticker") for x in out} and m.get("profiles"):
+   m=dict(m);m["dataStatus"]="UNAVAILABLE · último snapshot válido retenido";m["updatedAttempt"]=datetime.now(timezone.utc).isoformat();out.append(m)
 
  if not out:
   if previous.get("markets"):
-   previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained"
-   previous["updatedAttempt"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
-   feed["options"]=previous
+   previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained";feed["options"]=previous
   return
+
+ flow=feed.get("squawkFlow",{}) if isinstance(feed.get("squawkFlow"),dict) else {}
+ flow_data=flow.get("unusualOptions",{}).get("data") if isinstance(flow.get("unusualOptions"),dict) else []
+ if isinstance(flow_data,list):
+  flow_data=flow_data[:30]
+ else:flow_data=[]
+ option_stats=feed.get("optionsStats") if isinstance(feed.get("optionsStats"),dict) else {}
 
  hist=dict(previous.get("history") or {});stamp=datetime.now(timezone.utc).isoformat()
  for m in out:
-  if m.get("ticker") in ("BTC","ETH","BTC-CME"):continue
+  if m.get("referenceOnly") or m.get("ticker") in ("BTC","ETH","BTC-CME"):continue
   p=(m.get("profiles") or [{}])[0];arr=hist.get(m.get("ticker"),[])
-  snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),
-        "gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),
-        "callWall":p.get("callWall"),"putWall":p.get("putWall"),"ivAtm":p.get("ivAtm"),
-        "expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
+  snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),"gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),"callWall":p.get("callWall"),"putWall":p.get("putWall"),"ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
   arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10])]
   arr.append(snap);hist[m.get("ticker")]=arr[-180:]
 
  feed["options"]={
   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
   "markets":out,"history":hist,
-  "source":"Yahoo Finance public option chain + CME public BTC futures options + Deribit public BTC/ETH options + Farside BTC ETF flows",
-  "sourceUrl":"https://finance.yahoo.com/markets/options/",
-  "sourceStatus":"REAL / DELAYED · public snapshots",
-  "publication":"Yahoo options and CME public quotes may be delayed; Deribit is separate; Farside ETF flows are daily.",
-  "note":"Max Pain is calculated from public OI. Call/Put Wall = largest OI concentration by side. GEX/Gamma Flip remain modelled proxies. BTC is explicitly split into CME futures options, aggregated spot ETF flows, and Deribit."
-}
+  "flow":flow_data,
+  "optionsStats":option_stats,
+  "catalog":OPTION_CATALOG,
+  "source":"Yahoo public option chains + Barchart Options Overview + Eurex public statistics + Cboe-delayed unusual options feed",
+  "sourceStatus":"REAL / DELAYED · multi-source",
+  "publication":"Yahoo chains are delayed. Barchart options overview provides delayed IV/IV Rank/IV Percentile where publicly exposed. Eurex exposes public delayed index-derivative statistics. Flow is delayed and only a subset of public unusual activity.",
+  "note":"Max Pain is calculated from public OI when a complete chain is available. Call/Put Wall uses largest OI by side. GEX/Gamma Flip are modeled proxies. Reference-only instruments show the latest available underlying quote with its date instead of pretending that an unavailable option chain exists."
+ }
 
 
 def update_dark_pools(feed):
