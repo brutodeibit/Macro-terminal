@@ -1520,11 +1520,18 @@ function renderContent() {
                 setFeedStatus('Modo local · usando datos integrados', false);
                 return false;
             }
-            try{
-                const res=await fetch('./macro-feed.json?ts='+Date.now(), {cache:'no-store'});
-                if(!res.ok) throw new Error('feed no disponible');
-                const feed=await res.json();
-                if(feed && feed.economies){
+            const bucket=Math.floor(Date.now()/(5*60*1000));
+            const urls=[
+                './macro-feed.json?v='+bucket,
+                'https://raw.githubusercontent.com/brutodeibit/Macro-terminal/main/macro-feed.json?v='+bucket
+            ];
+            let lastError='feed no disponible';
+            for(const url of urls){
+                try{
+                    const res=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+                    if(!res.ok) throw new Error('HTTP '+res.status);
+                    const feed=await res.json();
+                    if(!feed || !feed.economies) throw new Error('JSON válido pero sin economies');
                     Object.entries(feed.economies).forEach(([k,v])=>{
                         if(!macroDatabase[k]) macroDatabase[k]={};
                         macroDatabase[k]={...macroDatabase[k],...v};
@@ -1533,29 +1540,16 @@ function renderContent() {
                         if(v.bonds) macroDatabase[k].bonds={...macroDatabase[k].bonds,...v.bonds};
                         if(Array.isArray(v.indicators) && v.indicators.length) macroDatabase[k].indicators=v.indicators;
                     });
-                    if(feed.riskOnOff) macroDatabase.__riskOnOff = feed.riskOnOff;
-                    if(feed.cot) macroDatabase.__cot = feed.cot;
-                    if(feed.options) macroDatabase.__options = feed.options;
-                    if(feed.fx) macroDatabase.__fx = feed.fx;
-                    if(feed.darkPools) macroDatabase.__darkPools = feed.darkPools;
-                    if(feed.darkPoolPrints) macroDatabase.__darkPoolPrints = feed.darkPoolPrints;
-                    if(feed.darkFlowRadar) macroDatabase.__darkFlowRadar = feed.darkFlowRadar;
-                    if(feed.squawkFlow) macroDatabase.__squawkFlow = feed.squawkFlow;
-                    if(feed.traditionalSentiment) macroDatabase.__traditionalSentiment = feed.traditionalSentiment;
-                    if(feed.traditionalFearGreed) macroDatabase.__traditionalFearGreed = feed.traditionalFearGreed;
-                    if(feed.optionsStats) macroDatabase.__optionsStats = feed.optionsStats;
-                    if(feed.globalMarkets) macroDatabase.__globalMarkets = feed.globalMarkets;
-                    if(feed.rotation) macroDatabase.__rotation = feed.rotation;
-                    if(feed.cryptoSentiment) macroDatabase.__cryptoSentiment = feed.cryptoSentiment;
-                    if(feed.bondMarket) macroDatabase.__bondMarket = feed.bondMarket;
-                    setFeedStatus('Feed externo sincronizado', true);
+                    const map={riskOnOff:'__riskOnOff',cot:'__cot',options:'__options',fx:'__fx',darkPools:'__darkPools',darkPoolPrints:'__darkPoolPrints',darkFlowRadar:'__darkFlowRadar',squawkFlow:'__squawkFlow',traditionalSentiment:'__traditionalSentiment',traditionalFearGreed:'__traditionalFearGreed',optionsStats:'__optionsStats',globalMarkets:'__globalMarkets',rotation:'__rotation',cryptoSentiment:'__cryptoSentiment',bondMarket:'__bondMarket'};
+                    Object.entries(map).forEach(([src,dst])=>{if(feed[src]!==undefined) macroDatabase[dst]=feed[src];});
+                    macroDatabase.__feedMeta={updated:feed.updated||'—',source:url.includes('raw.githubusercontent')?'GitHub raw fallback':'GitHub Pages',loadedAt:new Date().toISOString()};
+                    setFeedStatus('Feed sincronizado · '+macroDatabase.__feedMeta.source+' · '+(feed.updated||'—'),true);
                     renderSidebar();
                     renderContent();
                     return true;
-                }
-            }catch(e){
-                setFeedStatus('Feed externo no disponible · usando respaldo local', false);
+                }catch(e){lastError=String(e);}
             }
+            setFeedStatus('Feed no disponible · '+lastError+' · usando datos integrados',false);
             return false;
         }
 
