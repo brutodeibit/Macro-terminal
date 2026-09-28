@@ -697,7 +697,7 @@ def _barchart_option_overview(sym):
    m=re.search(p,text,re.I)
    if(m):out[k]=float(m.group(1))
   if not out:return None
-  out["source"]="Barchart · Options Overview";const["sourceUrl"]="https://www.barchart.com/stocks/quotes/"+sym+"/overview";const["dataStatus"]="REAL / DELAYED · Barchart";const["asOf"]="Último snapshot visible de Barchart"
+  out["source"]="Barchart · Options Overview";out["sourceUrl"]="https://www.barchart.com/stocks/quotes/"+sym+"/overview";out["dataStatus"]="REAL / DELAYED · Barchart";out["asOf"]="Último snapshot visible de Barchart"
   return out
  except Exception as e:
   print("BARCHART OPTIONS",sym,type(e).__name__,str(e)[:140]);return None
@@ -707,7 +707,7 @@ def _eurex_snapshot(entry):
   html=get(entry["eurex"]).text
   text=" ".join(BeautifulSoup(html,"html.parser").stripped_strings)
   out={"source":entry["source"],"sourceUrl":entry["sourceUrl"],"dataStatus":"REAL / DELAYED · Eurex","asOfDate":None}
-  m=re.search(r"Trading Date\s+(\\d{2}/\\d{2}/\\d{4})",text)
+  m=re.search(r"Trading Date\s+(\d{2}/\d{2}/\d{4})",text)
   if m:out["asOfDate"]=m.group(1)
   for key,label in (("volume","Volume"),("openInterest","Open Interest"),("putCallRatio","Put/Call ratio"),("underlyingClose","Underlying closing price")):
    m=re.search(re.escape(label)+r"\\s+([0-9][0-9,]*(?:\\.[0-9]+)?)",text,re.I)
