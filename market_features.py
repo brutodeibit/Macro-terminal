@@ -653,6 +653,7 @@ OPTION_CATALOG=[
  {"family":"Brent","code":"BZ","label":"Brent Crude Futures","kind":"future","yahoo":"BZ=F","source":"ICE / Yahoo Finance · futuro","sourceUrl":"https://www.theice.com/products/219/Brent-Crude-Futures"},
  {"family":"Brent","code":"BNO","label":"United States Brent Oil Fund ETF","kind":"etf","yahoo":"BNO","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/BNO/"},
  {"family":"Volatilidad","code":"VIX","label":"Cboe Volatility Index","kind":"index","yahoo":"^VIX","source":"Cboe · índice de volatilidad","sourceUrl":"https://www.cboe.com/tradable_products/vix/"},
+ {"family":"Cripto","code":"IBIT","label":"iShares Bitcoin Trust ETF","kind":"etf","yahoo":"IBIT","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/IBIT/"},
  {"family":"Cripto","code":"BTC","label":"Bitcoin","kind":"crypto","yahoo":"BTC-USD","source":"Yahoo Finance · spot proxy","sourceUrl":"https://finance.yahoo.com/quote/BTC-USD/"},
  {"family":"Cripto","code":"ETH","label":"Ethereum","kind":"crypto","yahoo":"ETH-USD","source":"Yahoo Finance · spot proxy","sourceUrl":"https://finance.yahoo.com/quote/ETH-USD/"},
  {"family":"Acciones referencia","code":"AAPL","label":"Apple","kind":"stock","yahoo":"AAPL","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/AAPL/"},
@@ -767,6 +768,23 @@ def update_options(feed):
   if entry.get("yahoo"):
    ref=_option_reference_entry(entry)
    if ref:out.append(ref)
+
+ # Add SPX model layer already available from the market feed.
+ sf=feed.get("squawkFlow",{}) if isinstance(feed.get("squawkFlow"),dict) else {}
+ sx=sf.get("spxGex",{}).get("data") if isinstance(sf.get("spxGex"),dict) else None
+ if isinstance(sx,dict):
+  spxprof={"expiration":sx.get("asOfDate"),"daysToExpiry":None,"gammaNet":sx.get("netGex"),
+           "gammaFlip":sx.get("gexFlipPrice"),"callWall":sx.get("callWall"),"putWall":sx.get("putWall"),
+           "callWallOi":sx.get("callWall"),"putWallOi":sx.get("putWall"),
+           "maxGammaStrike":sx.get("maxGammaStrike"),"volTrigger":sx.get("volTrigger"),
+           "bucket":"SPX · GEX model","source":"SquawkFlow / Cboe OI-derived estimate",
+           "dataStatus":"REAL / DELAYED · OI-derived"}
+  spx={"ticker":"SPX","instrumentCode":"SPX","family":"S&P 500","name":"S&P 500 Index · SPX",
+       "spot":sx.get("spotPrice"),"profiles":[spxprof],"referenceOnly":False,
+       "source":"SquawkFlow · SPX full-chain GEX model","sourceUrl":"https://squawkflow.com/docs/endpoints",
+       "dataStatus":"REAL / DELAYED · calculated from Cboe open interest","asOf":sx.get("levelsAsOf") or sx.get("asOfDate"),
+       "method":"GEX/Gamma Flip/Call-Put walls are modelled from the SPX option chain and Cboe open interest; Max Pain is not inferred when OI-by-strike is not exposed."}
+ out=[m for m in out if m.get("ticker")!="SPX"];out.insert(0,spx)
 
  # Preserve a previously valid detailed chain when the provider is temporarily unavailable.
  for code,m in old_by.items():
