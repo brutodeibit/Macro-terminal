@@ -1144,7 +1144,7 @@ const INSTRUMENT_NAMES={
         function renderOptionsSection(){
  const o=macroDatabase.__options||{updated:'—',markets:[],catalog:[],flow:[]};
  const markets=o.markets||[], catalog=o.catalog||[], families=[...new Set(catalog.map(x=>x.family).filter(Boolean))];
- const selected=(window.__optTicker&&markets.find(m=>(m.ticker||m.instrumentCode)===window.__optTicker))?window.__optTicker:(markets[0]?.ticker||'SPY');
+ const current=(window.__optTicker&&markets.find(m=>(m.ticker||m.instrumentCode)===window.__optTicker))||null; const chainFirst=markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length&&Array.isArray(m.profiles[0].topGexStrikes)&&m.profiles[0].topGexStrikes.length)||markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length)||markets[0]||null; const selected=current?(current.ticker||current.instrumentCode):(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY');
  window.__optTicker=selected;
  const m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
  const p=(m.profiles||[])[0]||{};
@@ -1181,40 +1181,57 @@ function __loadPlotly(){
  return __plotlyPromise;
 }
 function __optNum(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function __optionsChainMarket(markets){
+ return (markets||[]).find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length&&Array.isArray(m.profiles[0].topGexStrikes)&&m.profiles[0].topGexStrikes.length)||null;
+}
 function __optionsInteractiveHtml(m,p){
  const has=Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length;
- if(!has)return '';
- return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">STRIKE MAP · GEX + OI</b><p class="text-[10px] text-gray-500 mt-1">Interactivo · hover, zoom y selección. GEX es modelado sobre la cadena disponible.</p></div><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'CALCULADO')+'</span></div><div id="opt-gex-chart" class="w-full h-[430px] mt-2"></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4"><div id="opt-iv-chart" class="w-full h-[300px]"></div><div id="opt-term-chart" class="w-full h-[300px]"></div></div></div>';
+ if(!has){
+  return '<div class="metric rounded-xl p-5 border border-amber-900/50"><div class="flex items-center justify-between gap-3"><div><b class="text-sm text-white">OPTIONS 2.0 · CADENA NO DISPONIBLE</b><p class="text-[10px] text-gray-500 mt-1">Este instrumento no tiene una cadena de strikes completa en el snapshot actual. No se inventan GEX, Max Pain ni niveles derivados.</p></div><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'SIN CADENA')+'</span></div></div>';
+ }
+ return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">STRIKE MAP · GEX + OI</b><p class="text-[10px] text-gray-500 mt-1">Interactivo · hover, zoom y selección. GEX es un cálculo sobre la cadena disponible; no representa el libro real de dealers.</p></div><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'CALCULADO')+'</span></div><div id="opt-gex-chart" class="w-full h-[450px] mt-2"></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4"><div id="opt-iv-chart" class="w-full h-[300px]"></div><div id="opt-term-chart" class="w-full h-[300px]"></div></div></div>';
 }
 function __drawOptionsCharts(m,p){
  const root=document.getElementById('sec-options');if(!root)return;
- const rows=(p.topGexStrikes||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,oi:__optNum(x.oi)||0,iv:__optNum(x.iv)||null})).filter(x=>x.strike!==null);
- if(!rows.length)return;
+ const raw=(p.topGexStrikes||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,oi:__optNum(x.oi)||0,iv:__optNum(x.iv)||null,type:x.type||''})).filter(x=>x.strike!==null);
+ if(!raw.length)return;
+ const byStrike={};
+ raw.forEach(x=>{const k=String(x.strike);const a=byStrike[k]||(byStrike[k]={strike:x.strike,gex:0,oi:0,callOi:0,putOi:0,ivs:[]});a.gex+=x.gex;a.oi+=x.oi;if(x.type==='C')a.callOi+=x.oi;if(x.type==='P')a.putOi+=x.oi;if(x.iv!==null)a.ivs.push(x.iv);});
+ const rows=Object.values(byStrike).sort((a,b)=>a.strike-b.strike).map(x=>({...x,iv:x.ivs.length?x.ivs.reduce((a,b)=>a+b,0)/x.ivs.length:null}));
  __loadPlotly().then(P=>{
   const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
-  const spot=__optNum(m.spot),flip=__optNum(p.gammaFlip??p.zeroGamma),pain=__optNum(p.maxPain);
+  const spot=__optNum(m.spot),flip=__optNum(p.gammaFlip??p.zeroGamma),pain=__optNum(p.maxPain),callWall=__optNum(p.callWall),putWall=__optNum(p.putWall);
   const traces=[
    {x:rows.map(x=>x.strike),y:rows.map(x=>x.gex),type:'bar',name:'GEX',marker:{color:rows.map(x=>x.gex>=0?'#34d399':'#f87171')},hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'},
-   {x:rows.map(x=>x.strike),y:rows.map(x=>x.oi),type:'scatter',mode:'lines+markers',name:'OI total',yaxis:'y2',line:{color:'#60a5fa',width:2},hovertemplate:'Strike %{x}<br>OI %{y:,.0f}<extra></extra>'}
+   {x:rows.map(x=>x.strike),y:rows.map(x=>x.callOi),type:'scatter',mode:'lines+markers',name:'Call OI',yaxis:'y2',line:{color:'#60a5fa',width:2},hovertemplate:'Strike %{x}<br>Call OI %{y:,.0f}<extra></extra>'},
+   {x:rows.map(x=>x.strike),y:rows.map(x=>x.putOi),type:'scatter',mode:'lines+markers',name:'Put OI',yaxis:'y2',line:{color:'#c084fc',width:2},hovertemplate:'Strike %{x}<br>Put OI %{y:,.0f}<extra></extra>'}
   ];
   const shapes=[],anns=[];
-  [[spot,'Spot','#facc15'],[flip,'Gamma Flip','#a78bfa'],[pain,'Max Pain','#fb923c']].forEach(([v,label,c])=>{if(v!==null){shapes.push({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:c,width:2,dash:'dot'}});anns.push({x:v,y:1.04,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:10,color:c}});}});
-  P.newPlot('opt-gex-chart',traces,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:55,r:60,t:30,b:45},xaxis:{title:'Strike',gridcolor:'#1f2937',zeroline:false},yaxis:{title:'GEX',gridcolor:'#1f2937'},yaxis2:{title:'OI',overlaying:'y',side:'right',showgrid:false},shapes,annotations:anns,legend:{orientation:'h',y:1.12},hovermode:'x unified'},cfg);
+  [[spot,'Spot','#facc15'],[flip,'Gamma Flip','#a78bfa'],[pain,'Max Pain','#fb923c'],[callWall,'Call Wall','#60a5fa'],[putWall,'Put Wall','#c084fc']].forEach(([v,label,c])=>{if(v!==null){shapes.push({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:c,width:1.5,dash:'dot'}});anns.push({x:v,y:1.04,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:9,color:c}});}});
+  P.newPlot('opt-gex-chart',traces,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:60,r:65,t:55,b:48},xaxis:{title:'Strike',gridcolor:'#1f2937',zeroline:false},yaxis:{title:'GEX',gridcolor:'#1f2937'},yaxis2:{title:'Open Interest',overlaying:'y',side:'right',showgrid:false},shapes,annotations:anns,legend:{orientation:'h',y:1.16},hovermode:'x unified'},cfg);
   const ivRows=rows.filter(x=>x.iv!==null);
   if(ivRows.length)P.newPlot('opt-iv-chart',[{x:ivRows.map(x=>x.strike),y:ivRows.map(x=>x.iv),type:'scatter',mode:'lines+markers',name:'IV',line:{color:'#fbbf24',width:2},hovertemplate:'Strike %{x}<br>IV %{y:.2f}%<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:45,r:20,t:30,b:40},title:{text:'IV por strike',font:{size:12,color:'#e5e7eb'}},xaxis:{gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'}},cfg);
   else document.getElementById('opt-iv-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">IV por strike no disponible en este snapshot.</div>';
   const profiles=(m.profiles||[]).filter(q=>__optNum(q.daysToExpiry)!==null&&__optNum(q.ivAtm)!==null);
   if(profiles.length)P.newPlot('opt-term-chart',[{x:profiles.map(q=>q.daysToExpiry),y:profiles.map(q=>q.ivAtm),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#38bdf8',width:2},hovertemplate:'DTE %{x}<br>ATM IV %{y:.2f}%<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:45,r:20,t:30,b:40},title:{text:'Term structure · ATM IV',font:{size:12,color:'#e5e7eb'}},xaxis:{title:'Días',gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'}},cfg);
-  else document.getElementById('opt-term-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">Term structure ATM IV no disponible con suficientes vencimientos.</div>';
- }).catch(()=>{const el=document.getElementById('opt-gex-chart');if(el)el.innerHTML='<div class="text-[10px] text-gray-500 p-3">No se pudo cargar el motor gráfico interactivo; los datos siguen visibles abajo.</div>';});
+  else document.getElementById('opt-term-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">Term structure ATM IV no disponible con los vencimientos disponibles.</div>';
+ }).catch(()=>{const el=document.getElementById('opt-gex-chart');if(el)el.innerHTML='<div class="text-[10px] text-gray-500 p-3">No se pudo cargar el motor gráfico interactivo; los datos tabulares siguen visibles.</div>';});
 }
 renderOptionsSection=function(){
+ const o=macroDatabase.__options||{},markets=o.markets||[];
+ let selected=window.__optTicker||(markets[0]?.ticker||'SPY');
+ let m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||null;
+ if(!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length){
+  const first=__optionsChainMarket(markets); if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
+ }
+ if(!m)m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
+ const p=(m.profiles||[])[0]||{},chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
- const o=macroDatabase.__options||{},markets=o.markets||[],selected=window.__optTicker||(markets[0]?.ticker||'SPY');
- const m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{},p=(m.profiles||[])[0]||{},chart=__optionsInteractiveHtml(m,p);
  if(!chart)return html;
- const out=html.replace('<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>',chart+'<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>');
- setTimeout(()=>__drawOptionsCharts(m,p),80); return out;
+ const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
+ const out=html.replace(marker,chart+marker);
+ if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
+ return out;
 };
 
 function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
