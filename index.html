@@ -1167,6 +1167,56 @@ const INSTRUMENT_NAMES={
  const btcLayers=selected==='BTC'&&m.btcPerspective?'<div class="grid grid-cols-1 lg:grid-cols-3 gap-4"><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase text-gray-500">BTC · CME</div><b class="text-sm text-white block mt-1">Opciones sobre futuros</b><p class="text-xs text-gray-500 mt-2">'+esc(m.layers?.cme?.status||'Último dato público disponible si CME devuelve cadena.')+'</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase text-gray-500">BTC · SPOT ETF</div><b class="text-sm text-white block mt-1">Flujo agregado</b><p class="text-xs text-gray-500 mt-2">'+(m.layers?.spotEtfFlows?('1D '+fmtNum(m.layers.spotEtfFlows.netFlow1d,1)+' M$ · 1S '+fmtNum(m.layers.spotEtfFlows.netFlow1w,1)+' M$ · fecha '+esc(m.layers.spotEtfFlows.asOf||'—')):'Último flujo disponible no recuperado')+'</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase text-gray-500">BTC · DERIBIT</div><b class="text-sm text-white block mt-1">Cadena cripto nativa</b><p class="text-xs text-gray-500 mt-2">Se mantiene separada de CME y ETF spot.</p></div></div>':'';
  return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">DERIVATIVES DESK · MULTI-SOURCE / DELAYED</div><h2 class="text-xl font-black text-white mt-1">OPTIONS · STRUCTURE + FLOW</h2><p class="text-sm text-gray-400 mt-1">Familias de activos agrupadas por índice, ETF y futuro. Los cálculos derivados llevan etiqueta; los datos tienen fecha.</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"><select onchange="window.__optFamily=this.value;const x=(macroDatabase.__options.catalog||[]).find(z=>z.family===this.value);window.__optTicker=x?.code||window.__optTicker;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+familySelect+'</select><select onchange="window.__optTicker=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+instSelect+'</select></div><div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">'+metric('SPOT / ÚLTIMO',lvl(m.spot),m.asOf||'—')+metric('MAX PAIN',lvl(p.maxPain))+metric('GAMMA FLIP',lvl(p.gammaFlip??p.zeroGamma))+metric('GEX NET · MODELADO',fmtCompactMoney(p.gammaNet))+metric('CALL WALL · OI',lvl(p.callWallOi??p.callWall))+metric('PUT WALL · OI',lvl(p.putWallOi??p.putWall))+'</div></div><div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">'+refs+'</div>'+btcLayers+statsHtml+flowHtml+profilesHtml+(hasChain?'<div class="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-4"><div class="metric rounded-xl p-5"><b class="text-sm text-white">GEX CLUSTERS · STRIKE</b><div class="space-y-2 mt-5">'+(gexBars||'<div class="text-xs text-gray-500">Sin clusters disponibles.</div>')+'</div></div><div class="metric rounded-xl p-5"><b class="text-sm text-white">OI CLUSTERS · STRIKE</b><div class="space-y-2 mt-4">'+(oiBars||'<div class="text-xs text-gray-500">Sin OI disponible.</div>')+'</div></div></div>':'')+'<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b><p class="text-xs text-gray-400 mt-2">Max Pain = cálculo sobre OI disponible. Gamma Flip / GEX / DEX = proxies modelados, no posicionamiento de dealer observado. Delta, Gamma y Vega se muestran cuando la cadena permite calcularlos. Theta/Rho no se elevan a métricas principales.</p><p class="text-[9px] text-gray-600 mt-2">Actualización del feed: '+esc(o.updated||'—')+' · Fuente múltiple · datos retrasados según mercado.</p></div></section>';
 }
+/* OPTIONS 2.0 — interactive strike map + term structure, lazy-loaded. */
+const __renderOptionsLegacy = renderOptionsSection;
+let __plotlyPromise = null;
+function __loadPlotly(){
+ if(window.Plotly) return Promise.resolve(window.Plotly);
+ if(__plotlyPromise) return __plotlyPromise;
+ __plotlyPromise=new Promise((resolve,reject)=>{
+  const sc=document.createElement('script');
+  sc.src='https://cdn.plot.ly/plotly-2.35.2.min.js'; sc.async=true;
+  sc.onload=()=>resolve(window.Plotly); sc.onerror=reject; document.head.appendChild(sc);
+ });
+ return __plotlyPromise;
+}
+function __optNum(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function __optionsInteractiveHtml(m,p){
+ const has=Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length;
+ if(!has)return '';
+ return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">STRIKE MAP · GEX + OI</b><p class="text-[10px] text-gray-500 mt-1">Interactivo · hover, zoom y selección. GEX es modelado sobre la cadena disponible.</p></div><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'CALCULADO')+'</span></div><div id="opt-gex-chart" class="w-full h-[430px] mt-2"></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4"><div id="opt-iv-chart" class="w-full h-[300px]"></div><div id="opt-term-chart" class="w-full h-[300px]"></div></div></div>';
+}
+function __drawOptionsCharts(m,p){
+ const root=document.getElementById('sec-options');if(!root)return;
+ const rows=(p.topGexStrikes||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,oi:__optNum(x.oi)||0,iv:__optNum(x.iv)||null})).filter(x=>x.strike!==null);
+ if(!rows.length)return;
+ __loadPlotly().then(P=>{
+  const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
+  const spot=__optNum(m.spot),flip=__optNum(p.gammaFlip??p.zeroGamma),pain=__optNum(p.maxPain);
+  const traces=[
+   {x:rows.map(x=>x.strike),y:rows.map(x=>x.gex),type:'bar',name:'GEX',marker:{color:rows.map(x=>x.gex>=0?'#34d399':'#f87171')},hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'},
+   {x:rows.map(x=>x.strike),y:rows.map(x=>x.oi),type:'scatter',mode:'lines+markers',name:'OI total',yaxis:'y2',line:{color:'#60a5fa',width:2},hovertemplate:'Strike %{x}<br>OI %{y:,.0f}<extra></extra>'}
+  ];
+  const shapes=[],anns=[];
+  [[spot,'Spot','#facc15'],[flip,'Gamma Flip','#a78bfa'],[pain,'Max Pain','#fb923c']].forEach(([v,label,c])=>{if(v!==null){shapes.push({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:c,width:2,dash:'dot'}});anns.push({x:v,y:1.04,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:10,color:c}});}});
+  P.newPlot('opt-gex-chart',traces,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:55,r:60,t:30,b:45},xaxis:{title:'Strike',gridcolor:'#1f2937',zeroline:false},yaxis:{title:'GEX',gridcolor:'#1f2937'},yaxis2:{title:'OI',overlaying:'y',side:'right',showgrid:false},shapes,annotations:anns,legend:{orientation:'h',y:1.12},hovermode:'x unified'},cfg);
+  const ivRows=rows.filter(x=>x.iv!==null);
+  if(ivRows.length)P.newPlot('opt-iv-chart',[{x:ivRows.map(x=>x.strike),y:ivRows.map(x=>x.iv),type:'scatter',mode:'lines+markers',name:'IV',line:{color:'#fbbf24',width:2},hovertemplate:'Strike %{x}<br>IV %{y:.2f}%<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:45,r:20,t:30,b:40},title:{text:'IV por strike',font:{size:12,color:'#e5e7eb'}},xaxis:{gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'}},cfg);
+  else document.getElementById('opt-iv-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">IV por strike no disponible en este snapshot.</div>';
+  const profiles=(m.profiles||[]).filter(q=>__optNum(q.daysToExpiry)!==null&&__optNum(q.ivAtm)!==null);
+  if(profiles.length)P.newPlot('opt-term-chart',[{x:profiles.map(q=>q.daysToExpiry),y:profiles.map(q=>q.ivAtm),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#38bdf8',width:2},hovertemplate:'DTE %{x}<br>ATM IV %{y:.2f}%<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:45,r:20,t:30,b:40},title:{text:'Term structure · ATM IV',font:{size:12,color:'#e5e7eb'}},xaxis:{title:'Días',gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'}},cfg);
+  else document.getElementById('opt-term-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">Term structure ATM IV no disponible con suficientes vencimientos.</div>';
+ }).catch(()=>{const el=document.getElementById('opt-gex-chart');if(el)el.innerHTML='<div class="text-[10px] text-gray-500 p-3">No se pudo cargar el motor gráfico interactivo; los datos siguen visibles abajo.</div>';});
+}
+renderOptionsSection=function(){
+ const html=__renderOptionsLegacy();
+ const o=macroDatabase.__options||{},markets=o.markets||[],selected=window.__optTicker||(markets[0]?.ticker||'SPY');
+ const m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{},p=(m.profiles||[])[0]||{},chart=__optionsInteractiveHtml(m,p);
+ if(!chart)return html;
+ const out=html.replace('<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>',chart+'<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>');
+ setTimeout(()=>__drawOptionsCharts(m,p),80); return out;
+};
+
 function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
 
         function fmtPct(v,d=2){ const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }
