@@ -156,6 +156,91 @@ def _yahoo_option_chain(sym,expiration=None):
  j=get(u,params).json().get("optionChain",{}).get("result",[])
  return j[0] if j else None
 
+def _massive_json(path, params=None):
+ try:
+  key=os.getenv("MASSIVE_API_KEY")
+  if not key:return None
+  p=dict(params or {});p["apiKey"]=key
+  return get("https://api.massive.com"+path,p,{"Accept":"application/json","User-Agent":"MacroTerminal/6.0"}).json()
+ except Exception as e:
+  print("MASSIVE",path,type(e).__name__,str(e)[:160]);return None
+
+def _massive_follow_pages(j,max_pages=5):
+ rows=list((j or {}).get("results") or []);nxt=(j or {}).get("next_url");pages=1
+ while nxt and pages<max_pages:
+  try:
+   key=os.getenv("MASSIVE_API_KEY")
+   if not key:break
+   url=nxt+("&" if "?" in nxt else "?")+"apiKey="+requests.utils.quote(key,safe="")
+   jj=get(url,{"limit":"250"},{"Accept":"application/json","User-Agent":"MacroTerminal/6.0"}).json()
+   if not isinstance(jj,dict):break
+   more=jj.get("results") or []
+   if not more:break
+   rows.extend(more);nxt=jj.get("next_url");pages+=1
+  except Exception as e:
+   print("MASSIVE PAGINATION",type(e).__name__,str(e)[:140]);break
+ return rows
+
+def _massive_option_chain(underlying):
+ try:
+  if not os.getenv("MASSIVE_API_KEY"):return None
+  today=datetime.now(timezone.utc).date()
+  base=_massive_json("/v3/snapshot/options/"+requests.utils.quote(underlying,safe=""),{"expiration_date.gte":today.isoformat(),"limit":"250"})
+  if not base:return None
+  base_rows=_massive_follow_pages(base)
+  if not base_rows:return None
+  spot=None
+  for x in base_rows:
+   spot=num((x.get("underlying_asset") or {}).get("price") or x.get("underlying_price"))
+   if spot is not None:break
+  exps=sorted({str((x.get("details") or {}).get("expiration_date") or x.get("expiration_date") or "")[:10] for x in base_rows if (x.get("details") or {}).get("expiration_date") or x.get("expiration_date")})
+  exps=[x for x in exps if x]
+  if not exps:return None
+  candidates=[]
+  for ex in exps:
+   try:
+    d=datetime.fromisoformat(ex).date();days=(d-today).days
+    if days>=0:candidates.append((d,ex,days))
+   except Exception:pass
+  if not candidates:return None
+  selected=[]
+  for bucket,predicate in (
+   ("0DTE",lambda d:d==0),("NEXT",lambda d:0<d<=2),("7-30D",lambda d:7<d<=30),("30-90D",lambda d:30<d<=90)):
+   c=[z for z in candidates if predicate(z[2])]
+   if c:selected.append((bucket,c[0]))
+  if not selected:selected=[("NEXT",candidates[0])]
+  profiles=[]
+  for bucket,(_,ex,_) in selected[:4]:
+   j=_massive_json("/v3/snapshot/options/"+requests.utils.quote(underlying,safe=""),{"expiration_date":ex,"limit":"250"})
+   rows=_massive_follow_pages(j or {})
+   mapped=[]
+   for x in rows:
+    det=x.get("details") or {};day=x.get("day") or {};greeks=x.get("greeks") or {}
+    typ=str(det.get("contract_type") or x.get("contract_type") or "").lower()
+    if typ not in ("call","put"):continue
+    strike=num(det.get("strike_price") or x.get("strike_price"))
+    if strike is None:continue
+    mapped.append({
+     "strike":strike,"openInterest":num(x.get("open_interest")) or 0,"volume":num(day.get("volume") or x.get("volume")) or 0,
+     "iv":num(x.get("implied_volatility") or greeks.get("iv")) or 0,"delta":num(greeks.get("delta")),"gamma":num(greeks.get("gamma")),
+     "vanna":num(greeks.get("vanna")),"charm":num(greeks.get("charm")),"vega":num(greeks.get("vega")),
+     "type":"C" if typ=="call" else "P","expiration":ex,
+     "bid":num((x.get("last_quote") or {}).get("bid")),"ask":num((x.get("last_quote") or {}).get("ask")),
+     "lastPrice":num((x.get("last_trade") or {}).get("price")),"contractSymbol":det.get("ticker") or x.get("ticker")
+    })
+   if mapped and spot is not None:
+    p=_option_summary(mapped,float(spot),datetime.fromisoformat(ex).replace(tzinfo=timezone.utc))
+    p.update(bucket=bucket,source="Massive · full-chain snapshot",dataStatus="REAL / DELAYED · Massive",chainCount=len(mapped),coverage="Full listed chain returned by provider")
+    profiles.append(p)
+  if not profiles:return None
+  return {"ticker":underlying,"name":underlying,"spot":spot,"profiles":profiles,
+          "termStructure":[{"bucket":p.get("bucket"),"expiration":p.get("expiration"),"dte":p.get("daysToExpiry"),"ivAtm":p.get("ivAtm")} for p in profiles],
+          "zeroDteVolume":next((p.get("totalVolume") for p in profiles if p.get("bucket")=="0DTE"),None),
+          "source":"Massive Options Snapshot","sourceUrl":"https://massive.com/docs/rest/options/overview","dataStatus":"REAL / DELAYED · Massive","referenceOnly":False,
+          "method":"Massive full-chain snapshot; OI/volume/IV/Greeks supplied by provider. GEX/Gamma Flip/DEX are calculated from the returned chain."}
+ except Exception as e:
+  print("MASSIVE OPTIONS",underlying,type(e).__name__,str(e)[:180]);return None
+
 def opt(sym):
  try:
   base=_yahoo_option_chain(sym)
@@ -737,8 +822,16 @@ def _option_reference_entry(entry):
 def update_options(feed):
  previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
  old_by={m.get("ticker"):m for m in previous.get("markets",[]) if isinstance(m,dict) and m.get("ticker")}
+ chain_targets=("SPX","SPY","NDX","QQQ","RUT","IWM","DIA","GLD","IAU","SLV","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT")
  detailed={}
+ # Preferred chain source: Massive. Yahoo remains a public fallback.
+ for sym in chain_targets:
+  try:
+   x=_massive_option_chain(sym)
+   if x:detailed[sym]=x
+  except Exception as e:print("MASSIVE TARGET",sym,type(e).__name__,str(e)[:120])
  for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
+  if sym in detailed:continue
   try:
    x=opt(sym)
    if x:detailed[sym]=x
@@ -755,7 +848,8 @@ def update_options(feed):
     p0=(x.get("profiles") or [{}])[0]
     for k in ("ivRank","ivPercentile","iv","putCallVol","putCallOi","expectedMove","expectedMovePct"):
      if stats.get(k) is not None:p0[k]=stats[k]
-   x["family"]=entry["family"];x["instrumentCode"]=code;x["instrumentKind"]=entry["kind"];x["sourceDate"]=x.get("updated") or datetime.now(timezone.utc).isoformat()
+   x["family"]=entry["family"];x["instrumentCode"]=code;x["instrumentKind"]=entry["kind"]
+   x["sourceDate"]=x.get("asOf") or datetime.now(timezone.utc).isoformat()
    out.append(x);continue
   if entry.get("eurex"):
    ex=_eurex_snapshot(entry)
@@ -763,67 +857,72 @@ def update_options(feed):
     q=ex.get("underlyingClose")
     out.append({**entry,"ticker":code,"name":entry["label"],"referenceOnly":True,"spot":q,
                 "quote":ex,"stats":ex,"dataStatus":ex.get("dataStatus"),"asOf":ex.get("asOfDate"),
-                "method":"Eurex: último snapshot público disponible. Para ODAX/OESX se muestran estadísticas agregadas; sin cadena de strikes no se inventan Max Pain/GEX."})
+                "method":"Eurex: último snapshot público disponible. Sin cadena de strikes no se inventan Max Pain/GEX."})
     continue
   if entry.get("yahoo"):
    ref=_option_reference_entry(entry)
    if ref:out.append(ref)
 
- # Add SPX model layer already available from the market feed.
+ # SPX GEX fallback only if no full chain arrived from Massive/Yahoo.
  sf=feed.get("squawkFlow",{}) if isinstance(feed.get("squawkFlow"),dict) else {}
  sx=sf.get("spxGex",{}).get("data") if isinstance(sf.get("spxGex"),dict) else None
- if isinstance(sx,dict):
+ if isinstance(sx,dict) and not any(m.get("ticker")=="SPX" and not m.get("referenceOnly") for m in out):
   spxprof={"expiration":sx.get("asOfDate"),"daysToExpiry":None,"gammaNet":sx.get("netGex"),
            "gammaFlip":sx.get("gexFlipPrice"),"callWall":sx.get("callWall"),"putWall":sx.get("putWall"),
-           "callWallOi":sx.get("callWall"),"putWallOi":sx.get("putWall"),
-           "maxGammaStrike":sx.get("maxGammaStrike"),"volTrigger":sx.get("volTrigger"),
-           "bucket":"SPX · GEX model","source":"SquawkFlow / Cboe OI-derived estimate",
+           "callWallOi":sx.get("callWall"),"putWallOi":sx.get("putWall"),"maxGammaStrike":sx.get("maxGammaStrike"),
+           "volTrigger":sx.get("volTrigger"),"bucket":"SPX · GEX model","source":"SquawkFlow / Cboe OI-derived estimate",
            "dataStatus":"REAL / DELAYED · OI-derived"}
   spx={"ticker":"SPX","instrumentCode":"SPX","family":"S&P 500","name":"S&P 500 Index · SPX",
        "spot":sx.get("spotPrice"),"profiles":[spxprof],"referenceOnly":False,
-       "source":"SquawkFlow · SPX full-chain GEX model","sourceUrl":"https://squawkflow.com/docs/endpoints",
-       "dataStatus":"REAL / DELAYED · calculated from Cboe open interest","asOf":sx.get("levelsAsOf") or sx.get("asOfDate"),
-       "method":"GEX/Gamma Flip/Call-Put walls are modelled from the SPX option chain and Cboe open interest; Max Pain is not inferred when OI-by-strike is not exposed."}
- out=[m for m in out if m.get("ticker")!="SPX"];out.insert(0,spx)
+       "source":"SquawkFlow · SPX GEX model","sourceUrl":"https://squawkflow.com/docs/endpoints",
+       "dataStatus":"REAL / DELAYED · calculated from Cboe open interest",
+       "method":"Fallback GEX model from Cboe open interest; used only when a full chain source is unavailable."}
+  out=[m for m in out if m.get("ticker")!="SPX"];out.insert(0,spx)
 
- # Preserve a previously valid detailed chain when the provider is temporarily unavailable.
+ # Crypto options: Deribit is primary; CME is a separate layer, never merged into Deribit metrics.
+ for ccy in ("BTC","ETH"):
+  try:
+   der=_deribit_options(ccy)
+   if der:
+    crypto=dict(der);crypto["ticker"]=ccy;crypto["instrumentCode"]=ccy;crypto["family"]="Cripto";crypto["referenceOnly"]=False
+    crypto["dataStatus"]="REAL / DELAYED · Deribit public options"
+    crypto["method"]="Deribit public options. GEX/Gamma Flip are modeled from public OI/Greeks; CME and ETF layers remain separate."
+    if ccy=="BTC":
+     crypto["btcPerspective"]=True
+     crypto["layers"]={"deribit":der,"cme":_cme_btc_option_layer(),"spotEtfFlows":_bitcoin_etf_flows()}
+    out=[m for m in out if m.get("ticker")!=ccy];out.append(crypto)
+  except Exception as e:print("CRYPTO OPTIONS",ccy,type(e).__name__,str(e)[:160])
+
+ present={x.get("ticker") for x in out}
  for code,m in old_by.items():
-  if code not in {x.get("ticker") for x in out} and m.get("profiles"):
+  if code not in present and m.get("profiles"):
    m=dict(m);m["dataStatus"]="UNAVAILABLE · último snapshot válido retenido";m["updatedAttempt"]=datetime.now(timezone.utc).isoformat();out.append(m)
-
- if not out:
-  if previous.get("markets"):
-   previous["sourceStatus"]="UNAVAILABLE · last valid snapshot retained";feed["options"]=previous
-  return
 
  flow=feed.get("squawkFlow",{}) if isinstance(feed.get("squawkFlow"),dict) else {}
  flow_data=flow.get("unusualOptions",{}).get("data") if isinstance(flow.get("unusualOptions"),dict) else []
- if isinstance(flow_data,list):
-  flow_data=flow_data[:30]
- else:flow_data=[]
- option_stats=feed.get("optionsStats") if isinstance(feed.get("optionsStats"),dict) else {}
+ flow_data=flow_data[:30] if isinstance(flow_data,list) else []
 
  hist=dict(previous.get("history") or {});stamp=datetime.now(timezone.utc).isoformat()
  for m in out:
-  if m.get("referenceOnly") or m.get("ticker") in ("BTC","ETH","BTC-CME"):continue
+  if m.get("referenceOnly"):continue
   p=(m.get("profiles") or [{}])[0];arr=hist.get(m.get("ticker"),[])
-  snap={"asOf":stamp,"expiration":m.get("expiration"),"spot":m.get("spot"),"gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),"callWall":p.get("callWall"),"putWall":p.get("putWall"),"ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
+  snap={"asOf":stamp,"expiration":m.get("expiration") or p.get("expiration"),"spot":m.get("spot"),
+        "gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),
+        "callWall":p.get("callWallOi") or p.get("callWall"),"putWall":p.get("putWallOi") or p.get("putWall"),
+        "ivAtm":p.get("ivAtm"),"expectedMove":p.get("expectedMove"),"riskReversal25d":p.get("riskReversal25d")}
   arr=[h for h in arr if not (h.get("expiration")==snap.get("expiration") and h.get("asOf","")[:10]==stamp[:10])]
   arr.append(snap);hist[m.get("ticker")]=arr[-180:]
 
  feed["options"]={
   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-  "markets":out,"history":hist,
-  "flow":flow_data,
-  "optionsStats":option_stats,
+  "markets":out,"history":hist,"flow":flow_data,
+  "optionsStats":feed.get("optionsStats") if isinstance(feed.get("optionsStats"),dict) else {},
   "catalog":OPTION_CATALOG,
-  "source":"Yahoo public option chains + Barchart Options Overview + Eurex public statistics + Cboe-delayed unusual options feed",
+  "source":"Massive full-chain snapshots + Cboe + Barchart + Deribit/CME + Yahoo fallback",
   "sourceStatus":"REAL / DELAYED · multi-source",
-  "publication":"Yahoo chains are delayed. Barchart options overview provides delayed IV/IV Rank/IV Percentile where publicly exposed. Eurex exposes public delayed index-derivative statistics. Flow is delayed and only a subset of public unusual activity.",
-  "note":"Max Pain is calculated from public OI when a complete chain is available. Call/Put Wall uses largest OI by side. GEX/Gamma Flip are modeled proxies. Reference-only instruments show the latest available underlying quote with its date instead of pretending that an unavailable option chain exists."
+  "publication":"Massive supplies chain-level OI/volume/IV/Greeks where available; Cboe supplies market-wide statistics; Barchart complements IV rank/percentile; Deribit is primary crypto chain; Yahoo is fallback only.",
+  "note":"No se rellenan métricas inexistentes. Reference-only instruments muestran precio/fecha y explican por qué no hay cadena. Max Pain/GEX/Gamma Flip/DEX son cálculos sobre snapshots públicos y no observación directa del libro de dealers."
  }
-
-
 def update_dark_pools(feed):
     token=finra_access_token()
     if not token:return
@@ -1197,9 +1296,32 @@ def update_traditional_sentiment(feed):
 
 def update_options_market_stats(feed):
  try:
-  html=get("https://www.cboe.com/us/options/market_statistics/daily/").text
-  m1=re.search(r'TOTAL PUT/CALL RATIO\D+([0-9.]+)',html,re.I);m2=re.search(r'INDEX PUT/CALL RATIO\D+([0-9.]+)',html,re.I)
-  feed["optionsStats"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"totalPutCall":float(m1.group(1)) if m1 else None,"indexPutCall":float(m2.group(1)) if m2 else None,"source":"Cboe Daily Market Statistics","sourceUrl":"https://www.cboe.com/us/options/market_statistics/daily/"}
+  html=get("https://www.cboe.com/data/mktstat.aspx").text
+  patterns={
+   "totalPutCall":r"TOTAL PUT/CALL RATIO\D+([0-9.]+)",
+   "indexPutCall":r"INDEX PUT/CALL RATIO\D+([0-9.]+)",
+   "etpPutCall":r"EXCHANGE TRADED PRODUCTS PUT/CALL RATIO\D+([0-9.]+)",
+   "equityPutCall":r"EQUITY PUT/CALL RATIO\D+([0-9.]+)",
+   "vixPutCall":r"CBOE VOLATILITY INDEX \(VIX\) PUT/CALL RATIO\D+([0-9.]+)",
+   "spxPutCall":r"SPX \+ SPXW PUT/CALL RATIO\D+([0-9.]+)",
+   "russellPutCall":r"MRUT PUT/CALL RATIO\D+([0-9.]+)"
+  }
+  out={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"source":"Cboe Daily Market Statistics","sourceUrl":"https://www.cboe.com/data/mktstat.aspx","dataStatus":"REAL / DAILY · Cboe public statistics"}
+  for k,p in patterns.items():
+   m=re.search(p,html,re.I)
+   if m:out[k]=float(m.group(1))
+  def section(title):
+   pos=html.upper().find(title.upper())
+   if pos<0:return {}
+   chunk=html[pos:pos+7000];z={}
+   for metric in ("VOLUME","OPEN INTEREST"):
+    m=re.search(metric+r".{0,500}?([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)",chunk,re.I|re.S)
+    if m:z[metric.lower().replace(" ","_")]={"call":int(m.group(1).replace(",","")),"put":int(m.group(2).replace(",","")),"total":int(m.group(3).replace(",",""))}
+   return z
+  for name,title in (("all","SUM OF ALL PRODUCTS"),("index","INDEX OPTIONS"),("etp","EXCHANGE TRADED PRODUCTS"),("equity","EQUITY OPTIONS")):
+   z=section(title)
+   if z:out[name]=z
+  feed["optionsStats"]=out
  except Exception as e:print("CBOE STATS",type(e).__name__,str(e)[:180])
 
 def update_bond_curves(feed):
