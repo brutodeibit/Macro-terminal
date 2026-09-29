@@ -1193,7 +1193,7 @@ function __optionsInteractiveHtml(m,p){
 }
 function __drawOptionsCharts(m,p){
  const root=document.getElementById('sec-options');if(!root)return;
- const raw=(p.topGexStrikes||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,oi:__optNum(x.oi)||0,iv:__optNum(x.iv)||null,type:x.type||''})).filter(x=>x.strike!==null);
+ const raw=(p.topGexStrikes||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,oi:__optNum(x.oi)||0,iv:(__optNum(x.iv)!==null?(__optNum(x.iv)>3?__optNum(x.iv):__optNum(x.iv)*100):null),type:x.type||''})).filter(x=>x.strike!==null);
  if(!raw.length)return;
  const byStrike={};
  raw.forEach(x=>{const k=String(x.strike);const a=byStrike[k]||(byStrike[k]={strike:x.strike,gex:0,oi:0,callOi:0,putOi:0,ivs:[]});a.gex+=x.gex;a.oi+=x.oi;if(x.type==='C')a.callOi+=x.oi;if(x.type==='P')a.putOi+=x.oi;if(x.iv!==null)a.ivs.push(x.iv);});
