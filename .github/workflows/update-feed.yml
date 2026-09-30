@@ -56,8 +56,16 @@ jobs:
           git commit -m "chore: refresh macro feed"
           for i in 1 2 3; do
             git fetch origin main
-            git rebase origin/main && git push origin HEAD:main && exit 0
-            git rebase --abort || true
+            # The only generated file is macro-feed.json. Keep the freshly
+            # generated feed and rebase it logically onto the newest main
+            # without creating a content conflict in the large JSON file.
+            git reset --soft origin/main
+            git commit -m "chore: refresh macro feed" --allow-empty
+            if git push origin HEAD:main; then exit 0; fi
+            git reset --hard origin/main
+            python update_feed.py
+            git add macro-feed.json
+            git commit -m "chore: refresh macro feed"
             sleep 5
           done
           echo "Unable to publish after 3 attempts"
