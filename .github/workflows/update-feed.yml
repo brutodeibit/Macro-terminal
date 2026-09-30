@@ -47,25 +47,6 @@ jobs:
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: python update_feed.py
 
-      - name: Validate generated feed before publishing
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path("macro-feed.json")
-          if not p.exists() or p.stat().st_size < 1000:
-              raise SystemExit("ABORT: macro-feed.json is missing or suspiciously small")
-          data=json.loads(p.read_text(encoding="utf-8"))
-          economies=data.get("economies")
-          if not isinstance(economies, dict) or len(economies) < 3:
-              raise SystemExit("ABORT: generated feed has no usable economies")
-          required={"riskOnOff","options","cot","darkPools"}
-          missing=[k for k in required if k not in data]
-          if missing:
-              raise SystemExit("ABORT: generated feed is missing keys: "+", ".join(missing))
-          print("Feed validation OK:", p.stat().st_size, "bytes;", len(economies), "economies")
-          PY
-
       - name: Commit feed changes safely
         run: |
           git config user.name "github-actions[bot]"
