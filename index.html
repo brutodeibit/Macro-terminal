@@ -1699,10 +1699,15 @@ function renderContent() {
 
         // Inicializar al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
-            renderSidebar();
-            renderContent();
-            setTimeout(loadExternalFeed, 200);
-            setInterval(loadExternalFeed, 15*60*1000);
+            // Arranque tolerante a fallos: un módulo o feed roto no puede dejar todo el dashboard en blanco.
+            try { renderSidebar(); } catch (e) { console.error('MacroTerminal sidebar init', e); }
+            try { renderContent(); } catch (e) {
+                console.error('MacroTerminal content init', e);
+                const c=document.getElementById('mainDashboard');
+                if(c) c.innerHTML='<section class="metric rounded-2xl p-6"><div class="text-sm font-bold text-amber-300">Panel temporalmente limitado</div><div class="text-xs text-gray-400 mt-2">Los datos integrados no se han podido pintar en esta carga. Recargando el feed no se perderá la información disponible.</div></section>';
+            }
+            setTimeout(async()=>{ try { await loadExternalFeed(); } catch(e) { console.error('MacroTerminal feed init',e); } }, 200);
+            setInterval(async()=>{ try { await loadExternalFeed(); } catch(e) { console.error('MacroTerminal feed refresh',e); } }, 15*60*1000);
         });
     </script>
 
