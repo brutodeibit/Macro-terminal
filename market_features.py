@@ -891,9 +891,11 @@ def update_options(feed):
     crypto=dict(der);crypto["ticker"]=ccy;crypto["instrumentCode"]=ccy;crypto["family"]="Cripto";crypto["referenceOnly"]=False
     crypto["dataStatus"]="REAL / DELAYED · Deribit public options"
     crypto["method"]="Deribit public options. GEX/Gamma Flip are modeled from public OI/Greeks; CME and ETF layers remain separate."
+    crypto["cryptoPerspective"]=True
+    crypto["layers"]={"deribit":der,"spotEtfFlows":_crypto_spot_etf_flows(ccy)}
     if ccy=="BTC":
      crypto["btcPerspective"]=True
-     crypto["layers"]={"deribit":der,"cme":_cme_btc_option_layer(),"spotEtfFlows":_crypto_spot_etf_flows(ccy)}
+     crypto["layers"]["cme"]=_cme_btc_option_layer()
     out=[m for m in out if m.get("ticker")!=ccy];out.append(crypto)
   except Exception as e:print("CRYPTO OPTIONS",ccy,type(e).__name__,str(e)[:160])
 
