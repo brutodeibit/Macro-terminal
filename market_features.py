@@ -119,6 +119,18 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  rr25=(iv25c-iv25p)*100 if iv25c is not None and iv25p is not None else None
  call_oi_wall=max(calls,key=lambda x:float(x.get("openInterest",0) or 0)) if calls else None
  put_oi_wall=max(puts,key=lambda x:float(x.get("openInterest",0) or 0)) if puts else None
+ strike_map={}
+ for z in gex_by:
+  k=z.get("strike")
+  if k is None:continue
+  key=str(k); a=strike_map.setdefault(key,{"strike":k,"gex":0.0,"callOi":0.0,"putOi":0.0,"callVolume":0.0,"putVolume":0.0})
+  a["gex"]+=float(z.get("gex") or 0)
+  if z.get("type")=="C":a["callOi"]+=float(z.get("oi") or 0);a["callVolume"]+=float(z.get("volume") or 0)
+  else:a["putOi"]+=float(z.get("oi") or 0);a["putVolume"]+=float(z.get("volume") or 0)
+ strike_map=sorted(strike_map.values(),key=lambda z:float(z["strike"]))
+ if len(strike_map)>60:
+  strike_map=sorted(strike_map,key=lambda z:abs(float(z["strike"])-spot))[:60]
+  strike_map=sorted(strike_map,key=lambda z:float(z["strike"]))
  return {
   "expiration":expiration.date().isoformat(),"daysToExpiry":round(ex,2),
   "callOi":co,"putOi":po,"putCallOi":po/co if co else None,"callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,"putCallVol":pv/cv if cv else None,"totalVolume":cv+pv,"totalOpenInterest":total_oi,
@@ -132,6 +144,7 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   "dexProxy":dex,"vannaProxy":vanna,"charm":charm,"oiChange":oi_delta,"largestOiChange":largest_oi_change,
   **gp,"gammaFlipDistance":(gp.get("gammaFlip")-spot) if gp.get("gammaFlip") is not None else None,"gammaFlipDistancePct":(gp.get("gammaFlip")-spot)/spot*100 if gp.get("gammaFlip") is not None and spot else None,
   "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:16],
+  "strikeMap":strike_map,
   "sourceWindow":"Public delayed chain · OI/volume/IV; Greeks calculated with Black-Scholes"
  }
 
