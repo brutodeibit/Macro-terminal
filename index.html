@@ -1189,7 +1189,7 @@ function __optionsInteractiveHtml(m,p){
  if(!has){
   return '<div class="metric rounded-xl p-5 border border-amber-900/50"><div class="flex items-center justify-between gap-3"><div><b class="text-sm text-white">OPTIONS 2.0 · CADENA NO DISPONIBLE</b><p class="text-[10px] text-gray-500 mt-1">Este instrumento no tiene una cadena de strikes completa en el snapshot actual. No se inventan GEX, Max Pain ni niveles derivados.</p></div><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'SIN CADENA')+'</span></div></div>';
  }
- return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">STRIKE MAP · GEX + OI</b><p class="text-[10px] text-gray-500 mt-1">Interactivo · hover, zoom y selección. GEX es un cálculo sobre la cadena disponible; no representa el libro real de dealers.</p></div><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'CALCULADO')+'</span></div><div id="opt-gex-chart" class="w-full h-[450px] mt-2"></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4"><div id="opt-iv-chart" class="w-full h-[300px]"></div><div id="opt-term-chart" class="w-full h-[300px]"></div></div></div>';
+ return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">POSITIONING MAP · GEX + OPEN INTEREST</b><p class="text-[10px] text-gray-500 mt-1">Mapa interactivo de la expiración seleccionada. Barras = GEX modelado; líneas = Call/Put OI. Usa zoom y hover para inspeccionar strikes.</p></div><div class="flex flex-wrap gap-2"><span class="mini-pill">EXP '+esc(p.expiration||'—')+'</span><span class="mini-pill">DTE '+fmtNum(p.daysToExpiry,1)+'</span><span class="mini-pill">'+esc(p.dataStatus||m.dataStatus||'CALCULADO')+'</span></div></div><div id="opt-gex-chart" class="w-full h-[470px] mt-2"></div><div class="metric rounded-xl p-4 mt-4"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">VOLATILITY TERM STRUCTURE</b><p class="text-[10px] text-gray-500 mt-1">ATM IV por vencimiento: permite ver si la volatilidad está concentrada en el corto plazo o repartida hacia meses posteriores.</p></div><span class="mini-pill">DTE + FECHA</span></div><div id="opt-term-chart" class="w-full h-[330px] mt-2"></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"><div class="metric p-4"><b class="text-xs text-white">CÓMO LEER EL MAPA</b><ul class="text-[10px] text-gray-400 mt-2 space-y-1.5"><li>• <span class="text-emerald-300">GEX positivo</span>: el modelo estima mayor gamma estabilizadora; <span class="text-red-300">negativo</span>: mayor sensibilidad a movimientos.</li><li>• <span class="text-blue-300">Call OI</span> y <span class="text-purple-300">Put OI</span>: contratos abiertos por strike; no equivalen por sí solos a compras o ventas direccionales.</li><li>• Spot = precio actual. Gamma Flip = nivel donde el GEX modelado cambia de signo. Walls = strikes con concentración de OI.</li><li>• Max Pain es una referencia matemática de expiración, no un soporte/resistencia garantizado.</li></ul></div><div class="metric p-4"><b class="text-xs text-white">IMPORTANTE</b><p class="text-[10px] text-gray-400 mt-2">GEX, Gamma Flip y DEX son cálculos sobre la cadena disponible; no observamos el libro real de dealers. Para contexto temporal, mira primero DTE/expiración y después la term structure. IV por strike queda fuera del panel principal porque añade complejidad sin mejorar tanto la lectura macro.</p></div></div></div>
 }
 function __drawOptionsCharts(m,p){
  const root=document.getElementById('sec-options');if(!root)return;
@@ -1209,11 +1209,9 @@ function __drawOptionsCharts(m,p){
   const shapes=[],anns=[];
   [[spot,'Spot','#facc15'],[flip,'Gamma Flip','#a78bfa'],[pain,'Max Pain','#fb923c'],[callWall,'Call Wall','#60a5fa'],[putWall,'Put Wall','#c084fc']].forEach(([v,label,c])=>{if(v!==null){shapes.push({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:c,width:1.5,dash:'dot'}});anns.push({x:v,y:1.04,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:9,color:c}});}});
   P.newPlot('opt-gex-chart',traces,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:60,r:65,t:55,b:48},xaxis:{title:'Strike',gridcolor:'#1f2937',zeroline:false},yaxis:{title:'GEX',gridcolor:'#1f2937'},yaxis2:{title:'Open Interest',overlaying:'y',side:'right',showgrid:false},shapes,annotations:anns,legend:{orientation:'h',y:1.16},hovermode:'x unified'},cfg);
-  const ivRows=rows.filter(x=>x.iv!==null);
-  if(ivRows.length)P.newPlot('opt-iv-chart',[{x:ivRows.map(x=>x.strike),y:ivRows.map(x=>x.iv),type:'scatter',mode:'lines+markers',name:'IV',line:{color:'#fbbf24',width:2},hovertemplate:'Strike %{x}<br>IV %{y:.2f}%<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:45,r:20,t:30,b:40},title:{text:'IV por strike',font:{size:12,color:'#e5e7eb'}},xaxis:{gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'}},cfg);
-  else document.getElementById('opt-iv-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">IV por strike no disponible en este snapshot.</div>';
+
   const profiles=(m.profiles||[]).filter(q=>__optNum(q.daysToExpiry)!==null&&__optNum(q.ivAtm)!==null);
-  if(profiles.length)P.newPlot('opt-term-chart',[{x:profiles.map(q=>q.daysToExpiry),y:profiles.map(q=>q.ivAtm),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#38bdf8',width:2},hovertemplate:'DTE %{x}<br>ATM IV %{y:.2f}%<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:45,r:20,t:30,b:40},title:{text:'Term structure · ATM IV',font:{size:12,color:'#e5e7eb'}},xaxis:{title:'Días',gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'}},cfg);
+  if(profiles.length)P.newPlot('opt-term-chart',[{x:profiles.map(q=>q.daysToExpiry),y:profiles.map(q=>q.ivAtm),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#38bdf8',width:3},marker:{size:8},hovertemplate:'DTE %{x}<br>Expira %{customdata}<br>ATM IV %{y:.2f}%<extra></extra>',customdata:profiles.map(q=>q.expiration||'—')}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:55,r:20,t:45,b:50},title:{text:'ATM IV según vencimiento',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Días hasta expiración (DTE)',gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'},hovermode:'x unified'},cfg);
   else document.getElementById('opt-term-chart').innerHTML='<div class="text-[10px] text-gray-500 p-3">Term structure ATM IV no disponible con los vencimientos disponibles.</div>';
  }).catch(()=>{const el=document.getElementById('opt-gex-chart');if(el)el.innerHTML='<div class="text-[10px] text-gray-500 p-3">No se pudo cargar el motor gráfico interactivo; los datos tabulares siguen visibles.</div>';});
 }
@@ -1232,6 +1230,42 @@ renderOptionsSection=function(){
  const out=html.replace(marker,chart+marker);
  if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
+};
+
+/* PROFESSIONAL INTERACTIVE CHARTS · COT + DARK POOLS */
+const __renderCotLegacy=renderCotSection;
+const __renderDarkPoolLegacy=renderDarkPoolSection;
+renderCotSection=function(){
+ const html=__renderCotLegacy();
+ if(!document.body)return html;
+ setTimeout(()=>{
+  const host=document.querySelector('#sec-cot .cot-chart-wrap'); if(!host||host.dataset.plotlyReady)return;
+  const c=macroDatabase.__cot||{}, markets=c.markets||[], selected=window.__cotMarket, m=markets.find(x=>x.name===selected)||markets[0], hist=(m?.history||[]).slice(0,window.__cotRange||52).reverse();
+  if(!m||hist.length<2)return;
+  host.dataset.plotlyReady='1';
+  __loadPlotly().then(P=>{
+   const rows=hist.map(x=>({date:String(x.date||''),net:Number(x.net),long:Number(x.long),short:Number(x.short)})).filter(x=>Number.isFinite(x.net));
+   P.newPlot(host,[{x:rows.map(x=>x.date),y:rows.map(x=>x.net),type:'scatter',mode:'lines+markers',name:'Neto',line:{color:'#facc15',width:3},marker:{size:6},customdata:rows.map(x=>[x.long,x.short]),hovertemplate:'%{x}<br>Neto %{y:,.0f}<br>Largos %{customdata[0]:,.0f}<br>Cortos %{customdata[1]:,.0f}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:65,r:25,t:15,b:50},xaxis:{gridcolor:'#1f2937',rangeslider:{visible:true}},yaxis:{title:'Contratos netos',gridcolor:'#1f2937'},hovermode:'x unified'}, {responsive:true,displaylogo:false});
+  }).catch(()=>{});
+ },40);
+ return html;
+};
+renderDarkPoolSection=function(){
+ const html=__renderDarkPoolLegacy();
+ setTimeout(()=>{
+  const host=document.querySelector('#sec-darkpool .dp-chart-wrap'); if(!host||host.dataset.plotlyReady)return;
+  const t=macroDatabase.__darkPoolPrints||{},assets=t.assets||{},a=assets[window.__darkPoolTicker],ps=a?.priceSeries||[];
+  if(!a||ps.length<2)return;
+  host.dataset.plotlyReady='1';
+  __loadPlotly().then(P=>{
+   const base=ps.map(x=>({ts:Number(x.ts),price:Number(x.price)})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price));
+   const prints=(a.prints||[]).map((p,i)=>{const price=Number(p.price??p.priceApprox),ts=Number(p.approxTs);return {ts:Number.isFinite(ts)?ts:(base[i]?.ts||base[0]?.ts),price,side:p.side||'PRINT',size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp||''};}).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price));
+   const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#60a5fa',width:2.5},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
+   if(prints.length)trace.push({x:prints.map(x=>new Date(x.ts*1000)),y:prints.map(x=>x.price),type:'scatter',mode:'markers',name:'Prints',marker:{size:prints.map(x=>Math.max(5,Math.min(22,Math.sqrt(Math.max(x.size,1))/8))),color:prints.map(x=>x.side==='BUY'?'#34d399':x.side==='SELL'?'#f87171':'#facc15'),opacity:.78,line:{width:1,color:'#e5e7eb'}},customdata:prints.map(x=>[x.side,x.size,x.notional,x.time]),hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<br>%{customdata[0]} · %{customdata[1]:,.0f} sh<br>Notional %{customdata[2]:,.0f}<br>%{customdata[3]}<extra></extra>'});
+   P.newPlot(host,trace,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:60,r:20,t:15,b:55},xaxis:{title:'Hora',gridcolor:'#1f2937',rangeslider:{visible:true}},yaxis:{title:'Precio',gridcolor:'#1f2937'},hovermode:'x unified'}, {responsive:true,displaylogo:false});
+  }).catch(()=>{});
+ },40);
+ return html;
 };
 
 function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
