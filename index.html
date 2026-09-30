@@ -1648,8 +1648,9 @@ function renderContent() {
                     const res=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
                     if(!res.ok) throw new Error('HTTP '+res.status);
                     const feed=await res.json();
-                    if(!feed || !feed.economies) throw new Error('JSON válido pero sin economies');
+                    if(!feed || !feed.economies || typeof feed.economies!=='object' || !Object.keys(feed.economies).some(k=>feed.economies[k]&&feed.economies[k].id)) throw new Error('Feed inválido: sin economías utilizables');
                     Object.entries(feed.economies).forEach(([k,v])=>{
+                        if(!v || typeof v!=='object' || !v.id) return;
                         if(!macroDatabase[k]) macroDatabase[k]={};
                         macroDatabase[k]={...macroDatabase[k],...v};
                         if(v.rates) macroDatabase[k].rates={...macroDatabase[k].rates,...v.rates};
@@ -1696,6 +1697,26 @@ function renderContent() {
         macroDatabase.__traditionalSentiment = macroDatabase.__traditionalSentiment || {};
         macroDatabase.__traditionalFearGreed = macroDatabase.__traditionalFearGreed || {};
         macroDatabase.__optionsStats = macroDatabase.__optionsStats || {};
+
+        // Blindaje de render: un módulo defectuoso nunca debe dejar el dashboard entero en blanco.
+        const __renderContentCore = renderContent;
+        renderContent = function(){
+            try {
+                return __renderContentCore();
+            } catch(e) {
+                console.error('MacroTerminal renderContent:', e);
+                const container=document.getElementById('mainDashboard');
+                const data=macroDatabase[currentCountryKey];
+                if(!container) return;
+                if(currentCountryKey==='__global'){
+                    container.innerHTML='<section class="metric rounded-xl p-5 border border-amber-500/30"><div class="text-[10px] uppercase text-amber-300">PANEL GLOBAL · RECUPERACIÓN</div><div class="text-lg font-black text-white mt-1">Un módulo ha fallado al renderizar</div><p class="text-xs text-gray-400 mt-2">El feed está disponible, pero una función de presentación produjo un error. Las economías siguen accesibles desde el lateral.</p></section>';
+                } else if(data) {
+                    document.getElementById('countryTitle').innerHTML = (data.flag||'🌎')+' Monitor '+esc(data.name||data.id||'Economía');
+                    document.getElementById('countrySubtitle').textContent = data.subtitle || 'Política monetaria, curva e indicadores macro.';
+                    container.innerHTML='<section class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="metric rounded-xl p-5"><div class="text-[10px] uppercase text-gray-500">ESTADO DE DATOS</div><div class="text-xl font-black text-white mt-1">'+esc(data.updated||'Datos cargados')+'</div><p class="text-xs text-gray-400 mt-2">La información económica está cargada, pero una sección concreta no ha podido renderizarse.</p></div><div class="metric rounded-xl p-5"><div class="text-[10px] uppercase text-gray-500">TIPOS</div><div class="text-2xl font-black text-white mt-1">'+esc(data.rates?.official||'—')+'</div><p class="text-xs text-gray-400 mt-2">Próxima reunión: '+esc(data.rates?.nextMeeting||'—')+'</p></div></section>';
+                }
+            }
+        };
 
         // Inicializar al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
