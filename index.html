@@ -1148,7 +1148,7 @@ const INSTRUMENT_NAMES={
  window.__optTicker=selected;
  const m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
  const p=(m.profiles||[])[0]||{};
- const family=m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500';
+ const family=(window.__optFamily==='__ALL__'?'__ALL__':(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500'));
  const familyItems=catalog.filter(x=>x.family===family); const allItems=catalog.slice();
  const familySelect='<option value="__ALL__" '+(family==='__ALL__'?'selected':'')+'>TODOS LOS ACTIVOS</option>'+families.map(f=>'<option value="'+esc(f)+'" '+(f===family?'selected':'')+'>'+esc(f)+'</option>').join('');
  const instItems=family==='__ALL__'?allItems:familyItems; const instSelect=instItems.map(x=>'<option value="'+esc(x.code)+'" '+(x.code===selected?'selected':'')+'>'+esc(x.code)+' · '+esc(x.label)+'</option>').join('');
