@@ -572,16 +572,15 @@ def _farside_num(v):
   return float(re.sub(r"[^0-9.+-]","",s))
  except Exception:return None
 
-def _bitcoin_etf_flows():
+def _crypto_spot_etf_flows(asset="BTC"):
  try:
-  html=get("https://farside.co.uk/btc/").text
-  soup=BeautifulSoup(html,"html.parser")
-  table=None
+  slug="btc" if str(asset).upper()=="BTC" else "eth"
+  html=get(f"https://farside.co.uk/{slug}/").text
+  soup=BeautifulSoup(html,"html.parser");table=None
   for tbl in soup.find_all("table"):
-   sample=" ".join(" ".join(td.stripped_strings) for td in tbl.find_all("tr")[:4]).lower()
-   if "ibit" in sample and "total" in sample:
-    table=tbl
-    break
+   sample=" ".join(" ".join(td.stripped_strings) for td in tbl.find_all("tr")[:5]).lower()
+   if "total" in sample and (("ibit" in sample and slug=="btc") or ("etha" in sample and slug=="eth")):
+    table=tbl;break
   if table is None:return None
   rows=[]
   for tr in table.find_all("tr"):
@@ -592,20 +591,12 @@ def _bitcoin_etf_flows():
     if total is not None:rows.append({"date":cells[0],"netFlowUsdM":total})
   if not rows:return None
   vals=[x["netFlowUsdM"] for x in rows]
-  return {
-   "provider":"Farside Investors",
-   "source":"U.S. spot Bitcoin ETF flow table",
-   "sourceUrl":"https://farside.co.uk/btc/",
-   "asOf":rows[-1]["date"],
-   "netFlowUsdM":rows[-1]["netFlowUsdM"],
-   "netFlow1d":rows[-1]["netFlowUsdM"],
-   "netFlow1w":sum(vals[-5:]),
-   "netFlow1m":sum(vals[-22:]),
-   "history":rows[-60:],
-   "note":"Flujo neto agregado de la columna Total de los ETF spot BTC listados por Farside."
-  }
+  return {"provider":"Farside Investors","source":f"U.S. spot {asset} ETF flow table","sourceUrl":f"https://farside.co.uk/{slug}/","asOf":rows[-1]["date"],"netFlowUsdM":rows[-1]["netFlowUsdM"],"netFlow1d":rows[-1]["netFlowUsdM"],"netFlow5d":sum(vals[-5:]),"netFlow21d":sum(vals[-21:]),"history":rows[-60:],"note":f"Flujo neto agregado de todos los emisores ETF spot {asset} incluidos en la columna Total de Farside."}
  except Exception as e:
-  print("FARSIDE BTC ETF",type(e).__name__,str(e)[:180]);return None
+  print("FARSIDE ETF",asset,type(e).__name__,str(e)[:180]);return None
+
+def _bitcoin_etf_flows():
+ return _crypto_spot_etf_flows("BTC")
 
 def _cme_walk(obj):
  if isinstance(obj,dict):
@@ -902,7 +893,7 @@ def update_options(feed):
     crypto["method"]="Deribit public options. GEX/Gamma Flip are modeled from public OI/Greeks; CME and ETF layers remain separate."
     if ccy=="BTC":
      crypto["btcPerspective"]=True
-     crypto["layers"]={"deribit":der,"cme":_cme_btc_option_layer(),"spotEtfFlows":_bitcoin_etf_flows()}
+     crypto["layers"]={"deribit":der,"cme":_cme_btc_option_layer(),"spotEtfFlows":_crypto_spot_etf_flows(ccy)}
     out=[m for m in out if m.get("ticker")!=ccy];out.append(crypto)
   except Exception as e:print("CRYPTO OPTIONS",ccy,type(e).__name__,str(e)[:160])
 
