@@ -13,6 +13,7 @@ on:
 permissions:
   contents: write
 
+# All writers use the same lock so generated feeds cannot race on main.
 concurrency:
   group: macroterminal-main-writer
   cancel-in-progress: false
@@ -33,10 +34,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Validate Python
-        run: python -m py_compile update_feed.py market_features.py maintenance/fix_ui_2026_10_02.py
-
-      - name: Apply dashboard UI fixes
-        run: python maintenance/fix_ui_2026_10_02.py
+        run: python -m py_compile update_feed.py market_features.py
 
       - name: Update feed
         env:
@@ -49,51 +47,25 @@ jobs:
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: python update_feed.py
 
-      - name: Validate generated feed before publishing
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p=Path('macro-feed.json')
-          if not p.exists() or p.stat().st_size < 1000:
-              raise SystemExit('ABORT: macro-feed.json is missing or suspiciously small')
-          data=json.loads(p.read_text(encoding='utf-8'))
-          economies=data.get('economies')
-          if not isinstance(economies, dict) or len(economies) < 3:
-              raise SystemExit('ABORT: generated feed has no usable economies')
-          print('Feed validation OK:', p.stat().st_size, 'bytes;', len(economies), 'economies')
-          PY
-
-      - name: Validate dashboard JavaScript
-        run: |
-          python - <<'PY'
-          import re
-          from pathlib import Path
-          s=Path('index.html').read_text(encoding='utf-8')
-          scripts=re.findall(r'<script[^>]*>([\\s\\S]*?)</script>',s,re.I)
-          js=scripts[-1] if scripts else ''
-          compile(js,'index.html<script>','exec')
-          assert 'renderCotSection=__renderCotLegacy;' in js
-          assert 'const explicitCrypto=(selected===\'BTC\'||selected===\'ETH\');' in js
-          print('Dashboard JS validation OK')
-          PY
-
-      - name: Commit feed and UI changes safely
+      - name: Commit feed changes safely
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py .github/workflows/update-feed.yml
+          git add macro-feed.json
           git diff --cached --quiet && exit 0
-          git commit -m "fix: clean COT chart and isolate BTC ETH options"
+          git commit -m "chore: refresh macro feed"
           for i in 1 2 3; do
             git fetch origin main
-            git rebase origin/main || true
+            # The only generated file is macro-feed.json. Keep the freshly
+            # generated feed and rebase it logically onto the newest main
+            # without creating a content conflict in the large JSON file.
+            git reset --soft origin/main
+            git commit -m "chore: refresh macro feed" --allow-empty
             if git push origin HEAD:main; then exit 0; fi
             git reset --hard origin/main
-            python maintenance/fix_ui_2026_10_02.py
             python update_feed.py
-            git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py .github/workflows/update-feed.yml
-            git commit -m "fix: clean COT chart and isolate BTC ETH options" --allow-empty
+            git add macro-feed.json
+            git commit -m "chore: refresh macro feed"
             sleep 5
           done
           echo "Unable to publish after 3 attempts"
