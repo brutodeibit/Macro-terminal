@@ -1234,21 +1234,6 @@ renderOptionsSection=function(){
 
 /* PROFESSIONAL INTERACTIVE CHARTS · COT + DARK POOLS */
 const __renderDarkPoolLegacy=renderDarkPoolSection;
-renderCotSection=function(){
- const html=__renderCotLegacy();
- if(!document.body)return html;
- setTimeout(()=>{
-  const host=document.querySelector('#sec-cot .cot-chart-wrap'); if(!host||host.dataset.plotlyReady)return;
-  const c=macroDatabase.__cot||{}, markets=c.markets||[], selected=window.__cotMarket, m=markets.find(x=>x.name===selected)||markets[0], hist=(m?.history||[]).slice(0,window.__cotRange||52).reverse();
-  if(!m||hist.length<2)return;
-  host.dataset.plotlyReady='1';
-  __loadPlotly().then(P=>{
-   const rows=hist.map(x=>({date:String(x.date||''),net:Number(x.net),long:Number(x.long),short:Number(x.short)})).filter(x=>Number.isFinite(x.net));
-   P.newPlot(host,[{x:rows.map(x=>x.date),y:rows.map(x=>x.net),type:'scatter',mode:'lines+markers',name:'Neto',line:{color:'#facc15',width:3},marker:{size:6},customdata:rows.map(x=>[x.long,x.short]),hovertemplate:'%{x}<br>Neto %{y:,.0f}<br>Largos %{customdata[0]:,.0f}<br>Cortos %{customdata[1]:,.0f}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:65,r:25,t:15,b:50},xaxis:{gridcolor:'#1f2937',rangeslider:{visible:true}},yaxis:{title:'Contratos netos',gridcolor:'#1f2937'},hovermode:'x unified'}, {responsive:true,displaylogo:false});
-  }).catch(()=>{});
- },40);
- return html;
-};
 renderDarkPoolSection=function(){
  const html=__renderDarkPoolLegacy();
  setTimeout(()=>{
