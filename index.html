@@ -1218,6 +1218,7 @@ renderOptionsSection=function(){
  let selected=window.__optTicker||(markets[0]?.ticker||'SPY');
  const explicitCrypto=(selected==='BTC'||selected==='ETH');
  let m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||null;
+ if(!m && explicitCrypto) m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase().startsWith(selected+'-')||String(x.ticker||x.instrumentCode||'').toUpperCase().startsWith(selected+'/'))||null;
  if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
   const first=__optionsChainMarket(markets); if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
  }
