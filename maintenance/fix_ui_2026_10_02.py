@@ -3,17 +3,19 @@ from pathlib import Path
 p = Path('index.html')
 s = p.read_text(encoding='utf-8')
 
-# COT: keep the original single SVG chart and remove only the later COT overlay.
-# The overlay was creating a second visual layer/axis system. Dark Pools are
-# deliberately preserved.
+# COT: keep the original single SVG chart. Remove any later Plotly COT
+# override regardless of which previous patch version is present.
 marker = '/* PROFESSIONAL INTERACTIVE CHARTS · COT + DARK POOLS */'
-cot_marker = 'const __renderCotLegacy=renderCotSection;'
 dp_marker = 'const __renderDarkPoolLegacy=renderDarkPoolSection;'
-if marker in s and cot_marker in s and dp_marker in s:
-    cot_start = s.find(cot_marker, s.find(marker))
-    dp_start = s.find(dp_marker, cot_start)
-    if cot_start >= 0 and dp_start > cot_start:
-        s = s[:cot_start] + s[dp_start:]
+if marker in s and dp_marker in s:
+    section_start = s.find(marker)
+    dp_start = s.find(dp_marker, section_start)
+    if dp_start > section_start:
+        before = s[:section_start]
+        tail = s[dp_start:]
+        # Keep Dark Pools and everything after it, but remove any COT override
+        # between the professional marker and the Dark Pools legacy declaration.
+        s = before + marker + '\n' + tail
 
 # COT labels: show month/year on the axis. Exact date + long/short/net stay in
 # the point tooltip, so the chart remains visually clean without losing detail.
