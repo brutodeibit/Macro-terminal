@@ -1,0 +1,51 @@
+name: Fix dashboard charts once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply chart fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* CHART UX FIX 2026-10-02 */'
+          if marker in s:
+              print('Patch already present')
+              raise SystemExit(0)
+          patch=r'''\n\n        /* CHART UX FIX 2026-10-02 */\n        (function(){\n          // COT: one series, one Y axis, monthly X labels; exact weekly values only on hover.\n          const __cotClean = renderCotSection;\n          renderCotSection = function(){\n            const html=__cotClean();\n            setTimeout(()=>{\n              const host=document.querySelector('#sec-cot .cot-chart-wrap');\n              if(!host || host.dataset.chartUxFixed) return;\n              const c=macroDatabase.__cot||{}, markets=c.markets||[];\n              const selected=window.__cotMarket;\n              const m=markets.find(x=>x.name===selected)||markets[0];\n              const hist=(m?.history||[]).slice(0,window.__cotRange||52).reverse()\n                .map(x=>({date:String(x.date||''),net:Number(x.net),long:Number(x.long),short:Number(x.short)}))\n                .filter(x=>x.date && Number.isFinite(x.net));\n              if(!m || hist.length<2) return;\n              host.dataset.chartUxFixed='1';\n              host.innerHTML='';\n              __loadPlotly().then(P=>{\n                const dates=hist.map(x=>new Date(x.date+'T00:00:00Z'));\n                const trace={x:dates,y:hist.map(x=>x.net),type:'scatter',mode:'lines+markers',name:'Neto',line:{color:'#facc15',width:2.5},marker:{size:5},customdata:hist.map(x=>[x.long,x.short,x.date]),hovertemplate:'%{customdata[2]}<br>Neto %{y:,.0f}<br>Largos %{customdata[0]:,.0f}<br>Cortos %{customdata[1]:,.0f}<extra></extra>'};\n                P.newPlot(host,[trace],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:72,r:20,t:12,b:58},xaxis:{type:'date',title:'Mes',tickformat:'%b %Y',dtick:'M1',ticklabelmode:'period',gridcolor:'#18212d',showgrid:true,showline:false,rangeslider:{visible:false},automargin:true},yaxis:{title:'Contratos netos',tickformat:'~s',gridcolor:'#18212d',zeroline:true,zerolinecolor:'#374151',automargin:true},hovermode:'closest',showlegend:false},{responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']});\n              }).catch(()=>{});\n            },60);\n            return html;\n          };\n\n          // OPTIONS: only BTC and ETH are selectable; each selector resolves its own market.\n          renderOptionsSection = function(){\n            const o=macroDatabase.__options||{}, markets=o.markets||[];\n            const find=t=>markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===t);\n            const btc=find('BTC'), eth=find('ETH');\n            const available=[btc,eth].filter(Boolean);\n            let selected=String(window.__optTicker||'BTC').toUpperCase();\n            if(!available.some(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===selected)) selected=available[0]?String(available[0].ticker||available[0].instrumentCode).toUpperCase():'BTC';\n            window.__optTicker=selected;\n            const m=find(selected)||{};\n            const p=(m.profiles||[])[0]||{};\n            const buttons=['BTC','ETH'].map(t=>{const exists=!!find(t);return '<button '+(exists?'':'disabled')+' onclick=\"window.__optTicker=\\''+t+'\\';renderContent()\" class=\"rounded-lg px-4 py-2 text-xs font-bold border '+(selected===t?'border-blue-400 bg-blue-400/10 text-white':'border-gray-800 bg-gray-950/40 text-gray-400')+'\">'+t+(exists?'':' · sin cadena')+'</button>';}).join('');\n            const chart=__optionsInteractiveHtml(m,p);\n            const profiles=(m.profiles||[]).map(q=>'<div class=\"metric rounded-xl p-4\"><div class=\"flex items-center justify-between\"><b class=\"text-xs text-white\">'+esc(q.expiration||q.bucket||'VENCIMIENTO')+'</b><span class=\"mini-pill\">'+esc(q.dataStatus||m.dataStatus||'—')+'</span></div><div class=\"grid grid-cols-2 md:grid-cols-5 gap-3 mt-3 text-xs\"><div>Max Pain<b class=\"block text-white\">'+fmtNum(q.maxPain,2)+'</b></div><div>Gamma Flip<b class=\"block text-white\">'+fmtNum(q.gammaFlip??q.zeroGamma,2)+'</b></div><div>Call Wall<b class=\"block text-white\">'+fmtNum(q.callWallOi??q.callWall,0)+'</b></div><div>Put Wall<b class=\"block text-white\">'+fmtNum(q.putWallOi??q.putWall,0)+'</b></div><div>ATM IV<b class=\"block text-white\">'+(q.ivAtm!=null?fmtNum(q.ivAtm,2)+'%':'—')+'</b></div></div></div>').join('');\n            const html='<section id=\"sec-options\" class=\"space-y-4\"><div class=\"glass rounded-2xl p-5\"><div class=\"text-[10px] uppercase tracking-wider text-gray-500\">DERIVATIVES DESK · BTC / ETH</div><h2 class=\"text-xl font-black text-white mt-1\">OPTIONS · STRUCTURE + FLOW</h2><p class=\"text-sm text-gray-400 mt-1\">Solo BTC y ETH. Cada selección carga su propia cadena; no se reutilizan datos del activo anterior.</p><div class=\"flex gap-2 mt-4\">'+buttons+'</div></div><div class=\"grid grid-cols-2 md:grid-cols-5 gap-3\"><div class=\"metric p-3\"><span class=\"text-[9px] text-gray-500\">SPOT</span><b class=\"block text-lg\">'+fmtNum(m.spot,2)+'</b></div><div class=\"metric p-3\"><span class=\"text-[9px] text-gray-500\">MAX PAIN</span><b class=\"block text-lg\">'+fmtNum(p.maxPain,2)+'</b></div><div class=\"metric p-3\"><span class=\"text-[9px] text-gray-500\">GAMMA FLIP</span><b class=\"block text-lg\">'+fmtNum(p.gammaFlip??p.zeroGamma,2)+'</b></div><div class=\"metric p-3\"><span class=\"text-[9px] text-gray-500\">GEX</span><b class=\"block text-lg\">'+fmtCompactMoney(p.gammaNet)+'</b></div><div class=\"metric p-3\"><span class=\"text-[9px] text-gray-500\">ATM IV</span><b class=\"block text-lg\">'+(p.ivAtm!=null?fmtNum(p.ivAtm,2)+'%':'—')+'</b></div></div>'+profiles+chart+'</section>';\n            if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),100);\n            return html;\n          };\n        })();\n'''
+          needle='window.addEventListener(\'DOMContentLoaded\''
+          i=s.find(needle)
+          if i<0: raise SystemExit('DOMContentLoaded not found')
+          s=s[:i]+patch+s[i:]
+          p.write_text(s,encoding='utf-8')
+          print('Patched',len(s))
+          PY
+      - name: Validate JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',s,re.S)
+          Path('/tmp/dashboard.js').write_text(scripts[-1],encoding='utf-8')
+          print('JS extracted:',len(scripts[-1]))
+          PY
+          node --check /tmp/dashboard.js
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then echo 'No changes'; exit 0; fi
+          git commit -m 'fix: clean chart axes and BTC ETH option switching'
+          git push
