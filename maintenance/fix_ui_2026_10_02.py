@@ -71,5 +71,33 @@ if legacy_start >= 0 and legacy_end > legacy_start:
     html = html[:legacy_start] + legacy + html[legacy_end:]
 
 
+
+# Options charts: separate GEX and Open Interest into independent panels.
+chart_start = html.find("function __drawOptionsCharts(m,p){")
+chart_end = html.find("\nrenderOptionsSection=function(){", chart_start)
+if chart_start >= 0 and chart_end > chart_start:
+    chart_fn = r"""function __drawOptionsCharts(m,p){
+ const root=document.getElementById('sec-options');if(!root)return;
+ const raw=(p.strikeMap||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,callOi:__optNum(x.callOi)||0,putOi:__optNum(x.putOi)||0})).filter(x=>x.strike!==null).sort((a,b)=>a.strike-b.strike);
+ if(!raw.length)return;
+ __loadPlotly().then(P=>{
+  const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
+  const spot=__optNum(m.spot),flip=__optNum(p.gammaFlip??p.zeroGamma),pain=__optNum(p.maxPain),callWall=__optNum(p.callWall),putWall=__optNum(p.putWall);
+  const marks=[[spot,'Spot'],[flip,'Gamma Flip'],[pain,'Max Pain'],[callWall,'Call Wall'],[putWall,'Put Wall']];
+  const shapes=marks.filter(x=>x[0]!==null).map(([v])=>({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:'#6b7280',width:1,dash:'dot'}}));
+  const anns=marks.filter(x=>x[0]!==null).map(([v,label])=>({x:v,y:1.03,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:9,color:'#d1d5db'}}));
+  P.newPlot('opt-gex-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.gex),type:'bar',name:'GEX',hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:65,r:25,t:55,b:50},title:{text:'GEX por strike · escala independiente',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Strike',gridcolor:'#1f2937'},yaxis:{title:'GEX',gridcolor:'#1f2937',separatethousands:true},shapes,annotations:anns,hovermode:'x unified'},cfg);
+  P.newPlot('opt-oi-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.callOi),type:'scatter',mode:'lines+markers',name:'Call OI',hovertemplate:'Strike %{x}<br>Call OI %{y:,.0f}<extra></extra>'},{x:raw.map(x=>x.strike),y:raw.map(x=>x.putOi),type:'scatter',mode:'lines+markers',name:'Put OI',hovertemplate:'Strike %{x}<br>Put OI %{y:,.0f}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:65,r:25,t:45,b:50},title:{text:'Open Interest por strike · escala OI',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Strike',gridcolor:'#1f2937'},yaxis:{title:'Contratos OI',gridcolor:'#1f2937',separatethousands:true},hovermode:'x unified'},cfg);
+  const profiles=(m.profiles||[]).filter(q=>__optNum(q.daysToExpiry)!==null&&__optNum(q.ivAtm)!==null);
+  if(profiles.length)P.newPlot('opt-term-chart',[{x:profiles.map(q=>q.daysToExpiry),y:profiles.map(q=>q.ivAtm),type:'scatter',mode:'lines+markers',name:'ATM IV',hovertemplate:'DTE %{x}<br>Expira %{customdata}<br>ATM IV %{y:.2f}%<extra></extra>',customdata:profiles.map(q=>q.expiration||'—')}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:55,r:20,t:45,b:50},title:{text:'ATM IV por vencimiento',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Días hasta expiración (DTE)',gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'},hovermode:'x unified'},cfg);
+ }).catch(()=>{});
+}
+"""
+    html = html[:chart_start] + chart_fn + html[chart_end:]
+html = html.replace(
+    '<div id="opt-gex-chart" class="w-full h-[470px] mt-2"></div><div class="metric rounded-xl p-4 mt-4">',
+    '<div id="opt-gex-chart" class="w-full h-[390px] mt-2"></div><div id="opt-oi-chart" class="w-full h-[360px] mt-3"></div><div class="metric rounded-xl p-4 mt-4>',
+    1
+)
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
