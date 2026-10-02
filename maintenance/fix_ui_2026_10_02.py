@@ -50,6 +50,26 @@ options = r"""renderOptionsSection=function(){
  return out;
 };"""
 html = html[:opt_start] + options + html[opt_end+3:]
+// Patch the legacy options renderer too: its internal chainFirst fallback used
+// to reselect BTC when ETH had no chain, undoing the explicit asset selection.
+legacy_marker = "function renderOptionsSection(){"
+legacy_start = html.find(legacy_marker)
+legacy_end = html.find("const __renderOptionsLegacy", legacy_start)
+if legacy_start >= 0 and legacy_end > legacy_start:
+    legacy = html[legacy_start:legacy_end]
+    legacy = re.sub(
+        r"const current=\(window\.__optTicker&&markets\.find\(m=>\(m\.ticker\|\|m\.instrumentCode\)===window\.__optTicker\)\)\|\|null; const chainFirst=[\\s\\S]*?window\.__optTicker=selected;",
+        """const wanted=String(window.__optTicker||'').toUpperCase();
+ const explicitCrypto=(wanted==='BTC'||wanted==='ETH');
+ const current=markets.find(m=>String(m.ticker||m.instrumentCode||'').toUpperCase()===wanted)||markets.find(m=>{const k=String(m.ticker||m.instrumentCode||'').toUpperCase();return explicitCrypto&&(k.startsWith(wanted+'-')||k.startsWith(wanted+'/'));})||null;
+ const chainFirst=explicitCrypto?current:(markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length&&Array.isArray(m.profiles[0].topGexStrikes)&&m.profiles[0].topGexStrikes.length)||markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length)||markets[0]||null);
+ const selected=current?(current.ticker||current.instrumentCode):(explicitCrypto?wanted:(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY'));
+ window.__optTicker=selected;""",
+        legacy,
+        count=1
+    )
+    html = html[:legacy_start] + legacy + html[legacy_end:]
+
 
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
