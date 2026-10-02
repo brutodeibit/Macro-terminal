@@ -1108,7 +1108,7 @@ function renderMeetingHistory(data){
  const nums=visible.map(x=>Number(x.net)).filter(Number.isFinite),lo=nums.length?Math.min(...nums):0,hi=nums.length?Math.max(...nums):1,span=Math.max(hi-lo,1);
  const W=960,H=340,L=58,R=22,T=28,B=58,px=i=>L+i*(W-L-R)/Math.max(visible.length-1,1),py=v=>T+(hi-v)*(H-T-B)/span;
  const pts=visible.map((x,i)=>px(i).toFixed(1)+','+py(Number(x.net)).toFixed(1)).join(' ');
- const labels=visible.map((x,i)=>{const step=Math.max(1,Math.ceil(visible.length/6));return i%step===0||i===visible.length-1?'<text x="'+px(i).toFixed(1)+'" y="'+(H-18)+'" text-anchor="'+(i===visible.length-1?'end':'middle')+'" class="cot-axis">'+esc(String(x.date||'').slice(0,10))+'</text>':''}).join('');
+ const labels=visible.map((x,i)=>{const step=Math.max(1,Math.ceil(visible.length/6));return i%step===0||i===visible.length-1?'<text x="'+px(i).toFixed(1)+'" y="'+(H-18)+'" text-anchor="'+(i===visible.length-1?'end':'middle')+'" class="cot-axis">'+esc((String(x.date||'').match(/(\d{4})[-/](\d{2})/)||[]).slice(1).join('/'))+'</text>':''}).join('');
  const dots=visible.map((x,i)=>'<circle cx="'+px(i).toFixed(1)+'" cy="'+py(Number(x.net)).toFixed(1)+'" r="4.2" class="cot-dot"><title>'+esc(x.date)+' · Largos '+fmtInt(x.long)+' · Cortos '+fmtInt(x.short)+' · Neto '+fmtInt(x.net)+'</title></circle>').join('');
  const grid=[0,1,2,3,4].map(n=>{const y=T+n*(H-T-B)/4;const val=hi-n*span/4;return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="cot-grid"/><text x="'+(L-8)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" class="cot-axis">'+fmtInt(val)+'</text>';}).join('');
  const chart=visible.length>1?'<div class="cot-chart-wrap"><svg viewBox="0 0 '+W+' '+H+'" class="w-full h-[340px]"><defs><linearGradient id="cotFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#facc15" stop-opacity=".18"/><stop offset="100%" stop-color="#facc15" stop-opacity="0"/></linearGradient></defs>'+grid+'<polyline points="'+pts+'" class="cot-line"/><polygon points="'+L+','+(H-B)+' '+pts+' '+(W-R)+','+(H-B)+'" fill="url(#cotFill)"/>'+dots+labels+'</svg></div>':'<div class="h-[340px] flex items-center justify-center text-xs text-gray-500">Histórico COT insuficiente.</div>';
@@ -1216,11 +1216,12 @@ function __drawOptionsCharts(m,p){
 renderOptionsSection=function(){
  const o=macroDatabase.__options||{},markets=o.markets||[];
  let selected=window.__optTicker||(markets[0]?.ticker||'SPY');
+ const explicitCrypto=(selected==='BTC'||selected==='ETH');
  let m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||null;
- if(!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length){
+ if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
   const first=__optionsChainMarket(markets); if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
  }
- if(!m)m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
+ if(!m && !explicitCrypto)m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
  const p=(m.profiles||[])[0]||{},chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
  if(!chart)return html;
@@ -1231,7 +1232,6 @@ renderOptionsSection=function(){
 };
 
 /* PROFESSIONAL INTERACTIVE CHARTS · COT + DARK POOLS */
-const __renderCotLegacy=renderCotSection;
 const __renderDarkPoolLegacy=renderDarkPoolSection;
 renderCotSection=function(){
  const html=__renderCotLegacy();
