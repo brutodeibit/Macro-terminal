@@ -70,12 +70,21 @@ jobs:
           import re
           from pathlib import Path
           s=Path('index.html').read_text(encoding='utf-8')
-          scripts=re.findall(r'<script[^>]*>([\\s\\S]*?)</script>',s,re.I)
-          js=scripts[-1] if scripts else ''
-          compile(js,'index.html<script>','exec')
-          assert 'renderCotSection=__renderCotLegacy;' in js, 'COT cleanup marker missing'
+          scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',s,re.I)
+          if not scripts:
+              raise SystemExit('ABORT: no inline dashboard script found')
+          Path('/tmp/macroterminal.js').write_text(scripts[-1],encoding='utf-8')
+          # The browser executes JavaScript, so validate with Node rather than
+          # Python's parser (which was previously giving false confidence).
+          print('Inline JS extracted:', len(scripts[-1]), 'chars')
+          PY
+          node --check /tmp/macroterminal.js
+          python - <<'PY'
+          from pathlib import Path
+          js=Path('/tmp/macroterminal.js').read_text(encoding='utf-8')
+          assert 'const __renderCotLegacy=renderCotSection;' not in js, 'COT overlay still present'
           assert "const explicitCrypto=(selected==='BTC'||selected==='ETH');" in js, 'BTC/ETH isolation marker missing'
-          print('Dashboard JS validation OK')
+          print('Dashboard UI validation OK')
           PY
 
       - name: Commit feed and UI changes safely
@@ -87,13 +96,17 @@ jobs:
           git commit -m "fix: clean COT chart and isolate BTC ETH options"
           for i in 1 2 3; do
             git fetch origin main
-            git rebase origin/main || true
+            if git rebase origin/main; then
+              :
+            else
+              git rebase --abort || true
+              git reset --hard origin/main
+              python maintenance/fix_ui_2026_10_02.py
+              python update_feed.py
+              git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py .github/workflows/update-feed.yml
+              git commit -m "fix: clean COT chart and isolate BTC ETH options" --allow-empty
+            fi
             if git push origin HEAD:main; then exit 0; fi
-            git reset --hard origin/main
-            python maintenance/fix_ui_2026_10_02.py
-            python update_feed.py
-            git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py .github/workflows/update-feed.yml
-            git commit -m "fix: clean COT chart and isolate BTC ETH options" --allow-empty
             sleep 5
           done
           echo "Unable to publish after 3 attempts"
