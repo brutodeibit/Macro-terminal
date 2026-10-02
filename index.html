@@ -1211,14 +1211,22 @@ function __drawOptionsCharts(m,p){
 renderOptionsSection=function(){
  const o=macroDatabase.__options||{},markets=o.markets||[];
  let selected=window.__optTicker||(markets[0]?.ticker||'SPY');
+ selected=String(selected).toUpperCase();
  const explicitCrypto=(selected==='BTC'||selected==='ETH');
- let m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||null;
- if(!m && explicitCrypto) m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase().startsWith(selected+'-')||String(x.ticker||x.instrumentCode||'').toUpperCase().startsWith(selected+'/'))||null;
- if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
-  const first=__optionsChainMarket(markets); if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
+ let m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===selected)||null;
+ if(!m && explicitCrypto){
+  m=markets.find(x=>{
+   const k=String(x.ticker||x.instrumentCode||'').toUpperCase();
+   return k.startsWith(selected+'-')||k.startsWith(selected+'/');
+  })||null;
  }
- if(!m && !explicitCrypto)m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
- const p=(m.profiles||[])[0]||{},chart=__optionsInteractiveHtml(m,p);
+ if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
+  const first=__optionsChainMarket(markets);
+  if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
+ }
+ if(!m)m={ticker:selected,instrumentCode:selected,profiles:[],dataStatus:'SIN CADENA PARA '+selected};
+ const p=(m.profiles||[])[0]||{};
+ const chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
  if(!chart)return html;
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
