@@ -1162,10 +1162,15 @@ const INSTRUMENT_NAMES={
         function renderOptionsSection(){
  const o=macroDatabase.__options||{updated:'—',markets:[],catalog:[],flow:[]};
  const markets=o.markets||[], catalog=o.catalog||[], families=[...new Set(catalog.map(x=>x.family).filter(Boolean))];
- const current=(window.__optTicker&&markets.find(m=>(m.ticker||m.instrumentCode)===window.__optTicker))||null; const chainFirst=markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length&&Array.isArray(m.profiles[0].topGexStrikes)&&m.profiles[0].topGexStrikes.length)||markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length)||markets[0]||null; const selected=current?(current.ticker||current.instrumentCode):(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY');
+ const wanted=String(window.__optTicker||'').toUpperCase();
+ const explicitCrypto=(wanted==='BTC'||wanted==='ETH');
+ const current=markets.find(m=>String(m.ticker||m.instrumentCode||'').toUpperCase()===wanted)
+  || markets.find(m=>{const k=String(m.ticker||m.instrumentCode||'').toUpperCase();return explicitCrypto&&(k.startsWith(wanted+'-')||k.startsWith(wanted+'/'));})
+  || null;
+ const chainFirst=explicitCrypto?current:(markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length)||markets[0]||null);
+ const selected=current?(current.ticker||current.instrumentCode):(explicitCrypto?wanted:(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY'));
  window.__optTicker=selected;
- const m=markets.find(x=>(x.ticker||x.instrumentCode)===selected)||{};
- const p=(m.profiles||[])[0]||{};
+ const m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===String(selected).toUpperCase())||{};
  const family=(window.__optFamily==='__ALL__'?'__ALL__':(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500'));
  const familyItems=catalog.filter(x=>x.family===family); const allItems=catalog.slice();
  const familySelect='<option value="__ALL__" '+(family==='__ALL__'?'selected':'')+'>TODOS LOS ACTIVOS</option>'+families.map(f=>'<option value="'+esc(f)+'" '+(f===family?'selected':'')+'>'+esc(f)+'</option>').join('');
