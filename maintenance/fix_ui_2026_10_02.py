@@ -50,8 +50,8 @@ options = r"""renderOptionsSection=function(){
  return out;
 };"""
 html = html[:opt_start] + options + html[opt_end+3:]
-// Patch the legacy options renderer too: its internal chainFirst fallback used
-// to reselect BTC when ETH had no chain, undoing the explicit asset selection.
+# Patch the legacy options renderer too: its internal chainFirst fallback used
+# to reselect BTC when ETH had no chain, undoing the explicit asset selection.
 legacy_marker = "function renderOptionsSection(){"
 legacy_start = html.find(legacy_marker)
 legacy_end = html.find("const __renderOptionsLegacy", legacy_start)
