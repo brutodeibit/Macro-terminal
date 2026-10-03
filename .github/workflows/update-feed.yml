@@ -33,10 +33,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Validate Python
-        run: python -m py_compile update_feed.py market_features.py maintenance/fix_ui_2026_10_02.py
+        run: python -m py_compile update_feed.py market_features.py maintenance/fix_ui_2026_10_02.py maintenance/fix_options_feed_2026_10_03.py
 
       - name: Apply dashboard UI fixes
         run: python maintenance/fix_ui_2026_10_02.py
+
+      - name: Apply options feed fixes
+        run: python maintenance/fix_options_feed_2026_10_03.py
 
       - name: Update feed
         env:
@@ -61,7 +64,13 @@ jobs:
           economies=data.get('economies')
           if not isinstance(economies, dict) or len(economies) < 3:
               raise SystemExit('ABORT: generated feed has no usable economies')
-          print('Feed validation OK:', p.stat().st_size, 'bytes;', len(economies), 'economies')
+          opts=data.get('options')
+          if not isinstance(opts,dict) or not isinstance(opts.get('markets'),list) or not opts.get('markets'):
+              raise SystemExit('ABORT: generated options feed is missing')
+          tickers={str(x.get('ticker','')).upper() for x in opts['markets'] if isinstance(x,dict)}
+          if not {'BTC','ETH'}.issubset(tickers):
+              raise SystemExit('ABORT: BTC/ETH options tabs missing from generated feed')
+          print('Feed validation OK:', p.stat().st_size, 'bytes;', len(economies), 'economies;', len(opts['markets']), 'option markets; BTC/ETH present')
           PY
 
       - name: Validate dashboard JavaScript and UI markers
@@ -74,8 +83,6 @@ jobs:
           if not scripts:
               raise SystemExit('ABORT: no inline dashboard script found')
           Path('/tmp/macroterminal.js').write_text(scripts[-1],encoding='utf-8')
-          # The browser executes JavaScript, so validate with Node rather than
-          # Python's parser (which was previously giving false confidence).
           print('Inline JS extracted:', len(scripts[-1]), 'chars')
           PY
           node --check /tmp/macroterminal.js
@@ -91,9 +98,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py .github/workflows/update-feed.yml
+          git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py maintenance/fix_options_feed_2026_10_03.py .github/workflows/update-feed.yml
           git diff --cached --quiet && exit 0
-          git commit -m "fix: clean COT chart and isolate BTC ETH options"
+          git commit -m "fix: resilient options feed and asset isolation"
           for i in 1 2 3; do
             git fetch origin main
             if git rebase origin/main; then
@@ -102,9 +109,10 @@ jobs:
               git rebase --abort || true
               git reset --hard origin/main
               python maintenance/fix_ui_2026_10_02.py
+              python maintenance/fix_options_feed_2026_10_03.py
               python update_feed.py
-              git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py .github/workflows/update-feed.yml
-              git commit -m "fix: clean COT chart and isolate BTC ETH options" --allow-empty
+              git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py maintenance/fix_options_feed_2026_10_03.py .github/workflows/update-feed.yml
+              git commit -m "fix: resilient options feed and asset isolation" --allow-empty
             fi
             if git push origin HEAD:main; then exit 0; fi
             sleep 5
