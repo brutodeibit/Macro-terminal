@@ -1216,8 +1216,7 @@ function __optionsInteractiveHtml(m,p){
 }
 function __drawOptionsCharts(m,p){
  const root=document.getElementById('sec-options');if(!root)return;
- const source=(Array.isArray(p.strikeMap)&&p.strikeMap.length)?p.strikeMap:(p.topGexStrikes||[]);
- const raw=source.map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,callOi:__optNum(x.callOi??x.callOpenInterest??(x.type==='C'?x.oi:0))||0,putOi:__optNum(x.putOi??x.putOpenInterest??(x.type==='P'?x.oi:0))||0})).filter(x=>x.strike!==null).sort((a,b)=>a.strike-b.strike);
+ const raw=(p.strikeMap||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,callOi:__optNum(x.callOi)||0,putOi:__optNum(x.putOi)||0})).filter(x=>x.strike!==null).sort((a,b)=>a.strike-b.strike);
  if(!raw.length)return;
  __loadPlotly().then(P=>{
   const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
@@ -1244,21 +1243,19 @@ renderOptionsSection=function(){
    return k.startsWith(selected+'-')||k.startsWith(selected+'/');
   })||null;
  }
+ if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
+  const first=__optionsChainMarket(markets);
+  if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
+ }
  if(!m)m={ticker:selected,instrumentCode:selected,profiles:[],dataStatus:'SIN CADENA PARA '+selected};
  const p=(m.profiles||[])[0]||{};
- let html='';
- try { html=__renderOptionsLegacy(); }
- catch(err){ console.error('Options renderer failed',err); }
- try {
-  const chart=__optionsInteractiveHtml(m,p);
-  if(chart){
-   const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
-   html=html&&html.includes(marker)?html.replace(marker,chart+marker):chart+(html||'');
-  }
-  if(Array.isArray(p.strikeMap)&&p.strikeMap.length||Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
- } catch(err){ console.error('Options chart render failed',err); }
- if(!html)html='<section class="metric rounded-xl p-5"><b class="text-sm text-amber-300">OPCIONES · BETA</b><p class="text-xs text-gray-300 mt-2">'+esc(selected)+' · '+esc(m.dataStatus||'Sin datos suficientes del proveedor en esta actualización.')+'</p><div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3"><div><span class="text-[10px] text-gray-500">Spot</span><b class="block">'+fmtNum(m.spot,2)+'</b></div><div><span class="text-[10px] text-gray-500">Max Pain</span><b class="block">'+fmtNum(p.maxPain,2)+'</b></div><div><span class="text-[10px] text-gray-500">Gamma Flip</span><b class="block">'+fmtNum(p.gammaFlip??p.zeroGamma,2)+'</b></div><div><span class="text-[10px] text-gray-500">GEX neto</span><b class="block">'+fmtCompactMoney(p.gammaNet)+'</b></div></div></section>';
- return html;
+ const chart=__optionsInteractiveHtml(m,p);
+ const html=__renderOptionsLegacy();
+ if(!chart)return html;
+ const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
+ const out=html.replace(marker,chart+marker);
+ if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
+ return out;
 };
 
 /* PROFESSIONAL INTERACTIVE CHARTS · COT + DARK POOLS */
