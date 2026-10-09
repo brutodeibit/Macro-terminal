@@ -1252,7 +1252,15 @@ def update_dark_pool_prints(feed):
    for p in arr:
     venue=str(p.get("venue") or "TRF"); z=venue_map.setdefault(venue,{"venue":venue,"prints":0,"shares":0,"notional":0})
     z["prints"]+=1;z["shares"]+=float(p.get("size") or 0);z["notional"]+=float(p.get("notional") or 0)
-   assets[t]={"ticker":t,"label":meta.get("label",t),"proxyFor":meta.get("proxyFor"),"lastPrice":spot,"priceSeries":series[-90:],"prints":arr,
+   # Historical daily closes for 1W / 1M / 3M positioning context.
+   # Keep the intraday series above for print-time price approximation only.
+   hist_chart=chart(t) or {}
+   hist_ts=hist_chart.get("timestamp") or []
+   hist_close=(hist_chart.get("indicators",{}).get("quote") or [{}])[0].get("close") or []
+   price_history=[{"ts":int(ts),"price":float(cl)} for ts,cl in zip(hist_ts,hist_close) if ts is not None and cl is not None]
+   if len(price_history)<2:
+    price_history=series[-90:]
+   assets[t]={"ticker":t,"label":meta.get("label",t),"proxyFor":meta.get("proxyFor"),"lastPrice":spot,"priceSeries":price_history[-90:],"prints":arr,
      "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
      "notional":sum(float(x.get("notional") or 0) for x in arr),
      "dailyOffExchange":cs,"venueClusters":sorted(venue_map.values(),key=lambda x:x["shares"],reverse=True)[:8],
