@@ -78,7 +78,10 @@ chart_end = html.find("\nrenderOptionsSection=function(){", chart_start)
 if chart_start >= 0 and chart_end > chart_start:
     chart_fn = r"""function __drawOptionsCharts(m,p){
  const root=document.getElementById('sec-options');if(!root)return;
- const raw=(p.strikeMap||[]).map(x=>({strike:__optNum(x.strike),gex:__optNum(x.gex)||0,callOi:__optNum(x.callOi)||0,putOi:__optNum(x.putOi)||0})).filter(x=>x.strike!==null).sort((a,b)=>a.strike-b.strike);
+ const source=(Array.isArray(p.strikeMap)&&p.strikeMap.length)?p.strikeMap:(Array.isArray(p.topGexStrikes)?p.topGexStrikes:[]);
+ const byStrike=new Map();
+ for(const x of source){const strike=__optNum(x.strike);if(strike===null)continue;const q=byStrike.get(strike)||{strike,gex:0,callOi:0,putOi:0};q.gex+=__optNum(x.gex)||0;const typ=String(x.type||'').toUpperCase();if(typ==='C'||typ==='CALL')q.callOi+=__optNum(x.callOi??x.callOpenInterest??x.oi)||0;else if(typ==='P'||typ==='PUT')q.putOi+=__optNum(x.putOi??x.putOpenInterest??x.oi)||0;else{q.callOi+=__optNum(x.callOi??x.callOpenInterest)||0;q.putOi+=__optNum(x.putOi??x.putOpenInterest)||0;}byStrike.set(strike,q);}
+ const raw=[...byStrike.values()].sort((a,b)=>a.strike-b.strike);
  if(!raw.length)return;
  __loadPlotly().then(P=>{
   const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
