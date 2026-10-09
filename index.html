@@ -1249,13 +1249,22 @@ renderOptionsSection=function(){
  }
  if(!m)m={ticker:selected,instrumentCode:selected,profiles:[],dataStatus:'SIN CADENA PARA '+selected};
  const p=(m.profiles||[])[0]||{};
- const chart=__optionsInteractiveHtml(m,p);
- const html=__renderOptionsLegacy();
- if(!chart)return html;
- const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
- const out=html.replace(marker,chart+marker);
- if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
- return out;
+ let html='';
+ try { html=__renderOptionsLegacy(); }
+ catch(err){
+  console.error('Options legacy renderer failed',err);
+  html='<section class="metric rounded-xl p-4"><b class="text-sm text-amber-300">OPCIONES · BETA RESILIENTE</b><p class="text-xs text-gray-300 mt-2">'+esc(m.name||selected)+' · '+esc(m.dataStatus||'La cadena completa no está disponible ahora.')+'</p><p class="text-[10px] text-gray-500 mt-2">El fallo de una gráfica no debe ocultar el resto del módulo. Precio/fecha y las métricas válidas se muestran cuando el feed las contiene.</p><div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3"><div>Spot<b class="block">'+fmtNum(m.spot,2)+'</b></div><div>Max Pain<b class="block">'+fmtNum(p.maxPain,2)+'</b></div><div>Gamma Flip<b class="block">'+fmtNum(p.gammaFlip??p.zeroGamma,2)+'</b></div><div>GEX neto<b class="block">'+fmtCompactMoney(p.gammaNet)+'</b></div></div></section>';
+ }
+ if(!html)html='<section class="metric rounded-xl p-4"><b class="text-sm text-amber-300">OPCIONES · BETA</b><p class="text-xs text-gray-400 mt-2">Sin cadena completa para '+esc(selected)+'. El módulo permanece disponible para los demás activos.</p></section>';
+ try {
+  const chart=__optionsInteractiveHtml(m,p);
+  if(chart){
+   const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
+   html=html.includes(marker)?html.replace(marker,chart+marker):chart+html;
+  }
+  if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
+ } catch(err){ console.error('Options charts failed',err); }
+ return html;
 };
 
 /* PROFESSIONAL INTERACTIVE CHARTS · COT + DARK POOLS */
