@@ -1364,15 +1364,73 @@ def update_traditional_fear_greed(feed):
  feed["traditionalFearGreed"]=result
 
 def update_traditional_sentiment(feed):
-    result={"bullishPct":28.8,"neutralPct":17.9,"bearishPct":53.3,"previousBullishPct":38.0,"previousNeutralPct":22.7,"previousBearishPct":39.3,"week":"2026-09-16","source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey","bullBearSpread":-24.5,"history":[]}
+    """Refresh AAII weekly bullish/neutral/bearish values and retain recent weekly history."""
+    previous=feed.get("traditionalSentiment",{}) if isinstance(feed.get("traditionalSentiment"),dict) else {}
+    result={**previous,
+        "bullishPct":previous.get("bullishPct"),"neutralPct":previous.get("neutralPct"),"bearishPct":previous.get("bearishPct"),
+        "previousBullishPct":previous.get("previousBullishPct"),"previousNeutralPct":previous.get("previousNeutralPct"),
+        "previousBearishPct":previous.get("previousBearishPct"),"week":previous.get("week"),
+        "history":previous.get("history",[]) if isinstance(previous.get("history"),list) else [],
+        "source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey",
+        "dataStatus":"LAST VALID WEEKLY SNAPSHOT RETAINED"}
     try:
-        html=get("https://www.aaii.com/sentimentsurvey").text
-        vals=re.findall(r'Bullish.*?([0-9]+\.[0-9]+)%.*?Neutral.*?([0-9]+\.[0-9]+)%.*?Bearish.*?([0-9]+\.[0-9]+)%',html,re.I|re.S)
-        if vals:
-            bb,nn,br=map(float,vals[0]); result.update(bullishPct=bb,neutralPct=nn,bearishPct=br,bullBearSpread=round(bb-br,1))
-    except Exception as e: print("AAII",type(e).__name__,str(e)[:180])
+        html=get("https://www.aaii.com/sentimentsurvey",h={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36",
+            "Accept-Language":"en-US,en;q=0.9"
+        }).text
+        soup=BeautifulSoup(html,"html.parser")
+        text_all=" ".join(soup.stripped_strings)
+        history_by_date={}
+        # The public page has a "Recent weekly results" table with one date followed by
+        # Bullish, Neutral and Bearish columns. Parse those rows, not a broad label regex
+        # that can accidentally pair today's values with the historical averages.
+        row_re=re.compile(r"(?<!\d)(\d{1,2}/\d{1,2}/\d{4})\s+([0-9]+(?:\.[0-9]+)?)%\s+([0-9]+(?:\.[0-9]+)?)%\s+([0-9]+(?:\.[0-9]+)?)%(?!\d)")
+        def add_row(date_s,bb,nn,br):
+            try:
+                d=datetime.strptime(date_s,"%m/%d/%Y").date()
+                vals=(float(bb),float(nn),float(br))
+                if all(0<=x<=100 for x in vals) and abs(sum(vals)-100)<=1.5:
+                    iso=d.isoformat()
+                    history_by_date[iso]={"date":iso,"week":iso,"bullishPct":vals[0],"neutralPct":vals[1],
+                        "bearishPct":vals[2],"bullBearSpread":round(vals[0]-vals[2],1),"source":"AAII"}
+            except (TypeError,ValueError):pass
+        for m in row_re.finditer(text_all):
+            add_row(*m.groups())
+        # Fallback: scrape the current card independently if the page's historical
+        # rows have changed format. Do not mistake "Avg" values for the current reading.
+        current_re=re.search(
+            r"This week.?s results\s+Week ending\s+([A-Za-z]+\s+\d{1,2},\s+\d{4}).{0,500}?"
+            r"Bullish\s+([0-9]+(?:\.[0-9]+)?)%\s+Avg\s+[0-9]+(?:\.[0-9]+)?%\s+"
+            r"Neutral\s+([0-9]+(?:\.[0-9]+)?)%\s+Avg\s+[0-9]+(?:\.[0-9]+)?%\s+"
+            r"Bearish\s+([0-9]+(?:\.[0-9]+)?)%",
+            text_all,re.I
+        )
+        if current_re:
+            try:
+                ds=datetime.strptime(current_re.group(1),"%B %d, %Y").strftime("%m/%d/%Y")
+                add_row(ds,current_re.group(2),current_re.group(3),current_re.group(4))
+            except ValueError:pass
+        hist=sorted(history_by_date.values(),key=lambda x:x["date"],reverse=True)[:12]
+        if hist:
+            cur=hist[0]
+            result.update(bullishPct=cur["bullishPct"],neutralPct=cur["neutralPct"],bearishPct=cur["bearishPct"],
+                bullBearSpread=cur["bullBearSpread"],week=cur["date"],history=hist,dataStatus="REAL / WEEKLY",
+                previousBullishPct=hist[1]["bullishPct"] if len(hist)>1 else None,
+                previousNeutralPct=hist[1]["neutralPct"] if len(hist)>1 else None,
+                previousBearishPct=hist[1]["bearishPct"] if len(hist)>1 else None,
+                weekChangeBullish=round(cur["bullishPct"]-hist[1]["bullishPct"],1) if len(hist)>1 else None,
+                weekChangeNeutral=round(cur["neutralPct"]-hist[1]["neutralPct"],1) if len(hist)>1 else None,
+                weekChangeBearish=round(cur["bearishPct"]-hist[1]["bearishPct"],1) if len(hist)>1 else None)
+        else:
+            # Do not overwrite a valid prior snapshot with an empty/changed page.
+            result["dataStatus"]="UNAVAILABLE · last valid weekly snapshot retained"
+        result["fetchedAt"]=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception as e:
+        print("AAII SENTIMENT",type(e).__name__,str(e)[:180])
+        result["fetchError"]=type(e).__name__
     result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     feed["traditionalSentiment"]=result
+
 
 def update_options_market_stats(feed):
  try:
