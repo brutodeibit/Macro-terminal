@@ -1171,6 +1171,7 @@ const INSTRUMENT_NAMES={
  const selected=current?(current.ticker||current.instrumentCode):(explicitCrypto?wanted:(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY'));
  window.__optTicker=selected;
  const m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===String(selected).toUpperCase())||{};
+ const p=(m.profiles||[])[0]||{};
  const family=(window.__optFamily==='__ALL__'?'__ALL__':(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500'));
  const familyItems=catalog.filter(x=>x.family===family); const allItems=catalog.slice();
  const familySelect='<option value="__ALL__" '+(family==='__ALL__'?'selected':'')+'>TODOS LOS ACTIVOS</option>'+families.map(f=>'<option value="'+esc(f)+'" '+(f===family?'selected':'')+'>'+esc(f)+'</option>').join('');
