@@ -1173,7 +1173,8 @@ const INSTRUMENT_NAMES={
  const catalogItem=catalog.find(x=>String(x.code||'').toUpperCase()===String(selected).toUpperCase());
  const m=known||{ticker:selected,instrumentCode:selected,name:catalogItem?.label||selected,family:catalogItem?.family||'Referencia',referenceOnly:true,profiles:[],dataStatus:'REFERENCIA · SIN CADENA COMPLETA',method:'Se conserva el activo seleccionado. Solo se muestran métricas cuando existen datos públicos verificables.'};
  const p=(m.profiles||[])[0]||{};
- const family=(window.__optFamily==='__ALL__'?'__ALL__':(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500'));
+ const requestedFamily=String(window.__optFamily||'');
+ const family=(requestedFamily==='__ALL__'||families.includes(requestedFamily))?requestedFamily:(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500');
  const familyItems=catalog.filter(x=>x.family===family); const allItems=catalog.slice();
  const familySelect='<option value="__ALL__" '+(family==='__ALL__'?'selected':'')+'>TODOS LOS ACTIVOS</option>'+families.map(f=>'<option value="'+esc(f)+'" '+(f===family?'selected':'')+'>'+esc(f)+'</option>').join('');
  const instItems=family==='__ALL__'?allItems:familyItems; const instSelect=instItems.map(x=>'<option value="'+esc(x.code)+'" '+(x.code===selected?'selected':'')+'>'+esc(x.code)+' · '+esc(x.label)+'</option>').join('');
@@ -1273,6 +1274,7 @@ function __drawOptionsCharts(m,p){
   empty('opt-term-chart','No se pudo cargar el motor gráfico. Recarga la página para reintentar.');
  });
 }
+"""
 
 renderOptionsSection=function(){
  const o=macroDatabase.__options||{},markets=o.markets||[];
