@@ -1208,16 +1208,52 @@ def chart_exchange_offexchange(sym):
  slug=path_map.get(sym)
  if not slug:return None
  try:
-  html=get("https://chartexchange.com/symbol/"+slug+"/exchange-volume/dark-pool-prints/").text
-  m=re.search(r"Today's Off Exchange & Dark Pool volume is\s+([0-9,]+),\s+which is\s+([0-9.]+)%",html,re.I)
-  m30=re.search(r"average Off Exchange & Dark Pool volume has been\s+([0-9.]+)%",html,re.I)
-  total=re.search(r"Today's Lit volume is\s+([0-9,]+)",html,re.I)
-  if not m:return None
-  return {"offExchangeShares":int(m.group(1).replace(",","")),"offExchangePct":float(m.group(2)),
-          "offExchange30dPct":float(m30.group(1)) if m30 else None,
-          "litShares":int(total.group(1).replace(",","")) if total else None,
-          "source":"ChartExchange public exchange-volume page",
-          "sourceUrl":"https://chartexchange.com/"}
+  url="https://chartexchange.com/symbol/"+slug+"/exchange-volume/dark-pool-prints/"
+  html=get(url).text
+  # ChartExchange has recently used a typographic apostrophe in "Today's";
+  # normalise variants before parsing so a valid live snapshot is not lost.
+  normalized=(html.replace("’","'").replace("‘","'").replace("&#8217;","'").replace("&#x2019;","'").replace("&rsquo;","'"))
+  normalized=BeautifulSoup(normalized,"html.parser").get_text(" ",strip=True)
+  m=re.search(r"Today['']s Off Exchange & Dark Pool volume is\s+([0-9,]+),\s+which is\s+([0-9.]+)%",normalized,re.I)
+  m30=re.search(r"average Off Exchange & Dark Pool volume has been\s+([0-9.]+)%",normalized,re.I)
+  total=re.search(r"Today['']s Lit volume is\s+([0-9,]+)",normalized,re.I)
+  # Extract the public daily exchange-share percentages. This is a daily
+  # aggregate series, not individual trades and not a proxy for buy/sell.
+  history=[]
+  soup=BeautifulSoup(html,"html.parser")
+  for table in soup.find_all("table"):
+   trs=table.find_all("tr")
+   if not trs:continue
+   headers=[re.sub(r"\s+"," "," ".join(c.stripped_strings)).strip().lower() for c in trs[0].find_all(["th","td"])]
+   date_idx=next((i for i,x in enumerate(headers) if x in ("date","trading date","day")),None)
+   off_idx=next((i for i,x in enumerate(headers) if "off exchange" in x),None)
+   if date_idx is None or off_idx is None:continue
+   for tr in trs[1:]:
+    cells=[re.sub(r"\s+"," "," ".join(c.stripped_strings)).strip() for c in tr.find_all(["th","td"])]
+    if max(date_idx,off_idx)>=len(cells):continue
+    dm=re.search(r"(20\d{2}-\d{2}-\d{2})",cells[date_idx])
+    pm=re.search(r"([0-9]+(?:\.[0-9]+)?)",cells[off_idx])
+    if not dm or not pm:continue
+    pct=float(pm.group(1))
+    if 0<=pct<=100:history.append({"date":dm.group(1),"offExchangePct":pct})
+   if history:break
+  # Latest date first in the HTML table; deduplicate and retain 60 daily rows.
+  bydate={x["date"]:x for x in history}
+  history=sorted(bydate.values(),key=lambda x:x["date"])[-60:]
+  off_shares=int(m.group(1).replace(",","")) if m else None
+  off_pct=float(m.group(2)) if m else None
+  lit_shares=int(total.group(1).replace(",","")) if total else None
+  if off_pct is None and history:off_pct=history[-1]["offExchangePct"]
+  if off_shares is None and off_pct is None:return None
+  return {
+   "offExchangeShares":off_shares,"offExchangePct":off_pct,
+   "offExchange30dPct":float(m30.group(1)) if m30 else None,
+   "litShares":lit_shares,"history":history[-60:],
+   "asOf":history[-1]["date"] if history else datetime.now(timezone.utc).date().isoformat(),
+   "source":"ChartExchange public exchange-volume page",
+   "sourceUrl":url,
+   "dataType":"DAILY OFF-EXCHANGE AGGREGATE · not individual prints"
+  }
  except Exception as e:
   print("CHARTEXCHANGE DP",sym,type(e).__name__,str(e)[:140]);return None
 
