@@ -102,8 +102,24 @@ new = r'''def update_options(feed):
     if old:
      m=dict(old);m['dataStatus']='UNAVAILABLE · último snapshot válido retenido';m['updatedAttempt']=datetime.now(timezone.utc).isoformat();out.append(m)
 
- # Never let a temporary provider outage make an asset disappear from the selector.
- present={x.get('ticker') for x in out}
+ # Ensure every catalog instrument remains available in the UI even if its live
+ # quote and full option chain are temporarily unavailable.
+ present={str(x.get('ticker') or x.get('instrumentCode') or '').upper() for x in out}
+ for entry in OPTION_CATALOG:
+  code=str(entry.get('code') or '').upper()
+  if code and code not in present:
+   ref={'ticker':code,'instrumentCode':code,'name':entry.get('label',code),'family':entry.get('family','Referencia'),
+        'instrumentKind':entry.get('kind'),'referenceOnly':True,'profiles':[],'spot':None,'asOf':None,
+        'source':entry.get('source','Referencia pública'),'sourceUrl':entry.get('sourceUrl'),
+        'dataStatus':'UNAVAILABLE · activo conservado en selector',
+        'method':'No se ha recibido una cotización ni cadena válida en esta actualización. El activo permanece seleccionable; no se inventan precios ni métricas por strike.'}
+   if code in ('SPY','QQQ','DIA','IWM','GLD','IAU','USO','BNO','AAPL','NVDA','HYG','TLT','IBIT'):
+    try:
+     st=_barchart_option_overview(code)
+     if st:ref['stats']=st
+    except Exception as e:print('BARCHART REFERENCE',code,type(e).__name__,str(e)[:100])
+   out.append(ref);present.add(code)
+ # Retain last valid data for markets whose provider was temporarily unavailable.
  for code,m in old_by.items():
   if code not in present and m.get('profiles'):
    m=dict(m);m['dataStatus']='UNAVAILABLE · último snapshot válido retenido';m['updatedAttempt']=datetime.now(timezone.utc).isoformat();out.append(m);present.add(code)
