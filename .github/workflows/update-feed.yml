@@ -91,7 +91,14 @@ jobs:
           js=Path('/tmp/macroterminal.js').read_text(encoding='utf-8')
           assert 'const __renderCotLegacy=renderCotSection;' not in js, 'COT overlay still present'
           assert "const explicitCrypto=(selected==='BTC'||selected==='ETH');" in js, 'BTC/ETH isolation marker missing'
-          print('Dashboard UI validation OK')
+          assert "const first=__optionsChainMarket(markets)" not in js, 'Options selector still forces fallback to the first chain'
+          assert "const selected=current?(current.ticker||current.instrumentCode):wanted;" in js, 'Options selector does not preserve missing/reference-only assets'
+          assert "function __optionsInteractiveHtml(m,p)" in js, 'Options chart container missing'
+          assert "No hay IV ATM verificable" in js, 'Options term-structure empty state missing'
+          assert "setTimeout(()=>__drawOptionsCharts(m,p),80)" in js, 'Options charts are not scheduled for every selected asset'
+          assert "weeklyHist" in js, 'Traditional Fear & Greed weekly history missing'
+          assert "change3d" in js and "changeYtd" in js, 'Rotation 3-session/YTD windows missing'
+          print('Dashboard UI validation OK: selector, term structure, Fear & Greed history and rotation windows')
           PY
 
       - name: Commit feed and UI changes safely
