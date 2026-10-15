@@ -1386,7 +1386,7 @@ def update_markets_rotation(feed):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:return None
   y=yahoo_ytd(sym) or {}
-  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),"p1":q[-1]-q[-2],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
+  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"d3":(q[-1]/q[-4]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),"p1":q[-1]-q[-2],"p3":q[-1]-q[-4],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
  def rel(a,b,key):
   x=series(a);y=series(b)
   if not x or not y:return None
@@ -1394,7 +1394,7 @@ def update_markets_rotation(feed):
  sectors=[]
  for name,sym in sector_cfg:
   x=series(sym)
-  if x:sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],"change1w":x["w1"],"change1m":x["m1"],"changeYtd":x.get("ytd"),"pointChange1d":x["p1"],"pointChange1w":x["pw"],"pointChange1m":x["pm"],"vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
+  if x:sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],"change3d":x["d3"],"change1w":x["w1"],"change1m":x["m1"],"changeYtd":x.get("ytd"),"pointChange1d":x["p1"],"pointChange1w":x["pw"],"pointChange1m":x["pm"],"vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
  styles=[]
  for name,a1,b1 in style_cfg:
   a=series(a1);b=series(b1);styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1"),"changeYtd":(a.get("ytd")-b.get("ytd")) if a and b and a.get("ytd") is not None and b.get("ytd") is not None else None})
