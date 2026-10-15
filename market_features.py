@@ -1297,10 +1297,10 @@ def update_dark_pool_prints(feed):
   # Joining text nodes before matching restores the compact trade rows.
   seen={(x["ticker"],str(x.get("timestamp")),round(float(x.get("size") or 0),2)) for x in prints}
   compact_page="".join(soup.stripped_strings)
-  starts=list(re.finditer(r"Dark pool prints",compact_page,re.I))
-  row_text=compact_page[starts[-1].end():] if starts else compact_page
-  stop=re.search(r"Expiration ladder",row_text,re.I)
-  if stop:row_text=row_text[:stop.start()]
+  # All rows before the expiration ladder are considered, because the provider
+  # repeats the words "Dark pool prints" in both the heading and its FAQ.
+  ladder=re.search(r"Expiration ladder",compact_page,re.I)
+  row_text=compact_page[:ladder.start()] if ladder else compact_page
   row_pattern=re.compile(r"\d{1,2}:\d{2}(?::\d{2})?[A-Z][A-Z0-9.\-]{0,7}\d+(?:[.,]\d+)?[KMB]?[A-Z0-9\-]+[+\-]\d+(?:\.\d+)?%",re.I)
   for match in row_pattern.finditer(row_text):
    p=_parse_capitol_print_line(match.group(0))
