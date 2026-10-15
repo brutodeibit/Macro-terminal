@@ -1162,15 +1162,16 @@ const INSTRUMENT_NAMES={
         function renderOptionsSection(){
  const o=macroDatabase.__options||{updated:'—',markets:[],catalog:[],flow:[]};
  const markets=o.markets||[], catalog=o.catalog||[], families=[...new Set(catalog.map(x=>x.family).filter(Boolean))];
- const wanted=String(window.__optTicker||'').toUpperCase();
+ const wanted=String(window.__optTicker||'SPX').toUpperCase();
  const explicitCrypto=(wanted==='BTC'||wanted==='ETH');
  const current=markets.find(m=>String(m.ticker||m.instrumentCode||'').toUpperCase()===wanted)
   || markets.find(m=>{const k=String(m.ticker||m.instrumentCode||'').toUpperCase();return explicitCrypto&&(k.startsWith(wanted+'-')||k.startsWith(wanted+'/'));})
   || null;
- const chainFirst=explicitCrypto?current:(markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length)||markets[0]||null);
- const selected=current?(current.ticker||current.instrumentCode):(explicitCrypto?wanted:(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY'));
+ const selected=current?(current.ticker||current.instrumentCode):wanted;
  window.__optTicker=selected;
- const m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===String(selected).toUpperCase())||{};
+ const known=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===String(selected).toUpperCase());
+ const catalogItem=catalog.find(x=>String(x.code||'').toUpperCase()===String(selected).toUpperCase());
+ const m=known||{ticker:selected,instrumentCode:selected,name:catalogItem?.label||selected,family:catalogItem?.family||'Referencia',referenceOnly:true,profiles:[],dataStatus:'REFERENCIA · SIN CADENA COMPLETA',method:'Se conserva el activo seleccionado. Solo se muestran métricas cuando existen datos públicos verificables.'};
  const p=(m.profiles||[])[0]||{};
  const family=(window.__optFamily==='__ALL__'?'__ALL__':(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500'));
  const familyItems=catalog.filter(x=>x.family===family); const allItems=catalog.slice();
@@ -1238,7 +1239,7 @@ function __drawOptionsCharts(m,p){
 
 renderOptionsSection=function(){
  const o=macroDatabase.__options||{},markets=o.markets||[];
- let selected=window.__optTicker||(markets[0]?.ticker||'SPY');
+ let selected=window.__optTicker||'SPX';
  selected=String(selected).toUpperCase();
  const explicitCrypto=(selected==='BTC'||selected==='ETH');
  let m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===selected)||null;
@@ -1248,18 +1249,14 @@ renderOptionsSection=function(){
    return k.startsWith(selected+'-')||k.startsWith(selected+'/');
   })||null;
  }
- if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
-  const first=__optionsChainMarket(markets);
-  if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
- }
- if(!m)m={ticker:selected,instrumentCode:selected,profiles:[],dataStatus:'SIN CADENA PARA '+selected};
+ if(!m)m={ticker:selected,instrumentCode:selected,name:selected,family:(o.catalog||[]).find(x=>x.code===selected)?.family||'Referencia',referenceOnly:true,profiles:[],dataStatus:'REFERENCIA · SIN CADENA COMPLETA',method:'Se mantiene el activo elegido. No hay cadena completa disponible; se muestran solo los datos públicos que existan.'};
  const p=(m.profiles||[])[0]||{};
  const chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
  if(!chart)return html;
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
  const out=html.replace(marker,chart+marker);
- if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
+ setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
 };
 
