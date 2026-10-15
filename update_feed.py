@@ -91,7 +91,7 @@ def update_risk(feed):
   v=by['SKEW']['value'];add('SKEW',3 if v<120 else 1 if v<130 else -2 if v<140 else -4,'riesgo de cola')
  if 'MOVE' in by:
   v=by['MOVE']['value'];add('MOVE',3 if v<70 else 1 if v<85 else -2 if v<110 else -5,'volatilidad de bonos')
- for n,w in [('AUDJPY',2),('DXY',-2),('COPPER',1.5),('BTC',.8),('ETH',.8),('HYG',1.5),('LQD',1)]:
+ for n,w in [('AUDJPY',2),('DXY',-2),('COPPER',1.5),('BTC',.8),('HYG',1.5),('LQD',1)]:
   if n in by:add(n,max(-5,min(5,(by[n]['change1w'] or 0)*w)),'confirmación intermercado')
  if 'GOLD' in by:add('GOLD',max(-3,min(3,-(by['GOLD']['change1w'] or 0)*1.2)),'demanda defensiva')
  if 'BRENT' in by and 'WTI' in by:
