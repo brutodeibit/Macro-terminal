@@ -522,47 +522,113 @@ def finra_access_token():
   return None
 
 def _deribit_options(currency):
- out=[]
+ """Return separate, expiry-specific Deribit profiles for the public BTC/ETH option chain."""
  try:
   instruments=get("https://www.deribit.com/api/v2/public/get_instruments",{"currency":currency,"kind":"option","expired":"false"}).json().get("result",[])
   idx=get("https://www.deribit.com/api/v2/public/get_index_price",{"index_name":currency.lower()+"_usd"}).json().get("result",{}).get("index_price")
   summaries=get("https://www.deribit.com/api/v2/public/get_book_summary_by_currency",{"currency":currency,"kind":"option"}).json().get("result",[])
   if idx is None or not summaries:return None
-  by_name={str(x.get("instrument_name")):x for x in summaries}
-  now=datetime.now(timezone.utc);groups={"0DTE":[] ,"NEXT":[],"7-30D":[],"30-90D":[]}
+  idx=float(idx);by_name={str(x.get("instrument_name")):x for x in summaries}
+  now=datetime.now(timezone.utc);groups={}
   for ins in instruments:
    name=str(ins.get("instrument_name") or "");exp=ins.get("expiration_timestamp")
    if not name or not exp:continue
-   d=datetime.fromtimestamp(float(exp)/1000,tz=timezone.utc);days=(d-now).total_seconds()/86400
-   if days<0:continue
-   b="0DTE" if days<1 else "NEXT" if days<=7 else "7-30D" if days<=30 else "30-90D" if days<=90 else None
-   if b:groups[b].append((d,ins,by_name.get(name,{})))
-  for bucket,items in groups.items():
-   if not items:continue
-   exp,ins,sm=min(items,key=lambda x:x[0])
-   calls=[x for x in items if str(x[1].get("option_type","" )).lower()=="call"];puts=[x for x in items if str(x[1].get("option_type","" )).lower()=="put"]
-   # Build strike clusters directly from Deribit public OI; IV is attached when the summary exposes it.
-   clusters=[]
-   for d0,ii,ss in items:
-    oi=float(ss.get("open_interest") or 0);iv=float(ss.get("mark_iv") or 0);strike=float(ii.get("strike") or 0)
-    if not oi or not strike:continue
-    gamma=None;T=max((d0-now).total_seconds()/31536000,1/3650);typ="C" if str(ii.get("option_type","")).lower()=="call" else "P"
-    _,gamma,_,_=_bs_greeks(float(idx),strike,T,iv/100 if iv>3 else iv,0.04,typ) if iv else (None,None,None,None)
-    g=(1 if typ=="C" else -1)*oi*(gamma or 0)*float(idx)**2*0.01*1.0
-    clusters.append({"strike":strike,"gex":g,"oi":oi,"volume":float(ss.get("volume") or 0),"type":typ,"iv":iv})
-   call_clusters=[x for x in clusters if x["type"]=="C"];put_clusters=[x for x in clusters if x["type"]=="P"]
-   callwall=max(call_clusters,key=lambda x:x["oi"],default=None);putwall=max(put_clusters,key=lambda x:x["oi"],default=None)
-   net=sum(x["gex"] for x in clusters)
-   strikes=sorted({x["strike"] for x in clusters});cum=0;flip=None;prev=None
-   byk={k:sum(x["gex"] for x in clusters if x["strike"]==k) for k in strikes}
-   for k in strikes:
-    nxt=cum+byk[k]
+   exp_ts=int(float(exp));d=datetime.fromtimestamp(exp_ts/1000,tz=timezone.utc);days=(d-now).total_seconds()/86400
+   if days<0 or days>90:continue
+   ss=by_name.get(name,{})
+   groups.setdefault(exp_ts,[]).append((d,days,ins,ss))
+  if not groups:return None
+  # Select genuine individual expirations spread across the term structure. Never pool
+  # multiple expirations and label their combined OI as a single maturity.
+  ordered=sorted(groups.items(),key=lambda z:z[0])
+  bands=((0,1,"0DTE"),(1,3,"1-3D"),(3,7,"3-7D"),(7,14,"1-2W"),(14,21,"2-3W"),(21,30,"3-4W"),(30,45,"1-1.5M"),(45,60,"1.5-2M"),(60,90,"2-3M"))
+  chosen=[]
+  for lo,hi,label in bands:
+   eligible=[(ts,rows) for ts,rows in ordered if lo<=rows[0][1]<hi]
+   if not eligible:continue
+   target=(lo+hi)/2
+   pick=min(eligible,key=lambda z:abs(z[1][0][1]-target))
+   if pick[0] not in {x[0] for x in chosen}:chosen.append((pick[0],pick[1],label))
+  # Keep an earlier expiration if band edges leave gaps and maintain chronological order.
+  if not chosen:
+   ts,rows=ordered[0];chosen=[(ts,rows,"NEXT")]
+  chosen=sorted(chosen,key=lambda z:z[0])[:12]
+  profiles=[]
+  for exp_ts,items,bucket in chosen:
+   exp=items[0][0];days=max(0.0,(exp-now).total_seconds()/86400);T=max((exp-now).total_seconds()/31536000,1/3650)
+   contracts=[];call_oi={};put_oi={};call_vol={};put_vol={};iv_by_type={"C":[],"P":[]}
+   for d0,days0,ins,ss in items:
+    typ="C" if str(ins.get("option_type","")).lower()=="call" else "P" if str(ins.get("option_type","")).lower()=="put" else ""
+    strike=float(ins.get("strike") or 0)
+    if not typ or strike<=0:continue
+    oi=float(ss.get("open_interest") or 0);vol=float(ss.get("volume") or 0)
+    ivraw=float(ss.get("mark_iv") or 0)
+    ivpct=ivraw if ivraw>3 else ivraw*100 if ivraw>0 else None
+    ivfrac=ivraw/100 if ivraw>3 else ivraw
+    delta,gamma,vanna,charm=_bs_greeks(idx,strike,T,ivfrac,0.04,typ) if ivfrac else (None,None,None,None)
+    vega=None
+    if ivfrac and ivfrac>0:
+     try:
+      d1=(math.log(idx/strike)+(0.04+0.5*ivfrac*ivfrac)*T)/(ivfrac*math.sqrt(T))
+      vega=_norm_pdf(d1)*idx*math.sqrt(T)
+     except Exception:vega=None
+    rec={"strike":strike,"type":typ,"oi":oi,"volume":vol,"iv":ivpct,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":vega}
+    contracts.append(rec)
+    if typ=="C":
+     call_oi[strike]=call_oi.get(strike,0)+oi;call_vol[strike]=call_vol.get(strike,0)+vol
+    else:
+     put_oi[strike]=put_oi.get(strike,0)+oi;put_vol[strike]=put_vol.get(strike,0)+vol
+    if ivpct is not None:iv_by_type[typ].append((abs(strike-idx),ivpct,strike,oi,delta,gamma,vega))
+   if not contracts:continue
+   # ATM IV is built from the closest call and put at this exact expiration only.
+   near=[]
+   for typ in ("C","P"):
+    ranked=sorted(iv_by_type[typ],key=lambda z:z[0])
+    if ranked:near.append(ranked[0])
+   iv_atm=sum(x[1] for x in near)/len(near) if near else None
+   atm_delta=sum(x[4] for x in near if x[4] is not None)/len([x for x in near if x[4] is not None]) if any(x[4] is not None for x in near) else None
+   atm_gamma=sum(x[5] for x in near if x[5] is not None)/len([x for x in near if x[5] is not None]) if any(x[5] is not None for x in near) else None
+   atm_vega=sum(x[6] for x in near if x[6] is not None)/len([x for x in near if x[6] is not None]) if any(x[6] is not None for x in near) else None
+   strike_map=[];cluster_rows=[]
+   for strike in sorted(set(call_oi)|set(put_oi)):
+    c_oi=call_oi.get(strike,0);p_oi=put_oi.get(strike,0)
+    call_rec=next((x for x in contracts if x["strike"]==strike and x["type"]=="C"),None)
+    put_rec=next((x for x in contracts if x["strike"]==strike and x["type"]=="P"),None)
+    cg=(c_oi*(call_rec.get("gamma") or 0)*idx*idx*0.01) if call_rec else 0
+    pg=(-p_oi*(put_rec.get("gamma") or 0)*idx*idx*0.01) if put_rec else 0
+    gex=cg+pg
+    strike_map.append({"strike":strike,"gex":gex,"callOi":c_oi,"putOi":p_oi,"oi":c_oi+p_oi,"callVolume":call_vol.get(strike,0),"putVolume":put_vol.get(strike,0),"ivCall":call_rec.get("iv") if call_rec else None,"ivPut":put_rec.get("iv") if put_rec else None})
+   # Individual contracts stay available for the compact chart; strikeMap is cleaner for the main plots.
+   cluster_rows=[{"strike":x["strike"],"gex":(1 if x["type"]=="C" else -1)*x["oi"]*(x["gamma"] or 0)*idx*idx*0.01,"oi":x["oi"],"volume":x["volume"],"type":x["type"],"iv":x["iv"]} for x in contracts if x["oi"]>0]
+   callwall=max(call_oi.items(),key=lambda x:x[1],default=(None,0));putwall=max(put_oi.items(),key=lambda x:x[1],default=(None,0))
+   strikes=[x["strike"] for x in strike_map];gex_by={x["strike"]:x["gex"] for x in strike_map};cum=0;prev=None;flip=None
+   for strike in strikes:
+    nxt=cum+gex_by[strike]
     if prev is not None and ((cum<0<=nxt) or (cum>0>=nxt)):flip=prev;break
-    prev=k;cum=nxt
-   out.append({"ticker":currency+" · Deribit","name":currency+" Options · Deribit","source":"Deribit public options","sourceUrl":"https://www.deribit.com/options","spot":float(idx),"expiration":exp.date().isoformat(),"daysToExpiry":round((exp-now).total_seconds()/86400,2),"bucket":bucket,"gammaNet":net,"gammaFlip":flip,"callWall":callwall.get("strike") if callwall else None,"putWall":putwall.get("strike") if putwall else None,"callWallOiValue":callwall.get("oi") if callwall else None,"putWallOiValue":putwall.get("oi") if putwall else None,"topGexStrikes":sorted(clusters,key=lambda x:abs(x["gex"]),reverse=True)[:16],"note":"Deribit public BTC/ETH options. GEX is a modeled exposure estimate; not dealer positioning."})
-  return {"ticker":currency,"name":currency+" Options · Deribit","spot":float(idx),"profiles":out,"source":"Deribit public options","sourceUrl":"https://www.deribit.com/options","method":"Public option instruments/book summaries; BTC/ETH kept separate from CME and IBIT."} if out else None
+    prev=strike;cum=nxt
+   # Max Pain from this expiry's reported OI, not from other maturities.
+   payout=[]
+   for settle in strikes:
+    loss=sum(oi*max(k-settle,0) for k,oi in call_oi.items())+sum(oi*max(settle-k,0) for k,oi in put_oi.items())
+    payout.append((loss,settle))
+   max_pain=min(payout,default=(None,None))[1]
+   profiles.append({
+    "expiration":exp.date().isoformat(),"daysToExpiry":round(days,3),"bucket":bucket,"spot":idx,
+    "ivAtm":iv_atm,"atmDelta":atm_delta,"atmGamma":atm_gamma,"atmVega":atm_vega,
+    "gammaNet":sum(x["gex"] for x in strike_map),"gammaFlip":flip,"maxPain":max_pain,
+    "callWall":callwall[0],"putWall":putwall[0],"callWallOi":callwall[0],"putWallOi":putwall[0],
+    "callOi":sum(call_oi.values()),"putOi":sum(put_oi.values()),
+    "callVolume":sum(call_vol.values()),"putVolume":sum(put_vol.values()),
+    "topGexStrikes":sorted(cluster_rows,key=lambda x:abs(x["gex"]),reverse=True)[:40],
+    "strikeMap":strike_map,"source":"Deribit public options","dataStatus":"REAL / DELAYED · Deribit",
+   })
+  if not profiles:return None
+  return {"ticker":currency,"instrumentCode":currency,"name":currency+" Options · Deribit","family":"Cripto",
+          "spot":idx,"profiles":profiles,"source":"Deribit public options","sourceUrl":"https://www.deribit.com/options",
+          "method":"Per-expiry Deribit public options. ATM IV is estimated from the closest call/put IV for each exact expiry; GEX/Max Pain/Gamma Flip are modeled from public OI/Greeks, not dealer inventory."}
  except Exception as e:
   print("DERIBIT OPTIONS",currency,type(e).__name__,str(e)[:180]);return None
+
 
 def _farside_num(v):
  try:
