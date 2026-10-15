@@ -1293,16 +1293,22 @@ def update_dark_pool_prints(feed):
    if not p.get("timestamp") or not p.get("size"):continue
    p["sourceMode"]="EXACT_STRUCTURED"; prints.append(p);structured_count+=1
 
-  # Server-rendered compact rows remain useful fallback when structured data is not exposed.
+  # Server-rendered rows are split across nested spans on the current free page.
+  # Joining text nodes before matching restores the compact trade rows.
   seen={(x["ticker"],str(x.get("timestamp")),round(float(x.get("size") or 0),2)) for x in prints}
-  for raw in soup.stripped_strings:
-   p=_parse_capitol_print_line(raw)
-   if not p:continue
-   if p["ticker"] not in universe:continue
+  compact_page="".join(soup.stripped_strings)
+  starts=list(re.finditer(r"Dark pool prints",compact_page,re.I))
+  row_text=compact_page[starts[-1].end():] if starts else compact_page
+  stop=re.search(r"Expiration ladder",row_text,re.I)
+  if stop:row_text=row_text[:stop.start()]
+  row_pattern=re.compile(r"\d{1,2}:\d{2}(?::\d{2})?[A-Z][A-Z0-9.\-]{0,7}\d+(?:[.,]\d+)?[KMB]?[A-Z0-9\-]+[+\-]\d+(?:\.\d+)?%",re.I)
+  for match in row_pattern.finditer(row_text):
+   p=_parse_capitol_print_line(match.group(0))
+   if not p or p["ticker"] not in universe:continue
    key=(p["ticker"],str(p["time"]),round(float(p.get("size") or 0),2))
    if key in seen:continue
    p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,"notional":None,"side":"UNKNOWN","directionConfidence":None,
-             "sideBasis":"No individual side in free compact row","source":"Capitol Whale · free public view","realPrint":True,"sourceMode":"COMPACT"})
+             "sideBasis":"La fila pública no identifica el lado de la ejecución","source":"Capitol Whale · fila pública compacta","realPrint":True,"sourceMode":"COMPACT"})
    prints.append(p);seen.add(key)
   prints=prints[-300:]
   if prints:sources.append("Capitol Whale")
@@ -1437,70 +1443,91 @@ def update_traditional_fear_greed(feed):
 def update_traditional_sentiment(feed):
     previous=feed.get("traditionalSentiment",{}) if isinstance(feed.get("traditionalSentiment"),dict) else {}
     result={**previous,
-        "bullishPct":previous.get("bullishPct"),"neutralPct":previous.get("neutralPct"),"bearishPct":previous.get("bearishPct"),
-        "previousBullishPct":previous.get("previousBullishPct"),"previousNeutralPct":previous.get("previousNeutralPct"),"previousBearishPct":previous.get("previousBearishPct"),
-        "week":previous.get("week"),"source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey",
-        "bullBearSpread":previous.get("bullBearSpread"),"history":previous.get("history",[]),"sourceStatus":"UNAVAILABLE · último snapshot válido retenido"}
+        "source":"AAII Investor Sentiment Survey","sourceUrl":"https://www.aaii.com/sentimentsurvey",
+        "sourceStatus":"UNAVAILABLE · último snapshot válido retenido"}
     try:
-        html=get("https://www.aaii.com/sentimentsurvey").text
+        html=get("https://www.aaii.com/sentimentsurvey",h={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/155.0 Safari/537.36",
+            "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language":"en-US,en;q=0.9",
+            "Referer":"https://www.aaii.com/"
+        }).text
         soup=BeautifulSoup(html,"html.parser")
-        text=re.sub(r"\s+"," "," ".join(soup.stripped_strings)).strip()
-        low=text.lower()
-        start=low.find("recent weekly results")
-        end=low.find("historical view",start+1) if start>=0 else -1
-        recent=text[start:end if end>start else None] if start>=0 else text
-        # The public page presents the four latest weeks in a table/card group.
-        # Parse the dates and three percentages together so historical averages
-        # (also shown on the page) cannot be mistaken for this week's readings.
-        pat=re.compile(r"(\d{1,2}/\d{1,2}/\d{4})\s+([0-9]{1,2}(?:\.[0-9]+)?)%\s+([0-9]{1,2}(?:\.[0-9]+)?)%\s+([0-9]{1,2}(?:\.[0-9]+)?)%")
+        visible=re.sub(r"\s+"," "," ".join(soup.stripped_strings)).strip()
+        low=visible.lower()
+
+        def iso_date(value, formats):
+            for fmt in formats:
+                try:return datetime.strptime(value,fmt).date().isoformat()
+                except (ValueError,TypeError):pass
+            return None
+
+        def make_row(date_value,bull,neutral,bear,formats):
+            day=iso_date(date_value,formats)
+            vals=[float(bull),float(neutral),float(bear)]
+            if not day or any(v<0 or v>100 for v in vals) or abs(sum(vals)-100)>1.1:return None
+            return {"date":day,"bullishPct":vals[0],"neutralPct":vals[1],"bearishPct":vals[2],"bullBearSpread":round(vals[0]-vals[2],1)}
+
         rows=[]
-        for m in pat.finditer(recent):
-            try:
-                dt=datetime.strptime(m.group(1),"%m/%d/%Y").date()
-                vals=[float(m.group(i)) for i in (2,3,4)]
-                if all(0<=v<=100 for v in vals) and abs(sum(vals)-100)<=1.1:
-                    rows.append({"date":dt.isoformat(),"bullishPct":vals[0],"neutralPct":vals[1],"bearishPct":vals[2],"bullBearSpread":round(vals[0]-vals[2],1)})
-            except (TypeError,ValueError):
-                continue
-        # Structured table fallback for a minor page markup change.
+        # Parse AAII's "Recent weekly results" rows as date + bullish/neutral/bearish,
+        # never confusing the survey with the daily CNN Fear & Greed score.
+        hs=low.find("recent weekly results")
+        he=low.find("historical view",hs+1) if hs>=0 else -1
+        recent=visible[hs:he if he>hs else None] if hs>=0 else visible
+        weekly_pat=re.compile(r"(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2}(?:\.\d+)?)%\s+(\d{1,2}(?:\.\d+)?)%\s+(\d{1,2}(?:\.\d+)?)%")
+        for m in weekly_pat.finditer(recent):
+            row=make_row(m.group(1),m.group(2),m.group(3),m.group(4),("%m/%d/%Y","%d/%m/%Y"))
+            if row:rows.append(row)
+
+        # Table-cell fallback for markup that inserts text between the date and percentages.
         if not rows:
             for table in soup.find_all("table"):
                 for tr in table.find_all("tr"):
                     cells=[re.sub(r"\s+"," "," ".join(c.stripped_strings)).strip() for c in tr.find_all(["th","td"])]
-                    if len(cells)<4 or not re.search(r"\d{1,2}/\d{1,2}/\d{4}",cells[0]):continue
+                    if not cells:continue
+                    dm=re.search(r"(\d{1,2}/\d{1,2}/\d{4})",cells[0])
+                    if not dm:continue
                     nums=[]
                     for cell in cells[1:]:
-                        mm=re.search(r"([0-9]{1,2}(?:\.[0-9]+)?)%",cell)
-                        if mm:nums.append(float(mm.group(1)))
-                    if len(nums)>=3 and all(0<=v<=100 for v in nums[:3]) and abs(sum(nums[:3])-100)<=1.1:
-                        dt=datetime.strptime(re.search(r"\d{1,2}/\d{1,2}/\d{4}",cells[0]).group(0),"%m/%d/%Y").date()
-                        rows.append({"date":dt.isoformat(),"bullishPct":nums[0],"neutralPct":nums[1],"bearishPct":nums[2],"bullBearSpread":round(nums[0]-nums[2],1)})
-        # Last-resort current-card parser. Reads the value immediately associated
-        # with each sentiment label, not the historical average beside it.
+                        pm=re.search(r"(\d{1,2}(?:\.\d+)?)%",cell)
+                        if pm:nums.append(float(pm.group(1)))
+                    if len(nums)>=3:
+                        row=make_row(dm.group(1),nums[0],nums[1],nums[2],("%m/%d/%Y","%d/%m/%Y"))
+                        if row:rows.append(row)
+
+        # Current summary-card fallback, read immediately after the newest "Week ending".
         if not rows:
-            card=re.search(r"This week's results.*?Week ending\s+([A-Za-z]+\s+\d{1,2},\s+\d{4}).*?Bullish\s+([0-9]{1,2}(?:\.[0-9]+)?)%.*?Neutral\s+([0-9]{1,2}(?:\.[0-9]+)?)%.*?Bearish\s+([0-9]{1,2}(?:\.[0-9]+)?)%",text,re.I)
-            if card:
-                dt=datetime.strptime(card.group(1),"%B %d, %Y").date()
-                vals=[float(card.group(i)) for i in (2,3,4)]
-                if abs(sum(vals)-100)<=1.1:
-                    rows=[{"date":dt.isoformat(),"bullishPct":vals[0],"neutralPct":vals[1],"bearishPct":vals[2],"bullBearSpread":round(vals[0]-vals[2],1)}]
-        # Deduplicate dates, then keep newest first; retain four rows (this week + prior weeks).
-        by_date={x["date"]:x for x in rows}
-        rows=sorted(by_date.values(),key=lambda x:x["date"],reverse=True)[:8]
+            wm=re.search(r"Week ending\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})",visible,re.I)
+            if wm:
+                block=visible[wm.end():wm.end()+1000]
+                def labelled(label):
+                    q=re.search(r"\b"+label+r"\b\s+(\d{1,2}(?:\.\d+)?)%",block,re.I)
+                    return float(q.group(1)) if q else None
+                bb,nn,br=labelled("Bullish"),labelled("Neutral"),labelled("Bearish")
+                if None not in (bb,nn,br):
+                    row=make_row(wm.group(1),bb,nn,br,("%B %d, %Y","%b %d, %Y"))
+                    if row:rows.append(row)
+
+        unique={row["date"]:row for row in rows}
+        rows=sorted(unique.values(),key=lambda x:x["date"],reverse=True)[:8]
         if rows:
-            latest=rows[0];prior=rows[1] if len(rows)>1 else {}
-            result.update({"bullishPct":latest["bullishPct"],"neutralPct":latest["neutralPct"],"bearishPct":latest["bearishPct"],
-                "previousBullishPct":prior.get("bullishPct",previous.get("previousBullishPct")),
-                "previousNeutralPct":prior.get("neutralPct",previous.get("previousNeutralPct")),
-                "previousBearishPct":prior.get("bearishPct",previous.get("previousBearishPct")),
+            latest=rows[0]
+            older=rows[1] if len(rows)>1 else {}
+            result.update({
+                "bullishPct":latest["bullishPct"],"neutralPct":latest["neutralPct"],"bearishPct":latest["bearishPct"],
+                "previousBullishPct":older.get("bullishPct",previous.get("previousBullishPct")),
+                "previousNeutralPct":older.get("neutralPct",previous.get("previousNeutralPct")),
+                "previousBearishPct":older.get("bearishPct",previous.get("previousBearishPct")),
                 "week":latest["date"],"bullBearSpread":latest["bullBearSpread"],"history":rows,
-                "sourceStatus":"REAL / WEEKLY · AAII"})
+                "sourceStatus":"REAL / WEEKLY · AAII"
+            })
         else:
-            print("AAII: weekly results were not parsed; retaining last valid snapshot")
+            print("AAII: no current weekly rows parsed; retaining the last valid snapshot")
     except Exception as e:
         print("AAII",type(e).__name__,str(e)[:180])
     result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     feed["traditionalSentiment"]=result
+
 
 def update_options_market_stats(feed):
  try:
