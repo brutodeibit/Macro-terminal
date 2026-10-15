@@ -67,10 +67,25 @@ jobs:
           opts=data.get('options')
           if not isinstance(opts,dict) or not isinstance(opts.get('markets'),list) or not opts.get('markets'):
               raise SystemExit('ABORT: generated options feed is missing')
-          tickers={str(x.get('ticker','')).upper() for x in opts['markets'] if isinstance(x,dict)}
-          if not {'BTC','ETH'}.issubset(tickers):
-              raise SystemExit('ABORT: BTC/ETH options tabs missing from generated feed')
-          print('Feed validation OK:', p.stat().st_size, 'bytes;', len(economies), 'economies;', len(opts['markets']), 'option markets; BTC/ETH present')
+          tickers={str(x.get('ticker') or x.get('instrumentCode') or '').upper() for x in opts['markets'] if isinstance(x,dict)}
+          if not {'BTC','ETH','IBIT'}.issubset(tickers):
+              raise SystemExit('ABORT: BTC/ETH/IBIT options instruments missing from generated feed')
+          catalog={str(x.get('code') or '').upper() for x in opts.get('catalog',[]) if isinstance(x,dict)}
+          if 'IBIT' not in catalog:
+              raise SystemExit('ABORT: IBIT absent from options catalog')
+          sentiment=data.get('traditionalSentiment',{})
+          vals=[sentiment.get(k) for k in ('bullishPct','neutralPct','bearishPct')]
+          if any(not isinstance(v,(int,float)) for v in vals) or abs(sum(vals)-100)>1.2:
+              raise SystemExit('ABORT: AAII bullish/neutral/bearish percentages invalid or missing')
+          if len(sentiment.get('history',[]))<2:
+              raise SystemExit('ABORT: AAII weekly history must include previous observations')
+          dp=data.get('darkPoolPrints',{})
+          assets=dp.get('assets',{}) if isinstance(dp,dict) else {}
+          if not isinstance(assets,dict) or not assets:
+              raise SystemExit('ABORT: dark-pool feed would be blank; retain last valid snapshot')
+          if not any(len((x or {}).get('priceSeries',[]))>=2 for x in assets.values() if isinstance(x,dict)):
+              raise SystemExit('ABORT: dark-pool feed has no usable price history; retain last valid snapshot')
+          print('Feed validation OK:', p.stat().st_size, 'bytes;', len(economies), 'economies;', len(opts['markets']), 'option markets; BTC/ETH/IBIT present; AAII % and history valid; dark-pool price history valid')
           PY
 
       - name: Validate dashboard JavaScript and UI markers
@@ -97,8 +112,12 @@ jobs:
           assert "No hay IV ATM verificable" in js, 'Options term-structure empty state missing'
           assert "setTimeout(()=>__drawOptionsCharts(m,p),80)" in js, 'Options charts are not scheduled for every selected asset'
           assert "weeklyHist" in js, 'Traditional Fear & Greed weekly history missing'
+          assert "AAII · ALCISTAS / NEUTRALES / BAJISTAS" in js, 'AAII percentage panel missing below traditional Fear & Greed'
+          assert "aaiiHistoryRows" in js and "Últimas semanas · encuesta AAII" in js, 'AAII weekly survey history missing'
+          assert "families.includes(requestedFamily)" in js, 'Options family selection is not preserved'
+          assert "Estado del feed:" in js, 'Dark-pool freshness status missing'
           assert "change3d" in js and "changeYtd" in js, 'Rotation 3-session/YTD windows missing'
-          print('Dashboard UI validation OK: selector, term structure, Fear & Greed history and rotation windows')
+          print('Dashboard UI validation OK: options selector, term structure, AAII percentages/history, dark-pool status and rotation windows')
           PY
 
       - name: Commit feed and UI changes safely
