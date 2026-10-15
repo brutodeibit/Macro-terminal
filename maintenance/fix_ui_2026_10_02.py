@@ -25,7 +25,7 @@ if opt_start < 0 or opt_end < 0:
 
 options = r"""renderOptionsSection=function(){
  const o=macroDatabase.__options||{},markets=o.markets||[];
- let selected=window.__optTicker||(markets[0]?.ticker||'SPY');
+ let selected=window.__optTicker||'SPX';
  selected=String(selected).toUpperCase();
  const explicitCrypto=(selected==='BTC'||selected==='ETH');
  let m=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===selected)||null;
@@ -35,18 +35,14 @@ options = r"""renderOptionsSection=function(){
    return k.startsWith(selected+'-')||k.startsWith(selected+'/');
   })||null;
  }
- if(!explicitCrypto && (!m||m.referenceOnly||!Array.isArray(m.profiles)||!m.profiles.length||!Array.isArray(m.profiles[0].topGexStrikes)||!m.profiles[0].topGexStrikes.length)){
-  const first=__optionsChainMarket(markets);
-  if(first){selected=first.ticker||first.instrumentCode;window.__optTicker=selected;m=first;}
- }
- if(!m)m={ticker:selected,instrumentCode:selected,profiles:[],dataStatus:'SIN CADENA PARA '+selected};
+ if(!m)m={ticker:selected,instrumentCode:selected,name:selected,family:(o.catalog||[]).find(x=>x.code===selected)?.family||'Referencia',referenceOnly:true,profiles:[],dataStatus:'REFERENCIA · SIN CADENA COMPLETA',method:'Se mantiene el activo elegido. No hay cadena completa disponible; se muestran solo los datos públicos que existan.'};
  const p=(m.profiles||[])[0]||{};
  const chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
  if(!chart)return html;
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
  const out=html.replace(marker,chart+marker);
- if(Array.isArray(p.topGexStrikes)&&p.topGexStrikes.length)setTimeout(()=>__drawOptionsCharts(m,p),80);
+ setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
 };"""
 html = html[:opt_start] + options + html[opt_end+3:]
@@ -59,11 +55,10 @@ if legacy_start >= 0 and legacy_end > legacy_start:
     legacy = html[legacy_start:legacy_end]
     legacy = re.sub(
         r"const current=\(window\.__optTicker&&markets\.find\(m=>\(m\.ticker\|\|m\.instrumentCode\)===window\.__optTicker\)\)\|\|null; const chainFirst=[\\s\\S]*?window\.__optTicker=selected;",
-        """const wanted=String(window.__optTicker||'').toUpperCase();
+        """const wanted=String(window.__optTicker||'SPX').toUpperCase();
  const explicitCrypto=(wanted==='BTC'||wanted==='ETH');
  const current=markets.find(m=>String(m.ticker||m.instrumentCode||'').toUpperCase()===wanted)||markets.find(m=>{const k=String(m.ticker||m.instrumentCode||'').toUpperCase();return explicitCrypto&&(k.startsWith(wanted+'-')||k.startsWith(wanted+'/'));})||null;
- const chainFirst=explicitCrypto?current:(markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length&&Array.isArray(m.profiles[0].topGexStrikes)&&m.profiles[0].topGexStrikes.length)||markets.find(m=>!m.referenceOnly&&Array.isArray(m.profiles)&&m.profiles.length)||markets[0]||null);
- const selected=current?(current.ticker||current.instrumentCode):(explicitCrypto?wanted:(chainFirst?.ticker||chainFirst?.instrumentCode||'SPY'));
+ const selected=current?(current.ticker||current.instrumentCode):wanted;
  window.__optTicker=selected;""",
         legacy,
         count=1
@@ -78,22 +73,59 @@ chart_end = html.find("\nrenderOptionsSection=function(){", chart_start)
 if chart_start >= 0 and chart_end > chart_start:
     chart_fn = r"""function __drawOptionsCharts(m,p){
  const root=document.getElementById('sec-options');if(!root)return;
- const source=(Array.isArray(p.strikeMap)&&p.strikeMap.length)?p.strikeMap:(Array.isArray(p.topGexStrikes)?p.topGexStrikes:[]);
+ const source=(Array.isArray(p?.strikeMap)&&p.strikeMap.length)?p.strikeMap:(Array.isArray(p?.topGexStrikes)?p.topGexStrikes:[]);
  const byStrike=new Map();
- for(const x of source){const strike=__optNum(x.strike);if(strike===null)continue;const q=byStrike.get(strike)||{strike,gex:0,callOi:0,putOi:0};q.gex+=__optNum(x.gex)||0;const typ=String(x.type||'').toUpperCase();if(typ==='C'||typ==='CALL')q.callOi+=__optNum(x.callOi??x.callOpenInterest??x.oi)||0;else if(typ==='P'||typ==='PUT')q.putOi+=__optNum(x.putOi??x.putOpenInterest??x.oi)||0;else{q.callOi+=__optNum(x.callOi??x.callOpenInterest)||0;q.putOi+=__optNum(x.putOi??x.putOpenInterest)||0;}byStrike.set(strike,q);}
+ for(const x of source){
+  const strike=__optNum(x.strike);if(strike===null)continue;
+  const q=byStrike.get(strike)||{strike,gex:0,callOi:0,putOi:0};
+  q.gex+=__optNum(x.gex)||0;
+  const typ=String(x.type||'').toUpperCase();
+  if(typ==='C'||typ==='CALL')q.callOi+=__optNum(x.callOi??x.callOpenInterest??x.oi)||0;
+  else if(typ==='P'||typ==='PUT')q.putOi+=__optNum(x.putOi??x.putOpenInterest??x.oi)||0;
+  else{q.callOi+=__optNum(x.callOi??x.callOpenInterest)||0;q.putOi+=__optNum(x.putOi??x.putOpenInterest)||0;}
+  byStrike.set(strike,q);
+ }
  const raw=[...byStrike.values()].sort((a,b)=>a.strike-b.strike);
- if(!raw.length)return;
+ const empty=(id,msg)=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="h-full min-h-[150px] flex items-center justify-center text-center text-xs text-gray-400 px-4">'+msg+'</div>';};
+ const ivPct=v=>{let n=__optNum(v);if(n===null||n<=0)return null;if(n<3)n*=100;return n;};
+ const term=(m.profiles||[]).map(q=>{
+  const dte=__optNum(q.daysToExpiry);
+  let iv=ivPct(q.ivAtm??q.atmIV??q.impliedVolatility??q.iv);
+  if(iv===null){
+   const spot=__optNum(m.spot??q.spot);
+   const rows=(Array.isArray(q.strikeMap)&&q.strikeMap.length)?q.strikeMap:(q.topGexStrikes||[]);
+   if(spot!==null&&rows.length){
+    const calls=rows.filter(x=>['C','CALL'].includes(String(x.type||'').toUpperCase())&&ivPct(x.iv)!==null).sort((a,b)=>Math.abs(Number(a.strike)-spot)-Math.abs(Number(b.strike)-spot));
+    const puts=rows.filter(x=>['P','PUT'].includes(String(x.type||'').toUpperCase())&&ivPct(x.iv)!==null).sort((a,b)=>Math.abs(Number(a.strike)-spot)-Math.abs(Number(b.strike)-spot));
+    const vals=[calls[0]&&ivPct(calls[0].iv),puts[0]&&ivPct(puts[0].iv)].filter(x=>x!==null&&x!==undefined);
+    if(vals.length)iv=vals.reduce((a,b)=>a+b,0)/vals.length;
+   }
+  }
+  return {dte,iv,expiration:q.expiration||'—',bucket:q.bucket||'',source:q.source||m.source||''};
+ }).filter(q=>q.dte!==null&&q.dte>=0&&q.iv!==null&&q.iv>0&&q.iv<500).sort((a,b)=>a.dte-b.dte);
  __loadPlotly().then(P=>{
   const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
-  const spot=__optNum(m.spot),flip=__optNum(p.gammaFlip??p.zeroGamma),pain=__optNum(p.maxPain),callWall=__optNum(p.callWall),putWall=__optNum(p.putWall);
-  const marks=[[spot,'Spot'],[flip,'Gamma Flip'],[pain,'Max Pain'],[callWall,'Call Wall'],[putWall,'Put Wall']];
-  const shapes=marks.filter(x=>x[0]!==null).map(([v])=>({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:'#6b7280',width:1,dash:'dot'}}));
-  const anns=marks.filter(x=>x[0]!==null).map(([v,label])=>({x:v,y:1.03,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:9,color:'#d1d5db'}}));
-  P.newPlot('opt-gex-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.gex),type:'bar',name:'GEX',hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:65,r:25,t:55,b:50},title:{text:'GEX por strike · escala independiente',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Strike',gridcolor:'#1f2937'},yaxis:{title:'GEX',gridcolor:'#1f2937',separatethousands:true},shapes,annotations:anns,hovermode:'x unified'},cfg);
-  P.newPlot('opt-oi-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.callOi),type:'scatter',mode:'lines+markers',name:'Call OI',hovertemplate:'Strike %{x}<br>Call OI %{y:,.0f}<extra></extra>'},{x:raw.map(x=>x.strike),y:raw.map(x=>x.putOi),type:'scatter',mode:'lines+markers',name:'Put OI',hovertemplate:'Strike %{x}<br>Put OI %{y:,.0f}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:65,r:25,t:45,b:50},title:{text:'Open Interest por strike · escala OI',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Strike',gridcolor:'#1f2937'},yaxis:{title:'Contratos OI',gridcolor:'#1f2937',separatethousands:true},hovermode:'x unified'},cfg);
-  const profiles=(m.profiles||[]).filter(q=>__optNum(q.daysToExpiry)!==null&&__optNum(q.ivAtm)!==null);
-  if(profiles.length)P.newPlot('opt-term-chart',[{x:profiles.map(q=>q.daysToExpiry),y:profiles.map(q=>q.ivAtm),type:'scatter',mode:'lines+markers',name:'ATM IV',hovertemplate:'DTE %{x}<br>Expira %{customdata}<br>ATM IV %{y:.2f}%<extra></extra>',customdata:profiles.map(q=>q.expiration||'—')}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:55,r:20,t:45,b:50},title:{text:'ATM IV por vencimiento',font:{size:13,color:'#e5e7eb'}},xaxis:{title:'Días hasta expiración (DTE)',gridcolor:'#1f2937'},yaxis:{title:'IV %',gridcolor:'#1f2937'},hovermode:'x unified'},cfg);
- }).catch(()=>{});
+  const spot=__optNum(m.spot),flip=__optNum(p?.gammaFlip??p?.zeroGamma),pain=__optNum(p?.maxPain),callWall=__optNum(p?.callWallOi??p?.callWall),putWall=__optNum(p?.putWallOi??p?.putWall);
+  if(raw.length){
+   const marks=[[spot,'Spot'],[flip,'Gamma Flip'],[pain,'Max Pain'],[callWall,'Call Wall'],[putWall,'Put Wall']];
+   const shapes=marks.filter(x=>x[0]!==null).map(([v])=>({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:'#94a3b8',width:1,dash:'dot'}}));
+   const anns=marks.filter(x=>x[0]!==null).map(([v,label])=>({x:v,y:1.03,yref:'paper',text:label+' '+fmtNum(v,2),showarrow:false,font:{size:9,color:'#e2e8f0'}}));
+   P.newPlot('opt-gex-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.gex),type:'bar',name:'GEX modelado',marker:{color:raw.map(x=>x.gex>=0?'#22c55e':'#f87171')},hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:65,r:25,t:55,b:50},title:{text:'GEX por strike · exposición modelada',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Strike',gridcolor:'#334155',zerolinecolor:'#64748b'},yaxis:{title:'GEX',gridcolor:'#334155',zerolinecolor:'#64748b',separatethousands:true},shapes,annotations:anns,hovermode:'x unified'},cfg);
+   P.newPlot('opt-oi-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.callOi),type:'scatter',mode:'lines+markers',name:'Call OI',line:{color:'#38bdf8',width:2.5},marker:{size:5},hovertemplate:'Strike %{x}<br>Call OI %{y:,.0f}<extra></extra>'},{x:raw.map(x=>x.strike),y:raw.map(x=>x.putOi),type:'scatter',mode:'lines+markers',name:'Put OI',line:{color:'#fb7185',width:2.5},marker:{size:5},hovertemplate:'Strike %{x}<br>Put OI %{y:,.0f}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:65,r:25,t:45,b:50},title:{text:'Open interest por strike',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Strike',gridcolor:'#334155'},yaxis:{title:'Contratos OI',gridcolor:'#334155',separatethousands:true},hovermode:'x unified'},cfg);
+  }else{
+   empty('opt-gex-chart','Este activo no tiene una cadena completa de strikes disponible en el snapshot actual.');
+   empty('opt-oi-chart','El gráfico de OI requiere datos por strike. Se conserva la selección del activo y no se sustituyen sus datos por Bitcoin.');
+  }
+  if(term.length){
+   P.newPlot('opt-term-chart',[{x:term.map(q=>q.dte),y:term.map(q=>q.iv),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#a78bfa',width:3},marker:{size:7,color:'#c4b5fd',line:{color:'#f8fafc',width:1}},customdata:term.map(q=>[q.expiration,q.bucket,q.source]),hovertemplate:'DTE %{x}<br>Expiración %{customdata[0]}<br>ATM IV %{y:.2f}%<br>%{customdata[1]}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:55,r:20,t:45,b:55},title:{text:'Volatility term structure · ATM IV',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Días hasta expiración (DTE)',gridcolor:'#334155',zerolinecolor:'#64748b'},yaxis:{title:'Volatilidad implícita (%)',gridcolor:'#334155',rangemode:'tozero'},hovermode:'x unified'},cfg);
+  }else{
+   empty('opt-term-chart','No hay IV ATM verificable para varios vencimientos de este activo. La term structure permanecerá vacía hasta que exista una superficie de volatilidad válida; no se estiman puntos ficticios.');
+  }
+ }).catch(()=>{
+  empty('opt-gex-chart','No se pudo cargar el motor gráfico. Recarga la página para reintentar.');
+  empty('opt-oi-chart','No se pudo cargar el motor gráfico. Recarga la página para reintentar.');
+  empty('opt-term-chart','No se pudo cargar el motor gráfico. Recarga la página para reintentar.');
+ });
 }
 """
     html = html[:chart_start] + chart_fn + html[chart_end:]
