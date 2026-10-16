@@ -165,6 +165,7 @@ def _bs_greeks(S,K,T,sigma,r,typ):
 
 _YAHOO_OPTIONS_SESSION = None
 _YAHOO_OPTIONS_CRUMB = None
+_OPTIONS_PROVIDER_ERRORS = []
 
 def _yahoo_option_chain(sym,expiration=None):
  """Fetch Yahoo's public options chain using a cookie/crumb session; direct unauthenticated calls now often return 401."""
@@ -193,12 +194,16 @@ def _yahoo_option_chain(sym,expiration=None):
   j=response.json().get("optionChain",{}).get("result",[])
   return j[0] if j else None
  except Exception as e:
+  msg="Yahoo options "+sym+": "+type(e).__name__+" (cookie/crumb)"
+  if msg not in _OPTIONS_PROVIDER_ERRORS:_OPTIONS_PROVIDER_ERRORS.append(msg)
   print("YAHOO OPTIONS AUTH",sym,type(e).__name__,str(e)[:150])
   # Preserve the old direct route as a final fallback for environments where Yahoo does not require a crumb.
   try:
    j=get(u,params).json().get("optionChain",{}).get("result",[])
    return j[0] if j else None
   except Exception as direct:
+   msg="Yahoo options "+sym+": "+type(direct).__name__+" (direct)"
+   if msg not in _OPTIONS_PROVIDER_ERRORS:_OPTIONS_PROVIDER_ERRORS.append(msg)
    print("YAHOO OPTIONS DIRECT",sym,type(direct).__name__,str(direct)[:120])
    return None
 
