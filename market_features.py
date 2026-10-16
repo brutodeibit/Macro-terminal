@@ -163,11 +163,44 @@ def _bs_greeks(S,K,T,sigma,r,typ):
   return delta,gamma,vanna,charm
  except Exception:return (None,None,None,None)
 
+_YAHOO_OPTIONS_SESSION = None
+_YAHOO_OPTIONS_CRUMB = None
+
 def _yahoo_option_chain(sym,expiration=None):
+ """Fetch Yahoo's public options chain using a cookie/crumb session; direct unauthenticated calls now often return 401."""
+ global _YAHOO_OPTIONS_SESSION,_YAHOO_OPTIONS_CRUMB
  u="https://query1.finance.yahoo.com/v7/finance/options/"+requests.utils.quote(sym,safe="")
  params={"date":str(int(expiration))} if expiration else {}
- j=get(u,params).json().get("optionChain",{}).get("result",[])
- return j[0] if j else None
+ try:
+  if _YAHOO_OPTIONS_SESSION is None or not _YAHOO_OPTIONS_CRUMB:
+   session=requests.Session()
+   session.headers.update({"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36","Accept":"application/json,text/plain,*/*","Accept-Language":"en-US,en;q=0.9","Origin":"https://finance.yahoo.com","Referer":"https://finance.yahoo.com/"})
+   # Yahoo commonly requires a cookie-backed crumb for its options endpoint.
+   session.get("https://finance.yahoo.com/quote/"+requests.utils.quote(sym,safe="")+"/options/",timeout=T)
+   crumb=session.get("https://query1.finance.yahoo.com/v1/test/getcrumb",timeout=T).text.strip()
+   if not crumb or len(crumb)>100 or " " in crumb:
+    raise ValueError("Yahoo Finance did not return a valid crumb")
+   _YAHOO_OPTIONS_SESSION=session;_YAHOO_OPTIONS_CRUMB=crumb
+  query=dict(params);query["crumb"]=_YAHOO_OPTIONS_CRUMB
+  response=_YAHOO_OPTIONS_SESSION.get(u,params=query,timeout=T)
+  if response.status_code in (401,403):
+   # Refresh once in case the cookie/crumb pair expired during the workflow.
+   _YAHOO_OPTIONS_SESSION.get("https://finance.yahoo.com/quote/"+requests.utils.quote(sym,safe="")+"/options/",timeout=T)
+   _YAHOO_OPTIONS_CRUMB=_YAHOO_OPTIONS_SESSION.get("https://query1.finance.yahoo.com/v1/test/getcrumb",timeout=T).text.strip()
+   query["crumb"]=_YAHOO_OPTIONS_CRUMB
+   response=_YAHOO_OPTIONS_SESSION.get(u,params=query,timeout=T)
+  response.raise_for_status()
+  j=response.json().get("optionChain",{}).get("result",[])
+  return j[0] if j else None
+ except Exception as e:
+  print("YAHOO OPTIONS AUTH",sym,type(e).__name__,str(e)[:150])
+  # Preserve the old direct route as a final fallback for environments where Yahoo does not require a crumb.
+  try:
+   j=get(u,params).json().get("optionChain",{}).get("result",[])
+   return j[0] if j else None
+  except Exception as direct:
+   print("YAHOO OPTIONS DIRECT",sym,type(direct).__name__,str(direct)[:120])
+   return None
 
 def _massive_json(path, params=None):
  try:
@@ -375,7 +408,9 @@ def _cot_num(row,*keys):
 
 def _cot_percentile(history,current,lookback=52):
  vals=[x.get("net") for x in history[:lookback] if x.get("net") is not None]
- if len(vals)<8 or current is None:return None
+ # Do not label a short history as a 2-year/5-year percentile.
+ minimum=max(8,int(lookback*0.8+0.999))
+ if len(vals)<minimum or current is None:return None
  return round(100*sum(1 for v in vals if v<=current)/len(vals),1)
 
 def _cot_z(history,current,lookback=52):
@@ -446,8 +481,9 @@ def cot_one(rows,label,family,code,group):
  cur=hist[0]; prev=hist[1] if len(hist)>1 else None; prev4=hist[4] if len(hist)>4 else None
  net=cur["net"]
  percentile52=_cot_percentile(hist,net,52)
- z52=_cot_z(hist,net,52)
+ percentile104=_cot_percentile(hist,net,104)
  percentile260=_cot_percentile(hist,net,260)
+ z52=_cot_z(hist,net,52)
  lo52=min((x["net"] for x in hist[:52] if x["net"] is not None),default=None)
  hi52=max((x["net"] for x in hist[:52] if x["net"] is not None),default=None)
  if percentile52 is None:state="SIN HISTÓRICO SUFICIENTE"
@@ -460,7 +496,7 @@ def cot_one(rows,label,family,code,group):
  return {
   "name":label,"reportDate":cur["date"],"net":net,"long":cur["long"],"short":cur["short"],"spread":cur.get("spread"),
   "openInterest":cur.get("openInterest"),"netPctOI":cur.get("netPctOI"),
-  "zScore":z52,"z52":z52,"percentile52":percentile52,"percentile260":percentile260,
+  "zScore":z52,"z52":z52,"percentile52":percentile52,"percentile104":percentile104,"percentile260":percentile260,
   "netChange":net-(prev["net"] if prev else net),
   "change1w":net-(prev["net"] if prev else net),
   "change4w":net-(prev4["net"] if prev4 else net),
@@ -513,7 +549,7 @@ def finra_access_token():
   client_id=os.getenv("FINRA_API_CLIENT_ID")
   client_secret=os.getenv("FINRA_API_CLIENT_SECRET")
   if client_id and client_secret:
-   r=requests.post("https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token",params={"grant_type":"client_credentials"},auth=(client_id,client_secret),headers={"User-Agent":"MacroTerminal/6.0","Accept":"application/json"},timeout=T)
+   r=requests.post("https://ews.fip.finra.org/fip/rest/ews/oauth2/access_token",data={"grant_type":"client_credentials"},auth=(client_id,client_secret),headers={"User-Agent":"MacroTerminal/6.0","Accept":"application/json","Content-Type":"application/x-www-form-urlencoded"},timeout=T)
    r.raise_for_status()
    return r.json().get("access_token")
   return os.getenv("FINRA_API_TOKEN")
@@ -1009,7 +1045,7 @@ def update_options(feed):
   "publication":"Massive supplies chain-level OI/volume/IV/Greeks where available; Cboe supplies market-wide statistics; Barchart complements IV rank/percentile; Deribit is primary crypto chain; Yahoo is fallback only.",
   "note":"No se rellenan métricas inexistentes. Reference-only instruments muestran precio/fecha y explican por qué no hay cadena. Max Pain/GEX/Gamma Flip/DEX son cálculos sobre snapshots públicos y no observación directa del libro de dealers."
  }
-def update_dark_pools(feed):
+def _update_dark_pools_finra(feed):
     token=finra_access_token()
     if not token:return
     auth={"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json","Data-API-Version":"1"}
@@ -1078,6 +1114,56 @@ def update_dark_pools(feed):
                            "source":"FINRA OTC Transparency","sourceUrl":"https://www.finra.org/filing-reporting/otc-transparency",
                            "method":"Weekly Summary production dataset · rolling 12 months; se consulta la partición semanal más reciente disponible.","coverage":"T1 · ATS_W_SMBL + OTC_W_SMBL",
                            "dataStatus":"REAL AGGREGATED FINRA DATA · DELAYED"}
+
+
+def update_dark_pools(feed):
+    """Prefer official FINRA weekly ATS/OTC data; if unavailable, publish clearly labelled public daily off-exchange aggregates."""
+    before=feed.get("darkPools",{}) if isinstance(feed.get("darkPools"),dict) else {}
+    try:
+        _update_dark_pools_finra(feed)
+    except Exception as e:
+        print("FINRA DARK POOLS WRAPPER",type(e).__name__,str(e)[:140])
+    current=feed.get("darkPools",{}) if isinstance(feed.get("darkPools"),dict) else {}
+    if current.get("markets"):
+        return
+    symbols=("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG","IWM","DIA")
+    markets=[];history={}
+    for sym in symbols:
+        try:
+            dpx=chart_exchange_offexchange(sym) or {}
+            if dpx.get("offExchangePct") is None and not dpx.get("history"):
+                old_asset=((feed.get("darkPoolPrints") or {}).get("assets") or {}).get(sym,{})
+                dpx=old_asset.get("dailyOffExchange") or {}
+            if dpx.get("offExchangePct") is None and not dpx.get("history"):
+                continue
+            asof=str(dpx.get("asOf") or (dpx.get("history") or [{}])[-1].get("date") or "")
+            markets.append({
+                "symbol":sym,"totalOffExchange":dpx.get("offExchangeShares"),
+                "offExchangePct":dpx.get("offExchangePct"),"offExchange30dPct":dpx.get("offExchange30dPct"),
+                "weekStart":asof,"lastReportedDate":asof,"lastUpdateDate":asof,
+                "source":dpx.get("source","ChartExchange public exchange-volume page"),
+                "dataStatus":"PUBLIC DAILY AGGREGATE · not FINRA weekly ATS/OTC"
+            })
+            history[sym]=dpx.get("history") or []
+        except Exception as e:
+            print("DARK POOLS PUBLIC FALLBACK",sym,type(e).__name__,str(e)[:120])
+    if markets:
+        feed["darkPools"]={
+            "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
+            "markets":markets,"history":history,
+            "source":"ChartExchange public exchange-volume page",
+            "sourceUrl":"https://chartexchange.com/symbol/nyse-spy/exchange-volume/dark-pool-prints/",
+            "method":"Public daily off-exchange aggregates. This fallback is not FINRA's weekly ATS/OTC firm-level dataset and does not identify buyer/seller.",
+            "coverage":"Daily off-exchange share/percentage and 30-day average where published",
+            "dataStatus":"PUBLIC DAILY AGGREGATE · FINRA weekly feed unavailable"
+        }
+    elif before.get("markets"):
+        # Keep the last valid snapshot instead of replacing it with an empty payload.
+        before["dataStatus"]="STALE · last valid off-exchange snapshot retained"
+        feed["darkPools"]=before
+    else:
+        feed["darkPools"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":[],"history":{},
+            "source":"FINRA / public off-exchange fallback","dataStatus":"UNAVAILABLE · no verified aggregate returned"}
 
 def update_dark_flow_radar(feed):
  try:
