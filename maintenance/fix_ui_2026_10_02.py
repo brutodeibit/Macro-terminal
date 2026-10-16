@@ -40,8 +40,11 @@ options = r"""renderOptionsSection=function(){
  const chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
  if(!chart)return html;
+ const ps=o.providerStatus||{};
+ const errText=(ps.errors||[]).slice(0,3).join(' · ');
+ const diag='<div class="metric rounded-xl p-3 mt-3"><div class="flex flex-wrap items-center justify-between gap-2"><b class="text-xs text-white">ESTADO DE FUENTES · OPTIONS</b><span class="mini-pill">'+(Number(ps.fullChainMarkets)||0)+' cadenas completas / '+(Number(ps.referenceOnlyMarkets)||0)+' referencias</span></div><p class="text-[10px] text-gray-400 mt-2">Una referencia conserva el activo, pero no tiene cadena suficiente para calcular GEX, Max Pain u OI por strike. No equivale a una cadena vacía de mercado.</p>'+(errText?'<p class="text-[10px] text-amber-300 mt-2">Incidencias proveedor: '+esc(errText)+'</p>':'<p class="text-[10px] text-emerald-300 mt-2">Sin incidencias reportadas por el recolector.</p>')+'</div>';
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
- const out=html.replace(marker,chart+marker);
+ const out=html.replace(marker,chart+diag+marker);
  setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
 };"""
