@@ -138,6 +138,8 @@ new = r'''def update_options(feed):
   arr=[h for h in arr if not (h.get('expiration')==snap.get('expiration') and h.get('asOf','')[:10]==stamp[:10])]
   arr.append(snap);hist[m.get('ticker')]=arr[-180:]
 
+ for message in globals().get('_OPTIONS_PROVIDER_ERRORS',[]):
+  if message not in errors:errors.append(message)
  full=sum(1 for m in out if not m.get('referenceOnly') and m.get('profiles'))
  refs=sum(1 for m in out if m.get('referenceOnly'))
  feed['options']={
