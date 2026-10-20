@@ -1485,7 +1485,9 @@ function renderWeeklyFxRadar(data){
   .sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,5);
  const recent=matches.filter(e=>e.actual!==''&&e.forecast!==''&&Number.isFinite(parseNum(e.actual))&&Number.isFinite(parseNum(e.forecast))&&e.date&&e.date.slice(0,10)<=today&&e.date.slice(0,10)>=new Date(Date.now()-3*86400000).toISOString().slice(0,10))
   .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,4);
- const macro=macroInterpretation(data);
+ const freshIndicators=(data.indicators||[]).filter(ind=>{const t=Date.parse(String(ind.date||''));return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-45*86400000;});
+ const radarData={...data,indicators:freshIndicators,bonds:{...(data.bonds||{}),tenors:(data.bonds?.tenors||[]).map(t=>({...t,change:''}))}};
+ const macro=macroInterpretation(radarData);
  const exp=Number(macro.exp)||0;
  const tenors=data.bonds?.tenors||[];
  const shortRows=['3M','1Y','2Y'].map(term=>tenors.find(x=>x.term===term)).filter(Boolean);
@@ -1501,7 +1503,7 @@ function renderWeeklyFxRadar(data){
  if(['JPY','CHF'].includes(code)){if(riskOff)score+=0.65;if(riskOn)score-=0.25;}
  if(code==='USD'&&riskOff)score+=0.35;
  const label=fxBiasLabel(score),cls=fxBiasClass(score);
- const evidence=[trendOk,shortOk,Math.abs(macro.score||0)>0.1,Math.abs(exp)>0.08,upcoming.length>0].filter(Boolean).length;
+ const evidence=[trendOk,shortOk,freshIndicators.length>0,Math.abs(exp)>0.08,upcoming.length>0].filter(Boolean).length;
  const confidence=evidence>=4?'MEDIA · varias señales':evidence>=2?'BAJA-MEDIA · señales parciales':'BAJA · faltan confirmaciones';
  let baseline=null,biasChanged=false,scoreMoved=false;
  try{const now=new Date(),dow=(now.getUTCDay()+6)%7;now.setUTCDate(now.getUTCDate()-dow);now.setUTCHours(0,0,0,0);const wk=now.toISOString().slice(0,10),key='macroFxRadar:'+code+':'+wk;baseline=JSON.parse(localStorage.getItem(key)||'null');if(!baseline){baseline={score,label};localStorage.setItem(key,JSON.stringify(baseline));}else{biasChanged=baseline.label!==label;scoreMoved=Number.isFinite(Number(baseline.score))&&Math.abs(score-Number(baseline.score))>=0.9;}}catch(e){}
