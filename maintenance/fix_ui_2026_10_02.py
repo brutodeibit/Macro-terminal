@@ -194,7 +194,8 @@ if slot not in html:
     new = "container.innerHTML = " + tick + "\n                " + slot + "\n                <div class=\"grid grid-cols-1 lg:grid-cols-3 gap-6\" id=\"sec-tipos\">"
     html = html.replace(old, new, 1)
 html = html.replace("const map={riskOnOff:'__riskOnOff'", "const map={economicCalendar:'__economicCalendar',riskOnOff:'__riskOnOff'", 1)
-html = html.replace("macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", "macroDatabase.__economicCalendar = macroDatabase.__economicCalendar || {events:[],dataStatus:'UNAVAILABLE'};\n        macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", 1)
+if "macroDatabase.__economicCalendar = macroDatabase.__economicCalendar ||" not in html:
+    html = html.replace("macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", "macroDatabase.__economicCalendar = macroDatabase.__economicCalendar || {events:[],dataStatus:'UNAVAILABLE'};\n        macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", 1)
 
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
