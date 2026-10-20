@@ -137,5 +137,61 @@ html = html.replace(
     '<div id="opt-gex-chart" class="w-full h-[390px] mt-2"></div><div id="opt-oi-chart" class="w-full h-[360px] mt-3"></div><div class="metric rounded-xl p-4 mt-4>',
     1
 )
+
+# Weekly Forex Radar: concise country-level bias + upcoming macro catalysts.
+# This patch is idempotent because GitHub Actions reapplies it on every feed run.
+weekly_js = r"""function renderWeeklyFxRadar(data){
+ const codeMap={us:'USD',eu:'EUR',de:'EUR',uk:'GBP',jp:'JPY',ca:'CAD',au:'AUD',nz:'NZD',ch:'CHF'};
+ const code=codeMap[data?.id]||'';
+ const fx=macroDatabase.__fx||{},currency=fx.currencies?.[code]||{};
+ const cal=macroDatabase.__economicCalendar||{},all=Array.isArray(cal.events)?cal.events:[];
+ const matches=all.filter(e=>e.currency===code||e.economyId===data?.id||
+  (code==='EUR'&&((data?.id==='eu'&&e.economyId==='de')||(data?.id==='de'&&e.economyId==='eu'))));
+ const today=new Date().toISOString().slice(0,10);
+ const weekEnd=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+ const upcoming=matches.filter(e=>e.date&&e.date.slice(0,10)>=today&&e.date.slice(0,10)<=weekEnd)
+  .sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,5);
+ const recent=matches.filter(e=>e.actual!==''&&e.forecast!==''&&e.date&&e.date.slice(0,10)<=today&&e.date.slice(0,10)>=new Date(Date.now()-3*86400000).toISOString().slice(0,10))
+  .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,4);
+ const macro=macroInterpretation(data);
+ const exp=Number(macro.exp)||0;
+ const t2=(data.bonds?.tenors||[]).find(x=>x.term==='2Y')||{};
+ const y2bp=Number(t2.change1wBp);
+ const trend=Number(currency.change1w);
+ const trendOk=Number.isFinite(trend);
+ const y2Ok=Number.isFinite(y2bp);
+ const regime=String(macroDatabase.__riskOnOff?.label||'').toUpperCase();
+ const riskOn=regime.includes('RISK ON'),riskOff=regime.includes('RISK OFF');
+ let score=(Number(macro.score)||0)*0.62+exp*1.55+(y2Ok?Math.max(-1.2,Math.min(1.2,y2bp/8)):0)+(trendOk?Math.max(-1.3,Math.min(1.3,trend*0.65)):0);
+ if(['AUD','NZD','CAD'].includes(code)){if(riskOn)score+=0.35;if(riskOff)score-=0.55;}
+ if(['JPY','CHF'].includes(code)){if(riskOff)score+=0.65;if(riskOn)score-=0.25;}
+ if(code==='USD'&&riskOff)score+=0.35;
+ const label=fxBiasLabel(score),cls=fxBiasClass(score);
+ const evidence=[trendOk,y2Ok,Math.abs(macro.score||0)>0.1,Math.abs(exp)>0.08,upcoming.length>0].filter(Boolean).length;
+ const confidence=evidence>=4?'MEDIA · varias señales':evidence>=2?'BAJA-MEDIA · señales parciales':'BAJA · faltan confirmaciones';
+ const recentRows=recent.map(e=>{
+  const d=indicatorDirection({name:e.event,actual:e.actual,est:e.forecast,cat:/cpi|inflation|pce|ppi|precios/i.test(e.event)?'INFLACIÓN':/unemployment|jobless|claims|desempleo|paro/i.test(e.event)?'EMPLEO':/gdp|pmi|retail|ventas|industrial|pib|ifo|tankan/i.test(e.event)?'CRECIMIENTO':'MACRO',imp:'★★★'});
+  const surprise=d.score>0.15?'SORPRESA HAWKISH ↑':d.score< -0.15?'SORPRESA DOVISH ↓':'EN LÍNEA / MIXTA →';
+  const tone=d.score>0.15?'effect-hawkish':d.score< -0.15?'effect-dovish':'effect-neutral';
+  return '<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 py-2 border-b border-gray-800/70"><div class="min-w-0"><div class="text-xs text-gray-200">'+esc(e.event)+'</div><div class="text-[10px] text-gray-500">'+esc(e.date||'')+' · Real '+esc(e.actual)+' / consenso '+esc(e.forecast)+'</div></div><span class="text-[10px] font-bold '+tone+'">'+surprise+'</span></div>';
+ }).join('');
+ const eventRows=upcoming.map(e=>'<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 py-2 border-b border-gray-800/70"><div class="min-w-0"><div class="text-xs font-semibold text-gray-200">'+esc(e.event)+'</div><div class="text-[10px] text-gray-500">'+esc(e.date||'')+' · '+esc(e.country||code)+'</div></div><div class="text-[10px] text-gray-400 sm:text-right">Consenso: <b class="text-white">'+esc(e.forecast||'sin previsión')+'</b><div>Previo: '+esc(e.previous||'—')+'</div></div></div>').join('');
+ const status=recent.length?'DATOS RECIENTES · revisar reacción de mercado':'SESGO INICIAL · pendiente de nuevos datos';
+ const statusCls=recent.length?'text-amber-300':'text-blue-300';
+ return '<section id="sec-fx-weekly" class="card rounded-2xl p-5 md:p-6 space-y-4"><div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Forex Radar · semana en curso</div><h2 class="text-lg md:text-xl font-black text-white mt-1">Sesgo semanal de '+esc(code)+' · '+esc(data.name||'')+'</h2><p class="text-xs text-gray-400 mt-1 max-w-3xl">Hipótesis revisable, no señal automática de entrada. Prioriza la trayectoria esperada de tipos frente a lo que el mercado ya descuenta.</p></div><div class="metric rounded-xl p-3 min-w-[190px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo provisional</div><div class="text-lg font-black '+cls+' mt-1">'+(score>=0.35?'↑ ':'↓ ')+esc(label)+'</div><div class="text-[10px] text-gray-500 mt-1">Confianza: '+confidence+'</div></div></div><div class="flex flex-wrap gap-2 text-[10px]"><span class="mini-pill '+statusCls+'">'+status+'</span><span class="mini-pill">Risk '+(riskOn?'ON ↑':riskOff?'OFF ↓':'mixto / neutral')+'</span><span class="mini-pill">FX 1S '+(trendOk?fmtPct(trend):'N/D')+'</span><span class="mini-pill">2Y 1S '+(y2Ok?fmtPct(y2bp,1)+' pb':'N/D')+'</span></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Por qué este sesgo</div><ul class="space-y-2 mt-3 text-xs text-gray-300"><li>• Política y datos macro: <b>'+esc(macro.label||'lectura mixta')+'</b>.</li><li>• Pricing de tipos: <b>'+esc(exp>0.08?'más presión de subidas':exp< -0.08?'más presión de bajadas':'sin dirección clara')+'</b>.</li><li>• Bono soberano 2Y: '+(y2Ok?(y2bp>0?'sube y confirma presión restrictiva si el contexto acompaña':'cae y puede señalar menos endurecimiento'):'variación semanal no disponible')+'.</li><li>• Tendencia de divisa 1S: '+(trendOk?(trend>0?'positiva':trend<0?'negativa':'plana'):'sin referencia verificada')+'; el riesgo global es una confirmación contextual, no una regla fija.</li></ul><p class="text-[10px] text-gray-500 mt-3">Lectura heurística: no se presenta como correlación estable ni como predicción garantizada.</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Catalizadores · próximos 7 días</div>'+(eventRows||'<p class="text-xs text-gray-500 mt-3">No hay calendario futuro verificado disponible en el feed. No se muestran eventos inventados; revisar calendario oficial.</p>')+'</div></div>'+(recentRows?'<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Datos publicados · posibles sorpresas</div>'+recentRows+'</div>':'')+'</section>';
+}""";
+if "function renderWeeklyFxRadar(data)" not in html:
+    html = html.replace("function renderContent() {", weekly_js + "\nfunction renderContent() {", 1)
+if "['sec-fx-weekly','FOREX RADAR']" not in html:
+    html = html.replace("['sec-tipos','TIPOS']", "['sec-fx-weekly','FOREX RADAR'],['sec-tipos','TIPOS']", 1)
+slot = "$" + "{renderWeeklyFxRadar(data)}"
+if slot not in html:
+    tick = chr(96)
+    old = "container.innerHTML = " + tick + "\n                <div class=\"grid grid-cols-1 lg:grid-cols-3 gap-6\" id=\"sec-tipos\">"
+    new = "container.innerHTML = " + tick + "\n                " + slot + "\n                <div class=\"grid grid-cols-1 lg:grid-cols-3 gap-6\" id=\"sec-tipos\">"
+    html = html.replace(old, new, 1)
+html = html.replace("const map={riskOnOff:'__riskOnOff'", "const map={economicCalendar:'__economicCalendar',riskOnOff:'__riskOnOff'", 1)
+html = html.replace("macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", "macroDatabase.__economicCalendar = macroDatabase.__economicCalendar || {events:[],dataStatus:'UNAVAILABLE'};\n        macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", 1)
+
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
