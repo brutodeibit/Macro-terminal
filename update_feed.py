@@ -195,13 +195,14 @@ def update_te(feed):
     lname=name.lower()
     if not any(k in lname for k in relevant):continue
     actual=ev.get('Actual')
-    forecast=ev.get('Forecast') or ev.get('TEForecast')
+    forecast=ev.get('Forecast')
+    if forecast in (None,'','-'):forecast=ev.get('TEForecast')
     previous=ev.get('Previous')
     raw_date=str(ev.get('Date') or '')
     date=raw_date[:16].replace('T',' ')
     event={"economyId":eid,"currency":currency_map.get(eid),"country":ev.get('Country') or cfg['te'],
-           "date":date,"event":name,"actual":str(actual or ''),"forecast":str(forecast or ''),
-           "previous":str(previous or ''),"importance":ev.get('Importance') or 2,
+           "date":date,"event":name,"actual":str(actual if actual is not None else ''),"forecast":str(forecast if forecast is not None else ''),
+           "previous":str(previous if previous is not None else ''),"importance":ev.get('Importance') or 2,
            "source":ev.get('Source') or 'Trading Economics'}
     calendar.append(event)
     # Only published actuals belong in the historical indicator table.
