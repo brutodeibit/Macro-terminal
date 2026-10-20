@@ -163,25 +163,71 @@ def update_treasury(feed):
  except Exception as e:print('Treasury',e)
 
 def update_te(feed):
- key=os.getenv('TE_API_KEY');
- if not key:return
- now=datetime.now(timezone.utc); a=(now-timedelta(days=14)).date().isoformat();b=(now+timedelta(days=21)).date().isoformat()
+ key=os.getenv("TE_API_KEY")
+ if not key:
+  print("TE calendar: no API key; retaining last valid calendar snapshot")
+  return
+ now=datetime.now(timezone.utc)
+ a=(now-timedelta(days=10)).date().isoformat()
+ b=(now+timedelta(days=14)).date().isoformat()
+ calendar=[]
+ currency_map={"us":"USD","eu":"EUR","de":"EUR","uk":"GBP","ch":"CHF","jp":"JPY","ca":"CAD","au":"AUD","nz":"NZD"}
+ relevant=("cpi","inflation","pce","ppi","unemployment","payroll","employment","wage","claims","gdp","retail","industrial production","pmi","ism","core","rate decision","interest rate","consumer confidence","business confidence","ifo","z ew","tankan")
+ meta_map={
+  "cpi":("INFLACIÓN",3,1),"inflation":("INFLACIÓN",3,1),"pce":("INFLACIÓN",3,1),
+  "ppi":("INFLACIÓN",2,1),"unemployment":("EMPLEO",3,-1),"payroll":("EMPLEO",3,1),
+  "employment":("EMPLEO",3,1),"wage":("EMPLEO",2,1),"claims":("EMPLEO",2,-1),
+  "gdp":("CRECIMIENTO",3,1),"retail":("CRECIMIENTO",2,1),
+  "industrial production":("CRECIMIENTO",2,1),"pmi":("CRECIMIENTO",2,1),
+  "ism":("CRECIMIENTO",2,1),"rate decision":("BANCO CENTRAL",3,0),
+  "interest rate":("BANCO CENTRAL",3,0),"consumer confidence":("CONFIANZA",2,1),
+  "business confidence":("CONFIANZA",2,1),"ifo":("CRECIMIENTO",2,1),
+  "z ew":("CRECIMIENTO",2,1),"tankan":("CRECIMIENTO",2,1)
+ }
  for eid,cfg in ECONOMIES.items():
   try:
    url=f"https://api.tradingeconomics.com/calendar/country/{requests.utils.quote(cfg['te'])}/{a}/{b}"
    data=get(url,{'c':key,'f':'json','importance':2,'lang':'es'}).json()
-   eco=feed.get('economies',{}).get(eid,{}); inds=eco.setdefault('indicators',[])
+   eco=feed.get('economies',{}).get(eid,{})
+   inds=eco.setdefault('indicators',[])
    for ev in data if isinstance(data,list) else []:
-    actual=ev.get('Actual');forecast=ev.get('Forecast') or ev.get('TEForecast')
+    name=ev.get('Event') or ev.get('Category') or 'Evento'
+    lname=name.lower()
+    if not any(k in lname for k in relevant):continue
+    actual=ev.get('Actual')
+    forecast=ev.get('Forecast') or ev.get('TEForecast')
+    previous=ev.get('Previous')
+    raw_date=str(ev.get('Date') or '')
+    date=raw_date[:16].replace('T',' ')
+    event={"economyId":eid,"currency":currency_map.get(eid),"country":ev.get('Country') or cfg['te'],
+           "date":date,"event":name,"actual":str(actual or ''),"forecast":str(forecast or ''),
+           "previous":str(previous or ''),"importance":ev.get('Importance') or 2,
+           "source":ev.get('Source') or 'Trading Economics'}
+    calendar.append(event)
+    # Only published actuals belong in the historical indicator table.
     if actual in (None,'','-','N/A'):continue
-    name=ev.get('Event') or ev.get('Category') or 'Evento'; lname=name.lower()
-    if not any(k in lname for k in ('cpi','inflation','pce','ppi','unemployment','payroll','employment','wage','claims','gdp','retail','industrial production','pmi','ism','core')):continue
-    meta=next((v for k,v in {'cpi':('INFLACIÓN',3,1),'pce':('INFLACIÓN',3,1),'ppi':('INFLACIÓN',2,1),'unemployment':('EMPLEO',3,-1),'payroll':('EMPLEO',3,1),'employment':('EMPLEO',3,1),'wage':('EMPLEO',2,1),'claims':('EMPLEO',2,-1),'gdp':('CRECIMIENTO',3,1),'retail':('CRECIMIENTO',2,1),'industrial production':('CRECIMIENTO',2,1),'pmi':('CRECIMIENTO',2,1),'ism':('CRECIMIENTO',2,1)}.items() if k in lname),('MACRO',2,0))
-    cat,imp,sign=meta; row=next((x for x in inds if x.get('name')==name),None) or {'cat':cat,'name':name,'actual':'','est':'','surprise':'','date':'','imp':'★'*imp,'source':'Trading Economics','rateImpact':sign}
-    row.update(actual=str(actual),est=str(forecast or ''),date=str(ev.get('Date') or '')[:16].replace('T',' '),source=ev.get('Source') or 'Trading Economics',rateImpact=sign)
-    if forecast not in (None,'') and num(actual) is not None and num(forecast) is not None:row['surprise']=f"{(num(actual)-num(forecast))*sign:+.2f}"
+    meta=next((v for k,v in meta_map.items() if k in lname),('MACRO',2,0))
+    cat,imp,sign=meta
+    row=next((x for x in inds if x.get('name')==name),None) or {'cat':cat,'name':name,'actual':'','est':'','surprise':'','date':'','imp':'★'*imp,'source':'Trading Economics','rateImpact':sign}
+    row.update(actual=str(actual),est=str(forecast or ''),date=date,source=ev.get('Source') or 'Trading Economics',rateImpact=sign)
+    if forecast not in (None,'') and num(actual) is not None and num(forecast) is not None:
+     row['surprise']=f"{(num(actual)-num(forecast))*sign:+.2f}"
     if row not in inds:inds.append(row)
-  except Exception as e:print('TE',eid,e)
+  except Exception as e:
+   print('TE',eid,type(e).__name__,str(e)[:180])
+ if calendar:
+  # Deduplicate euro-area/Germany calendar entries without merging distinct releases.
+  unique={}
+  for ev in calendar:
+   key=(ev.get('economyId'),ev.get('date'),ev.get('event'))
+   unique[key]=ev
+  events=sorted(unique.values(),key=lambda x:(x.get('date') or '',-int(x.get('importance') or 0)))
+  feed['economicCalendar']={"updated":datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),
+   "windowStart":a,"windowEnd":b,"events":events,"source":"Trading Economics calendar",
+   "sourceUrl":"https://tradingeconomics.com/calendar","dataStatus":"REAL CALENDAR · forecast and actual values where published"}
+ elif not (feed.get('economicCalendar') or {}).get('events'):
+  feed['economicCalendar']={"updated":datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),
+   "events":[],"source":"Trading Economics calendar","dataStatus":"UNAVAILABLE · no verified calendar rows"}
 
 def ensure_slots(feed):
  for eco in feed.get('economies',{}).values():
