@@ -1552,16 +1552,28 @@ def update_traditional_fear_greed(feed):
   headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
   d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
   fg=d.get("fear_and_greed",{})
-  result.update({k:fg.get(k) for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year")})
-  hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
-  result["history"]=[{"date":datetime.fromtimestamp(float(x.get("x",0))/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":float(x.get("y"))} for x in hist if x.get("x") is not None and x.get("y") is not None][-90:]
-  result["components"]={}
-  for k,v in d.items():
-   if k.startswith("market_") or k in ("stock_price_strength","stock_price_breadth","put_call_options","junk_bond_demand","safe_haven_demand"):
-    if isinstance(v,dict):
-     val=v.get("score",v.get("value"))
-     if val is not None:result["components"][k]=val
-  result["sourceStatus"]="REAL / DAILY"
+  current=num(fg.get("score"))
+  # Never replace a valid snapshot with a null, malformed, or out-of-range score.
+  if current is not None and 0 <= current <= 100:
+   for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year"):
+    if fg.get(k) is not None:result[k]=fg.get(k)
+   hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
+   clean_hist=[]
+   for x in hist:
+    xv=num(x.get("x"));yv=num(x.get("y"))
+    if xv is not None and yv is not None and 0 <= yv <= 100:
+     clean_hist.append({"date":datetime.fromtimestamp(xv/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":yv})
+   if clean_hist:result["history"]=clean_hist[-90:]
+   components={}
+   for k,v in d.items():
+    if k.startswith("market_") or k in ("stock_price_strength","stock_price_breadth","put_call_options","junk_bond_demand","safe_haven_demand"):
+     if isinstance(v,dict):
+      val=num(v.get("score",v.get("value")))
+      if val is not None:components[k]=val
+   if components:result["components"]=components
+   result["sourceStatus"]="REAL / DAILY"
+  else:
+   result["sourceStatus"]="STALE · invalid CNN response; last valid snapshot retained"
  except Exception as e:
   print("CNN F&G",type(e).__name__,str(e)[:180])
  result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
@@ -1747,8 +1759,18 @@ def update_markets_rotation(feed):
  for name,a1,b1 in style_cfg:
   a=series(a1);b=series(b1);styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1"),"changeYtd":(a.get("ytd")-b.get("ytd")) if a and b and a.get("ytd") is not None and b.get("ytd") is not None else None})
  up=sum(x["change1w"]>0 for x in sectors);down=sum(x["change1w"]<0 for x in sectors);neutral=len(sectors)-up-down
- sentiment={"bullishPct":round(up*100/len(sectors),1) if sectors else 0,"neutralPct":round(neutral*100/len(sectors),1) if sectors else 0,"bearishPct":round(down*100/len(sectors),1) if sectors else 0}
- feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"method":"ETF sectorial: precio actual + cambios 1D/1S/1M/YTD + fuerza relativa frente a SPY."}
+ sentiment={"bullishPct":round(up*100/len(sectors),1) if sectors else None,"neutralPct":round(neutral*100/len(sectors),1) if sectors else None,"bearishPct":round(down*100/len(sectors),1) if sectors else None}
+ # Equal-weight versus cap-weight ETFs provide a transparent concentration/dispersion proxy.
+ # They are not substitutes for exact advancing/declining counts or % above moving averages.
+ breadth_proxy={}
+ try:
+  rsp=series("RSP");spy=series("SPY");qqew=series("QQEW");qqq=series("QQQ")
+  if rsp and spy:
+   breadth_proxy["sp500EqualWeightVsCap"]={"fiveSessionRelativePct":round(rsp["w1"]-spy["w1"],3),"twentyOneSessionRelativePct":round(rsp["m1"]-spy["m1"],3),"equalWeightTicker":"RSP","capWeightTicker":"SPY"}
+  if qqew and qqq:
+   breadth_proxy["nasdaqEqualWeightVsCap"]={"fiveSessionRelativePct":round(qqew["w1"]-qqq["w1"],3),"twentyOneSessionRelativePct":round(qqew["m1"]-qqq["m1"],3),"equalWeightTicker":"QQEW","capWeightTicker":"QQQ"}
+ except Exception as e:print("BREADTH PROXY",type(e).__name__,str(e)[:120])
+ feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"breadthProxy":breadth_proxy,"method":"ETF sectorial: retornos 1D/3/5/21 sesiones/YTD + fuerza relativa vs SPY. RSP/SPY y QQEW/QQQ son proxies de dispersión/concentración, no conteos de acciones."}
 
 def update_global_markets(feed):
  regions={
