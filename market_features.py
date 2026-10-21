@@ -1605,6 +1605,49 @@ def update_dark_pool_prints(feed):
  }
 
 
+def update_market_breadth(feed):
+ previous=feed.get("marketBreadth",{}) if isinstance(feed.get("marketBreadth"),dict) else {}
+ url="https://raw.githubusercontent.com/DeanFinancials/deanfi-data/main/advance-decline/daily_breadth.json"
+ try:
+  payload=get(url).json()
+  meta=payload.get("metadata",{}) if isinstance(payload,dict) else {}
+  data=payload.get("data",{}) if isinstance(payload,dict) else {}
+  ad=data.get("advances_declines",{}) if isinstance(data,dict) else {}
+  vol=data.get("volume_metrics",{}) if isinstance(data,dict) else {}
+  hl=data.get("new_highs_lows",{}) if isinstance(data,dict) else {}
+  ma=data.get("moving_averages",{}) if isinstance(data,dict) else {}
+  total=num(ad.get("total_stocks") or meta.get("total_stocks_analyzed"))
+  advances=num(ad.get("advances"));declines=num(ad.get("declines"));unchanged=num(ad.get("unchanged"))
+  day=str(data.get("date") or meta.get("trading_day") or "")[:10]
+  if not day or total is None or total<400 or advances is None or declines is None:
+   raise ValueError("S&P 500 breadth snapshot incomplete")
+  try:age=(datetime.now(timezone.utc).date()-datetime.fromisoformat(day).date()).days
+  except Exception:age=99
+  if age>5:raise ValueError("S&P 500 breadth snapshot stale: "+day)
+  def ma_entry(k):
+   x=ma.get(k,{}) if isinstance(ma,dict) else {}
+   return {"count":num(x.get("count")),"percentage":num(x.get("percentage"))}
+  out={
+   "date":day,"updated":meta.get("generated_at") or day,"universe":"S&P 500 constituents",
+   "totalStocks":total,"advances":advances,"declines":declines,"unchanged":unchanged,
+   "advanceDeclineRatio":num(ad.get("advance_decline_ratio")),
+   "advancePercentage":num(ad.get("advance_percentage")),
+   "advancingVolume":num(vol.get("advancing_volume")),"decliningVolume":num(vol.get("declining_volume")),
+   "volumeRatio":num(vol.get("volume_ratio")),
+   "near52wHigh":num(hl.get("stocks_near_52w_high")),"near52wLow":num(hl.get("stocks_near_52w_low")),
+   "near52wHighPct":num(hl.get("pct_near_52w_high")),"near52wLowPct":num(hl.get("pct_near_52w_low")),
+   "above20d":ma_entry("above_20_day_ma"),"above50d":ma_entry("above_50_day_ma"),"above200d":ma_entry("above_200_day_ma"),
+   "source":"DeanFinancials/deanfi-data · Yahoo Finance/yfinance","sourceUrl":url,
+   "dataStatus":"REAL / DAILY · third-party calculation" if age<=1 else "REAL / DAILY · last completed trading day",
+   "method":"503 aprox. componentes del S&P 500; máximos/mínimos cercanos dentro del 1% de su extremo de 52 semanas. Fuente externa de terceros, no dato oficial del índice."
+  }
+  feed["marketBreadth"]=out
+ except Exception as e:
+  print("MARKET BREADTH",type(e).__name__,str(e)[:160])
+  if previous:
+   previous["dataStatus"]="STALE / UNAVAILABLE · último snapshot válido retenido"
+   feed["marketBreadth"]=previous
+
 def update_traditional_fear_greed(feed):
  previous=feed.get("traditionalFearGreed",{}) if isinstance(feed.get("traditionalFearGreed"),dict) else {}
  result={**previous,"score":previous.get("score"),"rating":previous.get("rating","—"),"timestamp":previous.get("timestamp"),"previous_close":previous.get("previous_close"),"previous_1_week":previous.get("previous_1_week"),"previous_1_month":previous.get("previous_1_month"),"previous_1_year":previous.get("previous_1_year"),"history":previous.get("history",[]),"components":previous.get("components",{}),"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed","sourceStatus":"UNAVAILABLE · last valid snapshot retained"}
@@ -1935,7 +1978,7 @@ def update_bond_market(feed):
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
 
 def enrich_feed(feed):
- for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("GLOBAL_MARKETS",update_global_markets),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats),("TRAD_FG",update_traditional_fear_greed)):
+ for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("MARKET_BREADTH",update_market_breadth),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("GLOBAL_MARKETS",update_global_markets),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats),("TRAD_FG",update_traditional_fear_greed)):
   try:
    fn(feed)
   except Exception as e:
