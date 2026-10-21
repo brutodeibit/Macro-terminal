@@ -250,5 +250,14 @@ new_coverage = """(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmt
 if old_coverage in html:
     html = html.replace(old_coverage, new_coverage, 1)
 
+
+html = html.replace("1D/1S/1M", "1D/5S/21S")
+html = html.replace("1S/15D/1M", "5S/15S/21S")
+html = html.replace(">1S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15D</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">1M</th>", ">5S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">21S</th>")
+html = html.replace("1S relativo: '+fmtPct(x.change1w)", "5S relativo: '+fmtPct(x.change1w)")
+html = html.replace(" · 1M '+fmtPct(x.change1m)+' · YTD relativo", " · 21S '+fmtPct(x.change1m)+' · YTD relativo")
+html = html.replace("· 1S <span class=\"'+(q.change1w>=0?'risk-up':'risk-down')+'\">", "· 5S <span class=\"'+(q.change1w>=0?'risk-up':'risk-down')+'\">")
+html = html.replace("· 1M <span class=\"'+(q.change1m>=0?'risk-up':'risk-down')+'\">", "· 21S <span class=\"'+(q.change1m>=0?'risk-up':'risk-down')+'\">")
+
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
