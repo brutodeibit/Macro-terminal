@@ -253,7 +253,7 @@ if old_coverage in html:
 
 html = html.replace("1D/1S/1M", "1D/5S/21S")
 html = html.replace("1S/15D/1M", "5S/15S/21S")
-html = html.replace(">1S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15D</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">1M</th>", ">5S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">21S</th>")
+html = html.replace('>1S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15D</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">1M</th>', '>5S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">15S</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">21S</th>')
 html = html.replace("1S relativo: '+fmtPct(x.change1w)", "5S relativo: '+fmtPct(x.change1w)")
 html = html.replace(" · 1M '+fmtPct(x.change1m)+' · YTD relativo", " · 21S '+fmtPct(x.change1m)+' · YTD relativo")
 html = html.replace("· 1S <span class=\"'+(q.change1w>=0?'risk-up':'risk-down')+'\">", "· 5S <span class=\"'+(q.change1w>=0?'risk-up':'risk-down')+'\">")
