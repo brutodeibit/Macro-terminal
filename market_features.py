@@ -150,6 +150,33 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
 
 def _norm_pdf(x): return math.exp(-0.5*x*x)/math.sqrt(2*math.pi)
 def _norm_cdf(x): return 0.5*(1+math.erf(x/math.sqrt(2)))
+def _bs_price(S,K,T,sigma,r,typ):
+ if not S or not K or T<=0 or not sigma or sigma<=0:return None
+ try:
+  sq=math.sqrt(T);d1=(math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*sq);d2=d1-sigma*sq
+  if typ=="C":return S*_norm_cdf(d1)-K*math.exp(-r*T)*_norm_cdf(d2)
+  return K*math.exp(-r*T)*_norm_cdf(-d2)-S*_norm_cdf(-d1)
+ except Exception:return None
+
+def _implied_volatility(price,S,K,T,r,typ):
+ """Solve implied volatility from a public bid/ask midpoint or last trade; return None when unidentifiable."""
+ if price is None or S is None or K is None or T<=0:return None
+ try:
+  price=float(price);S=float(S);K=float(K)
+  intrinsic=max(0.0,S-K) if typ=="C" else max(0.0,K-S)
+  if not math.isfinite(price) or price<=intrinsic+1e-8:return None
+  lo,hi=0.005,5.0
+  cap=S if typ=="C" else K*math.exp(-r*T)
+  if price>=cap:return None
+  for _ in range(80):
+   mid=(lo+hi)/2;val=_bs_price(S,K,T,mid,r,typ)
+   if val is None:return None
+   if val>price:hi=mid
+   else:lo=mid
+  vol=(lo+hi)/2
+  return vol if 0.005<=vol<=5.0 else None
+ except (TypeError,ValueError,OverflowError):return None
+
 def _bs_greeks(S,K,T,sigma,r,typ):
  if not S or not K or T<=0 or not sigma or sigma<=0:return (None,None,None,None)
  try:
@@ -271,17 +298,30 @@ def _massive_option_chain(underlying):
     if typ not in ("call","put"):continue
     strike=num(det.get("strike_price") or x.get("strike_price"))
     if strike is None:continue
-    mapped.append({
-     "strike":strike,"openInterest":num(x.get("open_interest")) or 0,"volume":num(day.get("volume") or x.get("volume")) or 0,
-     "iv":num(x.get("implied_volatility") or greeks.get("iv")) or 0,"delta":num(greeks.get("delta")),"gamma":num(greeks.get("gamma")),
-     "vanna":num(greeks.get("vanna")),"charm":num(greeks.get("charm")),"vega":num(greeks.get("vega")),
-     "type":"C" if typ=="call" else "P","expiration":ex,
-     "bid":num((x.get("last_quote") or {}).get("bid")),"ask":num((x.get("last_quote") or {}).get("ask")),
-     "lastPrice":num((x.get("last_trade") or {}).get("price")),"contractSymbol":det.get("ticker") or x.get("ticker")
-    })
-   if mapped and spot is not None:
+    typ_code="C" if typ=="call" else "P"
+    oi_raw=num(x.get("open_interest"));vol_raw=num(day.get("volume") if day.get("volume") is not None else x.get("volume"))
+    bid=num((x.get("last_quote") or {}).get("bid"));ask=num((x.get("last_quote") or {}).get("ask"));last_price=num((x.get("last_trade") or {}).get("price"))
+    iv_raw=num(x.get("implied_volatility") if x.get("implied_volatility") is not None else greeks.get("iv"))
+    T_years=max((datetime.fromisoformat(ex).replace(tzinfo=timezone.utc)-datetime.now(timezone.utc)).total_seconds()/31536000,1/3650)
+    mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
+    if (iv_raw is None or iv_raw<=0) and mark is not None:iv_raw=_implied_volatility(mark,float(spot),strike,T_years,0.04,typ_code)
+    iv=iv_raw if iv_raw is not None and iv_raw>0 else None
+    delta=num(greeks.get("delta"));gamma=num(greeks.get("gamma"));vanna=num(greeks.get("vanna"));charm=num(greeks.get("charm"));vega=num(greeks.get("vega"))
+    if iv is not None and (delta is None or gamma is None or vanna is None or charm is None):
+     calc_delta,calc_gamma,calc_vanna,calc_charm=_bs_greeks(float(spot),strike,T_years,iv if iv<3 else iv/100,0.04,typ_code)
+     if delta is None:delta=calc_delta
+     if gamma is None:gamma=calc_gamma
+     if vanna is None:vanna=calc_vanna
+     if charm is None:charm=calc_charm
+    mapped.append({"strike":strike,"openInterest":oi_raw if oi_raw is not None else 0,"oiDataAvailable":oi_raw is not None,
+     "volume":vol_raw if vol_raw is not None else 0,"iv":iv if iv is not None else 0,"ivDataAvailable":iv is not None,
+     "delta":delta,"gamma":gamma,"vanna":vanna,"charm":charm,"vega":vega,"type":typ_code,"expiration":ex,
+     "bid":bid,"ask":ask,"lastPrice":last_price,"contractSymbol":det.get("ticker") or x.get("ticker")})
+   oi_coverage=sum(row.get("oiDataAvailable",False) for row in mapped)/len(mapped) if mapped else 0
+   if mapped and spot is not None and oi_coverage>=0.8:
     p=_option_summary(mapped,float(spot),datetime.fromisoformat(ex).replace(tzinfo=timezone.utc))
-    p.update(bucket=bucket,source="Massive · full-chain snapshot",dataStatus="REAL / DELAYED · Massive",chainCount=len(mapped),coverage="Full listed chain returned by provider")
+    iv_coverage=sum(row.get("ivDataAvailable",False) for row in mapped)/len(mapped)
+    p.update(bucket=bucket,source="Massive · full-chain snapshot",dataStatus="REAL / DELAYED · Massive"+(" · IV/Greeks parcialmente modeladas" if iv_coverage<0.9 else ""),chainCount=len(mapped),oiCoveragePct=round(oi_coverage*100,1),ivCoveragePct=round(iv_coverage*100,1),coverage="OI disponible en al menos el 80% de contratos; IV/Greeks derivadas de precios públicos cuando faltan")
     profiles.append(p)
   if not profiles:return None
   return {"ticker":underlying,"name":underlying,"spot":spot,"profiles":profiles,
@@ -326,13 +366,22 @@ def opt(sym):
    rows=[]
    for typ,key in (("C","calls"),("P","puts")):
     for x in chain.get(key,[]) or []:
-     K=num(x.get("strike"));oi=num(x.get("openInterest")) or 0;vol=num(x.get("volume")) or 0;iv=num(x.get("impliedVolatility")) or 0
+     K=num(x.get("strike"));oi_raw=num(x.get("openInterest"));vol_raw=num(x.get("volume"));iv_raw=num(x.get("impliedVolatility"))
      if not K:continue
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
-     delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv,0.04,typ)
-     rows.append({"strike":K,"openInterest":oi,"volume":vol,"iv":iv,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":(float(_norm_pdf(((math.log(spot/K)+(0.04+0.5*(iv if iv<3 else iv/100)**2)*T)/((iv if iv<3 else iv/100)*math.sqrt(T))))*spot*math.sqrt(T)) if iv else None),"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
-   if rows:
-    p=_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc));p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER");profiles.append(p);all_raw.extend(rows)
+     bid=num(x.get("bid"));ask=num(x.get("ask"));last_price=num(x.get("lastPrice"))
+     mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
+     if (iv_raw is None or iv_raw<=0) and mark is not None:iv_raw=_implied_volatility(mark,spot,K,T,0.04,typ)
+     iv=iv_raw if iv_raw is not None and iv_raw>0 else None
+     oi=oi_raw if oi_raw is not None else 0;vol=vol_raw if vol_raw is not None else 0
+     delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv if iv is not None and iv<3 else (iv/100 if iv is not None else None),0.04,typ)
+     rows.append({"strike":K,"openInterest":oi,"oiDataAvailable":oi_raw is not None,"volume":vol,"iv":iv,"ivDataAvailable":iv is not None,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":(float(_norm_pdf(((math.log(spot/K)+(0.04+0.5*(iv if iv<3 else iv/100)**2)*T)/((iv if iv<3 else iv/100)*math.sqrt(T))))*spot*math.sqrt(T)) if iv else None),"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
+   oi_coverage=sum(x.get("oiDataAvailable",False) for x in rows)/len(rows) if rows else 0
+   if rows and oi_coverage>=0.8:
+    p=_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc));p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER")
+    p["oiCoveragePct"]=round(oi_coverage*100,1);p["ivCoveragePct"]=round(sum(x.get("ivDataAvailable",False) for x in rows)/len(rows)*100,1)
+    p["dataStatus"]="REAL / DELAYED · Yahoo + Black-Scholes"+(" · cobertura parcial de IV" if p["ivCoveragePct"]<90 else "")
+    profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
   for p in profiles:
    ex=int(datetime.fromisoformat(p["expiration"]).replace(tzinfo=timezone.utc).timestamp());rr=[x for x in all_raw if x["expiration"]==ex]
