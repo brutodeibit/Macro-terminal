@@ -272,5 +272,14 @@ html = html.replace("· 1S <span class=\"'+(q.change1w>=0?'risk-up':'risk-down')
 html = html.replace("· 1M <span class=\"'+(q.change1m>=0?'risk-up':'risk-down')+'\">", "· 21S <span class=\"'+(q.change1m>=0?'risk-up':'risk-down')+'\">")
 
 html = html.replace("if(/desempleo|paro|jobless|claims|initial|continuing/.test(name))", "if(/desempleo|paro|unemployment|unemploy|jobless|claims|initial|continuing/.test(name))")
+
+html = html.replace('<div class="text-[8px] text-gray-600">1S</div>', '<div class="text-[8px] text-gray-600">5S</div>')
+html = html.replace('<div class="text-[8px] text-gray-600">1M</div>', '<div class="text-[8px] text-gray-600">21S</div>')
+html = html.replace("1S = semana de mercado (~5 cierres), 1M = ~21 cierres.", "5S = cinco cierres de mercado; 21S = veintiún cierres.")
+html = html.replace("vs SPY · 1S", "vs SPY · 5S")
+html = html.replace("Tramo corto 1S", "Tramo corto 5S")
+html = html.replace("Tendencia de divisa 1S", "Tendencia de divisa 5S")
+html = html.replace("<span>1S <b>$"+"{pctCell(y?.change1w)}</b></span><span>1M <b>$"+"{pctCell(y?.change1m)}</b></span>", "<span>5S <b>$"+"{pctCell(y?.change1w)}</b></span><span>21S <b>$"+"{pctCell(y?.change1m)}</b></span>")
+
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
