@@ -1846,7 +1846,7 @@ def update_global_markets(feed):
    if len(q)<22:continue
    arr.append({"name":name,"symbol":sym,"last":q[-1],"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"changeYtd":y.get("changeYtd"),"ytdStart":y.get("ytdStart"),"source":"Yahoo Finance public market data"})
   out[region]=arr
- feed["globalMarkets"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"regions":out,"source":"Yahoo Finance public market data","method":"Índices de referencia por región. Variaciones 1D/1S/1M/YTD; YTD se calcula desde el primer cierre disponible del año natural."}
+ feed["globalMarkets"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"regions":out,"source":"Yahoo Finance public market data","method":"Índices de referencia por región. Variaciones 1D/5S/21S/YTD; YTD se calcula desde el primer cierre disponible del año natural."}
 
 
 def _cmc_day(timestamp):
@@ -1976,8 +1976,8 @@ def update_risk(feed):
  why={"SP500":"la bolsa amplia acompaña el apetito por riesgo","NASDAQ":"la beta alta acompaña el régimen","VIX":"la volatilidad bursátil está contenida","VVIX":"la volatilidad de la volatilidad no muestra estrés","SKEW":"el riesgo de cola no muestra tensión extrema","MOVE":"la volatilidad de bonos no muestra estrés significativo","HYG":"el crédito high yield acompaña el régimen","LQD":"el crédito investment grade acompaña el régimen","DXY":"el dólar actúa como refugio/liquidez","AUDJPY":"el carry confirma apetito por riesgo","COPPER":"el cobre acompaña la demanda cíclica","GOLD":"el oro muestra demanda defensiva","BTC":"cripto acompaña liquidez/beta","TLT/SPY":"la duración frente a acciones aporta contexto","OIL":"el petróleo aporta contexto de inflación/crecimiento"}
  positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5];negatives=sorted([x for x in comp if x[0]<0])[:5]
  feed["riskOnOff"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"score":round(score,1),"label":label,"confidence":conf,
-  "method":"Composite intermercado. 1D/1S/1M = retorno del último cierre disponible; pointChange = cambio absoluto en unidades del propio activo.",
+  "method":"Composite intermercado. 1D/5S/21S = retorno del último cierre disponible; pointChange = cambio absoluto en unidades del propio activo.",
   "assets":data,"confirmations":[f"{n}: {why.get(n,w)}." for _,n,w in positives],"tensions":[f"{n}: {why.get(n,w)}." for _,n,w in negatives],
-  "coverage":{"totalAssets":len(data),"windows":["1D","1S","1M"],"symbols":[x["symbol"] for x in data]}}
+  "coverage":{"totalAssets":len(data),"windows":["1D","5S","21S"],"symbols":[x["symbol"] for x in data]}}
 
 
