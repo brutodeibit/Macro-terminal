@@ -242,5 +242,13 @@ html = html.replace(" · 1M '+fmtPct(q.change1m)"," · 21S '+fmtPct(q.change1m)"
 html = html.replace("(x.change1w>=0?'risk-up':'risk-down')+'\">'+fmtPct(x.change3d)","(x.change3d>=0?'risk-up':'risk-down')+'\">'+fmtPct(x.change3d)")
 html = html.replace("const lvl=v=>{const n=Number(v);return Number.isFinite(n)?fmtNum(n,2):'—';};","const lvl=v=>{if(v===null||v===undefined||v==='')return '—';const n=Number(v);return Number.isFinite(n)?fmtNum(n,2):'—';};")
 
+
+if "esc(fg.rating||'—')" in html and "esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')" not in html:
+    html = html.replace("esc(fg.rating||'—')", "esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')", 1)
+old_coverage = """(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+'</div></div>').join('')"""
+new_coverage = """(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+(q.oiCoveragePct!=null?'<div>OI disponible<b class="block">'+fmtNum(q.oiCoveragePct,0)+'%</b></div>':'')+(q.ivCoveragePct!=null?'<div>IV/Greeks disponibles<b class="block">'+fmtNum(q.ivCoveragePct,0)+'%</b></div>':'')+'</div></div>').join('')"""
+if old_coverage in html:
+    html = html.replace(old_coverage, new_coverage, 1)
+
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
