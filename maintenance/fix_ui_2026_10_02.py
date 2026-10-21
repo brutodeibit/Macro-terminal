@@ -281,5 +281,6 @@ html = html.replace("Tramo corto 1S", "Tramo corto 5S")
 html = html.replace("Tendencia de divisa 1S", "Tendencia de divisa 5S")
 html = html.replace("<span>1S <b>$"+"{pctCell(y?.change1w)}</b></span><span>1M <b>$"+"{pctCell(y?.change1m)}</b></span>", "<span>5S <b>$"+"{pctCell(y?.change1w)}</b></span><span>21S <b>$"+"{pctCell(y?.change1m)}</b></span>")
 
+html = html.replace("Los porcentajes son variaciones de precio del último cierre disponible: 1D, 1 semana y 1 mes.", "Los porcentajes son variaciones de precio del último cierre disponible: 1D, 5 sesiones y 21 sesiones.")
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
