@@ -304,7 +304,7 @@ def _massive_option_chain(underlying):
     iv_raw=num(x.get("implied_volatility") if x.get("implied_volatility") is not None else greeks.get("iv"))
     T_years=max((datetime.fromisoformat(ex).replace(tzinfo=timezone.utc)-datetime.now(timezone.utc)).total_seconds()/31536000,1/3650)
     mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
-    if (iv_raw is None or iv_raw<=0) and mark is not None:iv_raw=_implied_volatility(mark,float(spot),strike,T_years,0.04,typ_code)
+    if (iv_raw is None or iv_raw<=0) and mark is not None and spot is not None:iv_raw=_implied_volatility(mark,float(spot),strike,T_years,0.04,typ_code)
     iv=iv_raw if iv_raw is not None and iv_raw>0 else None
     delta=num(greeks.get("delta"));gamma=num(greeks.get("gamma"));vanna=num(greeks.get("vanna"));charm=num(greeks.get("charm"));vega=num(greeks.get("vega"))
     if iv is not None and (delta is None or gamma is None or vanna is None or charm is None):
