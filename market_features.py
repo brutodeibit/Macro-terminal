@@ -74,6 +74,9 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  ex=max(0,(expiration-datetime.now(timezone.utc)).total_seconds()/86400.0)
  co=sum(float(x.get("openInterest",0) or 0) for x in calls); po=sum(float(x.get("openInterest",0) or 0) for x in puts)
  cv=sum(float(x.get("volume",0) or 0) for x in calls); pv=sum(float(x.get("volume",0) or 0) for x in puts)
+ gamma_coverage=sum(x.get("gamma") is not None for x in rows)/len(rows) if rows else 0
+ delta_coverage=sum(x.get("delta") is not None for x in rows)/len(rows) if rows else 0
+ iv_coverage=sum((x.get("ivDataAvailable") if "ivDataAvailable" in x else (x.get("iv") is not None and float(x.get("iv") or 0)>0)) for x in rows)/len(rows) if rows else 0
  gp=_option_gex(calls,puts,spot)
  total_oi=co+po
  above_oi=sum(float(x.get("openInterest",0) or 0) for x in rows if float(x.get("strike") or 0)>spot)
@@ -131,8 +134,16 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  if len(strike_map)>60:
   strike_map=sorted(strike_map,key=lambda z:abs(float(z["strike"])-spot))[:60]
   strike_map=sorted(strike_map,key=lambda z:float(z["strike"]))
+ # Never publish a synthetic zero when too few contracts have calculable Greeks.
+ if gamma_coverage<0.65:
+  for key in ("gammaPositive","gammaNegative","gammaNet","gammaTotal","gammaFlip","zeroGamma","callWall","putWall"):gp[key]=None
+  gp["gammaRegime"]="UNAVAILABLE · insufficient gamma coverage";gp["gammaEffect"]="No se publica GEX agregado porque faltan demasiadas griegas verificables."
+  gp["positiveZones"]=[];gp["negativeZones"]=[];gex_by=[];strike_map=[]
+ if delta_coverage<0.65:dex=None
+ if iv_coverage<0.5:vanna=None
  return {
   "expiration":expiration.date().isoformat(),"daysToExpiry":round(ex,2),
+  "gammaCoveragePct":round(gamma_coverage*100,1),"deltaCoveragePct":round(delta_coverage*100,1),"ivCoveragePct":round(iv_coverage*100,1),
   "callOi":co,"putOi":po,"putCallOi":po/co if co else None,"callVolume":cv,"putVolume":pv,"putCallVolume":pv/cv if cv else None,"putCallVol":pv/cv if cv else None,"totalVolume":cv+pv,"totalOpenInterest":total_oi,
   "oiAboveSpot":above_oi,"oiBelowSpot":below_oi,"oiAtSpot":at_oi,"oiAbovePct":above_oi/total_oi*100 if total_oi else None,"oiBelowPct":below_oi/total_oi*100 if total_oi else None,
   "ivAtm":iv_atm*100 if iv_atm else None,"atmDelta":atm_delta,"atmGamma":atm_gamma,"atmVega":(float(atm_row.get("vega")) if atm_row.get("vega") is not None else None),"atmCharm":atm_charm,"expectedMove":expected,"expectedMovePct":expected/spot*100 if expected and spot else None,
