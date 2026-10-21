@@ -312,27 +312,44 @@ def _massive_option_chain(underlying):
     typ_code="C" if typ=="call" else "P"
     oi_raw=num(x.get("open_interest"));vol_raw=num(day.get("volume") if day.get("volume") is not None else x.get("volume"))
     bid=num((x.get("last_quote") or {}).get("bid"));ask=num((x.get("last_quote") or {}).get("ask"));last_price=num((x.get("last_trade") or {}).get("price"))
-    iv_raw=num(x.get("implied_volatility") if x.get("implied_volatility") is not None else greeks.get("iv"))
+    iv_provider_raw=num(x.get("implied_volatility") if x.get("implied_volatility") is not None else greeks.get("iv"))
+    iv_provider_available=iv_provider_raw is not None and iv_provider_raw>0
+    iv_raw=iv_provider_raw
     T_years=max((datetime.fromisoformat(ex).replace(tzinfo=timezone.utc)-datetime.now(timezone.utc)).total_seconds()/31536000,1/3650)
     mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
     if (iv_raw is None or iv_raw<=0) and mark is not None and spot is not None:iv_raw=_implied_volatility(mark,float(spot),strike,T_years,0.04,typ_code)
     iv=iv_raw if iv_raw is not None and iv_raw>0 else None
     delta=num(greeks.get("delta"));gamma=num(greeks.get("gamma"));vanna=num(greeks.get("vanna"));charm=num(greeks.get("charm"));vega=num(greeks.get("vega"))
+    greeks_provider_available=all(v is not None for v in (delta,gamma,vega))
     if iv is not None and (delta is None or gamma is None or vanna is None or charm is None):
      calc_delta,calc_gamma,calc_vanna,calc_charm=_bs_greeks(float(spot),strike,T_years,iv if iv<3 else iv/100,0.04,typ_code)
      if delta is None:delta=calc_delta
      if gamma is None:gamma=calc_gamma
      if vanna is None:vanna=calc_vanna
      if charm is None:charm=calc_charm
+    if iv is not None and vega is None and spot is not None:
+     sigma=iv if iv<3 else iv/100
+     try:
+      d1=(math.log(float(spot)/strike)+(0.04+0.5*sigma*sigma)*T_years)/(sigma*math.sqrt(T_years))
+      vega=_norm_pdf(d1)*float(spot)*math.sqrt(T_years)
+     except Exception:vega=None
     mapped.append({"strike":strike,"openInterest":oi_raw if oi_raw is not None else 0,"oiDataAvailable":oi_raw is not None,
      "volume":vol_raw if vol_raw is not None else 0,"iv":iv if iv is not None else 0,"ivDataAvailable":iv is not None,
+     "ivProviderAvailable":iv_provider_available,"greeksProviderAvailable":greeks_provider_available,
+     "greeksAvailable":all(v is not None for v in (delta,gamma,vega)),
      "delta":delta,"gamma":gamma,"vanna":vanna,"charm":charm,"vega":vega,"type":typ_code,"expiration":ex,
      "bid":bid,"ask":ask,"lastPrice":last_price,"contractSymbol":det.get("ticker") or x.get("ticker")})
    oi_coverage=sum(row.get("oiDataAvailable",False) for row in mapped)/len(mapped) if mapped else 0
    if mapped and spot is not None and oi_coverage>=0.8:
     p=_option_summary(mapped,float(spot),datetime.fromisoformat(ex).replace(tzinfo=timezone.utc))
     iv_coverage=sum(row.get("ivDataAvailable",False) for row in mapped)/len(mapped)
-    p.update(bucket=bucket,source="Massive · full-chain snapshot",dataStatus="REAL / DELAYED · Massive"+(" · IV/Greeks parcialmente modeladas" if iv_coverage<0.9 else ""),chainCount=len(mapped),oiCoveragePct=round(oi_coverage*100,1),ivCoveragePct=round(iv_coverage*100,1),coverage="OI disponible en al menos el 80% de contratos; IV/Greeks derivadas de precios públicos cuando faltan")
+    iv_provider_coverage=sum(row.get("ivProviderAvailable",False) for row in mapped)/len(mapped)
+    greeks_provider_coverage=sum(row.get("greeksProviderAvailable",False) for row in mapped)/len(mapped)
+    greeks_coverage=sum(row.get("greeksAvailable",False) for row in mapped)/len(mapped)
+    p.update(bucket=bucket,source="Massive · full-chain snapshot",dataStatus="REAL / DELAYED · Massive"+(" · IV/Greeks modeladas parcialmente" if greeks_coverage<0.9 or iv_provider_coverage<0.9 else ""),
+     chainCount=len(mapped),oiCoveragePct=round(oi_coverage*100,1),ivCoveragePct=round(iv_coverage*100,1),
+     providerIvCoveragePct=round(iv_provider_coverage*100,1),providerGreeksCoveragePct=round(greeks_provider_coverage*100,1),greeksCoveragePct=round(greeks_coverage*100,1),
+     coverage="OI/IV/Greeks de proveedor separados de los cálculos propios; IV y griegas faltantes se modelan cuando existen precios públicos.")
     profiles.append(p)
   if not profiles:return None
   return {"ticker":underlying,"name":underlying,"spot":spot,"profiles":profiles,
@@ -357,7 +374,7 @@ def opt(sym):
   today=datetime.now(timezone.utc).date()
   for ex in expirations:
    d=datetime.fromtimestamp(ex,tz=timezone.utc);days=(d.date()-today).days
-   if days==0 or days<=2: bucket="0DTE"
+   if days==0: bucket="0DTE"
    elif days<=7: bucket="NEXT"
    elif days<=30: bucket="7-30D"
    elif days<=90: bucket="30-90D"
@@ -379,6 +396,7 @@ def opt(sym):
     for x in chain.get(key,[]) or []:
      K=num(x.get("strike"));oi_raw=num(x.get("openInterest"));vol_raw=num(x.get("volume"));iv_raw=num(x.get("impliedVolatility"))
      if not K:continue
+     iv_provider_available=iv_raw is not None and iv_raw>0
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
      bid=num(x.get("bid"));ask=num(x.get("ask"));last_price=num(x.get("lastPrice"))
      mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
@@ -386,12 +404,19 @@ def opt(sym):
      iv=iv_raw if iv_raw is not None and iv_raw>0 else None
      oi=oi_raw if oi_raw is not None else 0;vol=vol_raw if vol_raw is not None else 0
      delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv if iv is not None and iv<3 else (iv/100 if iv is not None else None),0.04,typ)
-     rows.append({"strike":K,"openInterest":oi,"oiDataAvailable":oi_raw is not None,"volume":vol,"iv":iv,"ivDataAvailable":iv is not None,"gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":(float(_norm_pdf(((math.log(spot/K)+(0.04+0.5*(iv if iv<3 else iv/100)**2)*T)/((iv if iv<3 else iv/100)*math.sqrt(T))))*spot*math.sqrt(T)) if iv else None),"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
+     vega=(float(_norm_pdf(((math.log(spot/K)+(0.04+0.5*(iv if iv<3 else iv/100)**2)*T)/((iv if iv<3 else iv/100)*math.sqrt(T))))*spot*math.sqrt(T)) if iv else None
+     rows.append({"strike":K,"openInterest":oi,"oiDataAvailable":oi_raw is not None,"volume":vol,"iv":iv,"ivDataAvailable":iv is not None,
+      "ivProviderAvailable":iv_provider_available,"greeksProviderAvailable":False,"greeksAvailable":all(v is not None for v in (delta,gamma,vega)),
+      "gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":vega,"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
    oi_coverage=sum(x.get("oiDataAvailable",False) for x in rows)/len(rows) if rows else 0
    if rows and oi_coverage>=0.8:
     p=_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc));p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER")
-    p["oiCoveragePct"]=round(oi_coverage*100,1);p["ivCoveragePct"]=round(sum(x.get("ivDataAvailable",False) for x in rows)/len(rows)*100,1)
-    p["dataStatus"]="REAL / DELAYED · Yahoo + Black-Scholes"+(" · cobertura parcial de IV" if p["ivCoveragePct"]<90 else "")
+    p["oiCoveragePct"]=round(oi_coverage*100,1)
+    p["ivCoveragePct"]=round(sum(x.get("ivDataAvailable",False) for x in rows)/len(rows)*100,1)
+    p["providerIvCoveragePct"]=round(sum(x.get("ivProviderAvailable",False) for x in rows)/len(rows)*100,1)
+    p["providerGreeksCoveragePct"]=0
+    p["greeksCoveragePct"]=round(sum(x.get("greeksAvailable",False) for x in rows)/len(rows)*100,1)
+    p["dataStatus"]="REAL / DELAYED · Yahoo OI/volumen/IV pública + Black-Scholes para griegas"+(" · cobertura parcial de IV" if p["ivCoveragePct"]<90 else "")
     profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
   for p in profiles:
