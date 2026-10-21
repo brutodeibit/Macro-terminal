@@ -258,7 +258,7 @@ html = html.replace("const lvl=v=>{const n=Number(v);return Number.isFinite(n)?f
 if "esc(fg.rating||'—')" in html and "esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')" not in html:
     html = html.replace("esc(fg.rating||'—')", "esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')", 1)
 old_coverage = """(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+'</div></div>').join('')"""
-new_coverage = """(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+(q.oiCoveragePct!=null?'<div>OI disponible<b class="block">'+fmtNum(q.oiCoveragePct,0)+'%</b></div>':'')+(q.ivCoveragePct!=null?'<div>IV/Greeks disponibles<b class="block">'+fmtNum(q.ivCoveragePct,0)+'%</b></div>':'')+'</div></div>').join('')"""
+new_coverage = """(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+(q.oiCoveragePct!=null?'<div>OI disponible<b class="block">'+fmtNum(q.oiCoveragePct,0)+'%</b></div>':'')+(q.ivCoveragePct!=null?'<div>IV disponible<b class="block">'+fmtNum(q.ivCoveragePct,0)+'%</b></div>':'')+(q.gammaCoveragePct!=null?'<div>Gamma calculable<b class="block">'+fmtNum(q.gammaCoveragePct,0)+'%</b></div>':'')+'</div></div>').join('')"""
 if old_coverage in html:
     html = html.replace(old_coverage, new_coverage, 1)
 
