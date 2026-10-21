@@ -205,5 +205,42 @@ html = html.replace("const map={riskOnOff:'__riskOnOff'", "const map={economicCa
 if "macroDatabase.__economicCalendar = macroDatabase.__economicCalendar ||" not in html:
     html = html.replace("macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", "macroDatabase.__economicCalendar = macroDatabase.__economicCalendar || {events:[],dataStatus:'UNAVAILABLE'};\n        macroDatabase.__riskOnOff = macroDatabase.__riskOnOff ||", 1)
 
+
+# Keep these data-quality and layout fixes persistent across automated feed refreshes.
+old_pct = "function fmtPct(v,d=2){ const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }"
+new_pct = "function fmtPct(v,d=2){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }"
+if old_pct in html: html = html.replace(old_pct, new_pct, 1)
+old_num = "function fmtNum(v,d=2){ const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }"
+new_num = "function fmtNum(v,d=2){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }"
+if old_num in html: html = html.replace(old_num, new_num, 1)
+old_score = " const score=Number(fg.score), angle=Number.isFinite(score)?-90+score*1.8:-90, hist=(fg.history||[]).slice(-60);"
+new_score = " const scoreRaw=fg.score,score=scoreRaw!==null&&scoreRaw!==undefined&&scoreRaw!==''&&Number.isFinite(Number(scoreRaw))&&Number(scoreRaw)>=0&&Number(scoreRaw)<=100?Number(scoreRaw):NaN,angle=Number.isFinite(score)?-90+score*1.8:-90,hist=(fg.history||[]).filter(x=>x&&x.value!==null&&x.value!==undefined&&x.value!==''&&Number.isFinite(Number(x.value))&&Number(x.value)>=0&&Number(x.value)<=100).slice(-60);"
+if old_score in html: html = html.replace(old_score, new_score, 1)
+old_lvl = " const lvl=v=>{const n=Number(v);return Number.isFinite(n)?fmtNum(n,2):'—';};"
+new_lvl = " const lvl=v=>{if(v===null||v===undefined||v==='')return '—';const n=Number(v);return Number.isFinite(n)?fmtNum(n,2):'—';};"
+if old_lvl in html: html = html.replace(old_lvl, new_lvl, 1)
+if "new Date(Date.now()-3*86400000).toISOString().slice(0,10)" in html:
+    html = html.replace("new Date(Date.now()-3*86400000).toISOString().slice(0,10)", "new Date(Date.now()-7*86400000).toISOString().slice(0,10)")
+if "function renderCryptoBondSection(){" in html and "const compVal=k=>" not in html:
+    marker_fg = " const levelPct=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v).toFixed(1)+'%':'—';"
+    breadth_add = r""" 
+ const compVal=k=>{const v=fg.components?.[k];return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;};
+ const breadthProxy=macroDatabase.__rotation?.breadthProxy||{};
+ const breadthCell=(label,value)=>'<div class="rounded-lg bg-slate-950/70 border border-gray-800 p-2"><div class="text-[9px] text-gray-500">'+label+'</div><b class="text-sm text-white">'+(value===null||value===undefined?'—':Number(value).toFixed(1)+' / 100')+'</b></div>';
+ const relCell=(label,x)=>'<div class="rounded-lg bg-slate-950/70 border border-gray-800 p-2"><div class="text-[9px] text-gray-500">'+label+'</div><b class="text-xs '+(x!==undefined&&x!==null&&Number(x)>=0?'risk-up':'risk-down')+'">'+fmtPct(x,2)+'</b></div>';
+ const breadthMini='<div class="space-y-2"><div class="text-[10px] uppercase tracking-wider text-gray-400">Amplitud y dispersión · contexto adicional</div><div class="grid grid-cols-2 gap-2">'+breadthCell('CNN · AMPLITUD',compVal('stock_price_breadth'))+breadthCell('CNN · FUERZA DE PRECIO',compVal('stock_price_strength'))+relCell('S&P 500 · RSP vs SPY · 5S',breadthProxy.sp500EqualWeightVsCap?.fiveSessionRelativePct)+relCell('Nasdaq · QQEW vs QQQ · 5S',breadthProxy.nasdaqEqualWeightVsCap?.fiveSessionRelativePct)+'</div><div class="text-[9px] text-gray-500">RSP/SPY y QQEW/QQQ miden si el índice equiponderado acompaña al ponderado por capitalización. No equivalen a un recuento de acciones.</div><div class="text-[9px] text-amber-300">Avances/descensos, % sobre medias de 50/200 días y nuevos máximos/mínimos: conteo exacto pendiente de una fuente pública verificable; no se sustituye por estimaciones.</div></div>';
+"""
+    if marker_fg in html: html = html.replace(marker_fg, marker_fg + breadth_add, 1)
+old_gauge = """<div class="relative mt-4"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg)"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><b class="text-3xl text-white">'+(Number.isFinite(score)?score.toFixed(0):'—')+'</b><div class="text-xs text-gray-400 uppercase">'+esc(fg.rating||'—')+'</div></div></div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]">"""
+new_gauge = """<div class="grid grid-cols-1 md:grid-cols-[minmax(150px,0.85fr)_1fr] gap-3 items-center mt-3"><div class="relative mt-2"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg)"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><b class="text-3xl text-white">'+(Number.isFinite(score)?score.toFixed(0):'—')+'</b><div class="text-xs text-gray-400 uppercase">'+esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')+'</div></div></div>'+breadthMini+'</div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]">"""
+if old_gauge in html and "breadthMini+'</div>" not in html: html = html.replace(old_gauge, new_gauge, 1)
+html = html.replace("1D · 1S · 1M","1D · 5S · 21S")
+html = html.replace("<th class=\"text-right py-2 px-2\">1S</th><th class=\"text-right py-2 px-2\">1M</th>","<th class=\"text-right py-2 px-2\">5S</th><th class=\"text-right py-2 px-2\">21S</th>")
+html = html.replace("1D / 1S / 1M.","1D / 5 sesiones / 21 sesiones.")
+html = html.replace("1D '+fmtPct(q.change1d)+' · 1S ","1D '+fmtPct(q.change1d)+' · 5S ")
+html = html.replace(" · 1M '+fmtPct(q.change1m)"," · 21S '+fmtPct(q.change1m)")
+html = html.replace("(x.change1w>=0?'risk-up':'risk-down')+'\">'+fmtPct(x.change3d)","(x.change3d>=0?'risk-up':'risk-down')+'\">'+fmtPct(x.change3d)")
+html = html.replace("const lvl=v=>{const n=Number(v);return Number.isFinite(n)?fmtNum(n,2):'—';};","const lvl=v=>{if(v===null||v===undefined||v==='')return '—';const n=Number(v);return Number.isFinite(n)?fmtNum(n,2):'—';};")
+
 p.write_text(html, encoding="utf-8")
 print("UI fixes applied")
