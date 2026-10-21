@@ -294,7 +294,7 @@ def _massive_option_chain(underlying):
   if not candidates:return None
   selected=[]
   for bucket,predicate in (
-   ("0DTE",lambda d:d==0),("NEXT",lambda d:0<d<=2),("7-30D",lambda d:7<d<=30),("30-90D",lambda d:30<d<=90)):
+   ("0DTE",lambda d:d==0),("NEXT",lambda d:0<d<=7),("7-30D",lambda d:7<d<=30),("30-90D",lambda d:30<d<=90)):
    c=[z for z in candidates if predicate(z[2])]
    if c:selected.append((bucket,c[0]))
   if not selected:selected=[("NEXT",candidates[0])]
@@ -441,18 +441,40 @@ def yahoo_ytd(sym):
 
 def update_fx(feed):
  sy={"EUR":"EURUSD=X","GBP":"GBPUSD=X","JPY":"USDJPY=X","AUD":"AUDUSD=X","NZD":"NZDUSD=X","CAD":"USDCAD=X","CHF":"USDCHF=X"}
- out={"USD":{"pair":"—","change1d":0,"change1w":0,"change15d":0,"change1m":0}}
+ out={}
  for c,sym in sy.items():
   try:
    r=chart(sym); q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
    if len(q)<22:continue
-   last=q[-1]; a1=(last/q[-2]-1)*100; w=(last/q[-6]-1)*100; d15=(last/q[-16]-1)*100; m=(last/q[-22]-1)*100
-   if c in ("JPY","CAD","CHF"):a1,w,d15,m=[-x for x in (a1,w,d15,m)]
-   out[c]={"pair":sym,"last":last,"change1d":a1,"change1w":w,"change15d":d15,"change1m":m}
+   ytd=yahoo_ytd(sym) or {}
+   vals={"change1d":(q[-1]/q[-2]-1)*100,"change3s":(q[-1]/q[-4]-1)*100,
+         "change5s":(q[-1]/q[-6]-1)*100,"change21s":(q[-1]/q[-22]-1)*100,
+         "changeYtd":ytd.get("changeYtd")}
+   # USDJPY/USDCAD/USDCHF are quoted as USD in the numerator:
+   # invert their return so every named currency is measured as strength versus USD.
+   if c in ("JPY","CAD","CHF"):
+    for k,v in list(vals.items()):
+     if v is not None:vals[k]=-v
+   vals.update({"pair":sym,"last":q[-1],"change1w":vals["change5s"],"change15d":(q[-1]/q[-16]-1)*100,"change1m":vals["change21s"],"source":"Yahoo Finance public FX quote"})
+   if c in ("JPY","CAD","CHF") and vals.get("change15d") is not None:vals["change15d"]=-vals["change15d"]
+   out[c]=vals
   except Exception as e:print("FX",c,type(e).__name__,str(e)[:120])
+ # The USD line is a DXY basket proxy; do not fabricate zero returns when data is missing.
+ try:
+  sym="DX-Y.NYB";r=chart(sym);q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
+  if len(q)>=22:
+   ytd=yahoo_ytd(sym) or {}
+   vals={"change1d":(q[-1]/q[-2]-1)*100,"change3s":(q[-1]/q[-4]-1)*100,"change5s":(q[-1]/q[-6]-1)*100,
+         "change21s":(q[-1]/q[-22]-1)*100,"changeYtd":ytd.get("changeYtd")}
+   vals.update({"pair":"DXY proxy","last":q[-1],"change1w":vals["change5s"],"change15d":(q[-1]/q[-16]-1)*100,"change1m":vals["change21s"],
+                "source":"Yahoo Finance · DXY basket proxy","note":"DXY aproxima el USD frente a una cesta; no equivale a una cotización bilateral."})
+   out["USD"]=vals
+ except Exception as e:print("FX USD DXY",type(e).__name__,str(e)[:120])
+ if not out:
+  out["USD"]={"pair":"DXY proxy","change1d":None,"change3s":None,"change5s":None,"change21s":None,"changeYtd":None,
+              "change1w":None,"change15d":None,"change1m":None,"source":"DXY unavailable"}
  feed["fx"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"currencies":out,
-   "method":"Fuerza frente a USD normalizada. Variaciones: 1D, 5S, 15S y 21S, calculadas sobre cierres disponibles. Se combina con política, 2Y, tipo real y tendencia."}
-
+   "method":"Fuerza normalizada frente al USD: 1D, 3S, 5S, 21S y YTD. Para JPY/CAD/CHF se invierte el retorno del par cotizado. USD usa DXY como proxy explícito. Retornos de mercado son confirmación, no causalidad."}
 
 def cot_rows(dataset,where,limit=260):
  try:
@@ -1606,10 +1628,24 @@ def update_dark_pool_prints(feed):
 
 
 def update_market_breadth(feed):
+ """Verified daily breadth: public S&P 500 snapshot plus a calculated Nasdaq-100 constituent snapshot."""
+ import csv, io
+ from concurrent.futures import ThreadPoolExecutor, as_completed
+ from statistics import median
+ from zoneinfo import ZoneInfo
+
  previous=feed.get("marketBreadth",{}) if isinstance(feed.get("marketBreadth"),dict) else {}
- url="https://raw.githubusercontent.com/DeanFinancials/deanfi-data/main/advance-decline/daily_breadth.json"
+ # Migrate both older scalar snapshots and the newer paired shape.
+ previous_sp=previous.get("sp500") if isinstance(previous.get("sp500"),dict) else previous
+ previous_ndx=previous.get("nasdaq100") if isinstance(previous.get("nasdaq100"),dict) else {}
+ sp_hist=list(previous.get("sp500History") or [])
+ ndx_hist=list(previous.get("nasdaq100History") or [])
+ now=datetime.now(timezone.utc);stamp=now.strftime("%d/%m/%Y %H:%M UTC")
+ ny=ZoneInfo("America/New_York");now_et=now.astimezone(ny);today_et=now_et.date().isoformat()
+ sp_url="https://raw.githubusercontent.com/DeanFinancials/deanfi-data/main/advance-decline/daily_breadth.json"
+ sp=previous_sp if isinstance(previous_sp,dict) else {}
  try:
-  payload=get(url).json()
+  payload=get(sp_url).json()
   meta=payload.get("metadata",{}) if isinstance(payload,dict) else {}
   data=payload.get("data",{}) if isinstance(payload,dict) else {}
   ad=data.get("advances_declines",{}) if isinstance(data,dict) else {}
@@ -1621,32 +1657,164 @@ def update_market_breadth(feed):
   day=str(data.get("date") or meta.get("trading_day") or "")[:10]
   if not day or total is None or total<400 or advances is None or declines is None:
    raise ValueError("S&P 500 breadth snapshot incomplete")
-  try:age=(datetime.now(timezone.utc).date()-datetime.fromisoformat(day).date()).days
-  except Exception:age=99
+  age=(now.date()-datetime.fromisoformat(day).date()).days
   if age>5:raise ValueError("S&P 500 breadth snapshot stale: "+day)
   def ma_entry(k):
    x=ma.get(k,{}) if isinstance(ma,dict) else {}
-   return {"count":num(x.get("count")),"percentage":num(x.get("percentage"))}
-  out={
+   return {"count":num(x.get("count")),"percentage":num(x.get("percentage")),"eligible":total}
+  sp={
    "date":day,"updated":meta.get("generated_at") or day,"universe":"S&P 500 constituents",
    "totalStocks":total,"advances":advances,"declines":declines,"unchanged":unchanged,
-   "advanceDeclineRatio":num(ad.get("advance_decline_ratio")),
-   "advancePercentage":num(ad.get("advance_percentage")),
+   "advanceDeclineRatio":num(ad.get("advance_decline_ratio")),"advancePercentage":num(ad.get("advance_percentage")),
    "advancingVolume":num(vol.get("advancing_volume")),"decliningVolume":num(vol.get("declining_volume")),
-   "volumeRatio":num(vol.get("volume_ratio")),
+   "advancingVolumePct":num(vol.get("advancing_volume_pct")),"volumeRatio":num(vol.get("volume_ratio")),
    "near52wHigh":num(hl.get("stocks_near_52w_high")),"near52wLow":num(hl.get("stocks_near_52w_low")),
    "near52wHighPct":num(hl.get("pct_near_52w_high")),"near52wLowPct":num(hl.get("pct_near_52w_low")),
    "above20d":ma_entry("above_20_day_ma"),"above50d":ma_entry("above_50_day_ma"),"above200d":ma_entry("above_200_day_ma"),
-   "source":"DeanFinancials/deanfi-data · Yahoo Finance/yfinance","sourceUrl":url,
+   "source":"DeanFinancials/deanfi-data · Yahoo Finance/yfinance","sourceUrl":sp_url,
    "dataStatus":"REAL / DAILY · third-party calculation" if age<=1 else "REAL / DAILY · last completed trading day",
-   "method":"503 aprox. componentes del S&P 500; máximos/mínimos cercanos dentro del 1% de su extremo de 52 semanas. Fuente externa de terceros, no dato oficial del índice."
+   "method":"Breadth derivada del S&P 500. Máximos/mínimos cercanos dentro del 1% del extremo anual; fuente externa de terceros, no dato oficial del índice."
   }
-  feed["marketBreadth"]=out
+  sp_hist=[x for x in sp_hist if isinstance(x,dict) and x.get("date")!=day]
+  sp_hist.append({k:sp.get(k) for k in ("date","advances","declines","unchanged","advancePercentage","advanceDeclineRatio","near52wHigh","near52wLow","above20d","above50d","above200d")})
+  sp_hist=sorted(sp_hist,key=lambda x:str(x.get("date") or ""))[-260:]
  except Exception as e:
-  print("MARKET BREADTH",type(e).__name__,str(e)[:160])
-  if previous:
-   previous["dataStatus"]="STALE / UNAVAILABLE · último snapshot válido retenido"
-   feed["marketBreadth"]=previous
+  print("MARKET BREADTH SP500",type(e).__name__,str(e)[:160])
+  if sp:sp={**sp,"dataStatus":"STALE / UNAVAILABLE · last verified S&P 500 snapshot retained"}
+
+ # Calculate a real daily Nasdaq-100 breadth snapshot at most once per completed US session.
+ # The source constituent list is refreshed weekly; quotes and moving averages use Yahoo daily history.
+ ndx=previous_ndx if isinstance(previous_ndx,dict) else {}
+ ndx_date=str(ndx.get("date") or "")
+ ndx_attempt=str(previous.get("nasdaq100AttemptDate") or "")
+ try:ndx_age=(now_et.date()-datetime.fromisoformat(ndx_date).date()).days if ndx_date else 999
+ except Exception:ndx_age=999
+ after_close=now_et.weekday()<5 and (now_et.hour>16 or (now_et.hour==16 and now_et.minute>=20))
+ weekend=now_et.weekday()>=5
+ should_calc=after_close and not weekend and ndx_date!=today_et and ndx_attempt!=today_et
+ ndx_list_url="https://raw.githubusercontent.com/Gary-Strauss/NASDAQ100_Constituents/master/data/nasdaq100_constituents.csv"
+ if should_calc:
+  # Remember the attempt even if Yahoo has a temporary outage; avoid re-requesting ~100 symbols every 15 minutes.
+  ndx_attempt=today_et
+  try:
+   csv_text=get(ndx_list_url).text
+   reader=csv.DictReader(io.StringIO(csv_text))
+   symbol_key=next((x for x in (reader.fieldnames or []) if x.strip().lower() in ("ticker","symbol")),None)
+   symbols=list(dict.fromkeys(str(row.get(symbol_key) or "").strip().upper() for row in reader if symbol_key and str(row.get(symbol_key) or "").strip()))
+   if len(symbols)<80:raise ValueError("Nasdaq-100 constituent list incomplete")
+  except Exception as e:
+   print("NASDAQ100 CONSTITUENTS",type(e).__name__,str(e)[:140]);symbols=[]
+  if symbols:
+   def member_bars(sym):
+    try:
+     ticker=sym.replace(".","-")
+     url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(ticker,safe="")
+     root=(get(url,{"range":"1y","interval":"1d"}).json().get("chart",{}).get("result") or [])
+     if not root:return None
+     rr=root[0];ts=rr.get("timestamp") or [];quote=(rr.get("indicators",{}).get("quote") or [{}])[0]
+     closes=quote.get("close") or [];volumes=quote.get("volume") or []
+     adj=(rr.get("indicators",{}).get("adjclose") or [{}])[0].get("adjclose") or []
+     bars=[]
+     for ix,epoch in enumerate(ts):
+      if ix>=len(closes) or closes[ix] is None:continue
+      session=datetime.fromtimestamp(float(epoch),tz=timezone.utc).astimezone(ny).date()
+      if session==now_et.date() and not after_close:continue
+      close=adj[ix] if ix<len(adj) and adj[ix] is not None else closes[ix]
+      if close is None:continue
+      bars.append({"date":session,"close":float(close),"volume":float(volumes[ix]) if ix<len(volumes) and volumes[ix] is not None else 0.0})
+     bars.sort(key=lambda x:x["date"])
+     return (sym,bars) if len(bars)>=2 else None
+    except Exception as e:
+     print("NASDAQ100 MEMBER",sym,type(e).__name__,str(e)[:90]);return None
+   result=[]
+   try:
+    with ThreadPoolExecutor(max_workers=10) as pool:
+     futs=[pool.submit(member_bars,sym) for sym in symbols]
+     for fut in as_completed(futs):
+      try:
+       row=fut.result()
+       if row:result.append(row)
+      except Exception:pass
+   except Exception as e:print("NASDAQ100 THREADS",type(e).__name__,str(e)[:140])
+   minimum=max(80,int(len(symbols)*0.80))
+   if len(result)>=minimum:
+    counts={"advances":0,"declines":0,"unchanged":0}
+    win_count={k:{"advances":0,"declines":0,"unchanged":0,"eligible":0} for k in ("3s","5s","21s","YTD")}
+    ma_count={20:{"above":0,"eligible":0},50:{"above":0,"eligible":0},200:{"above":0,"eligible":0}}
+    highs=lows=high_eligible=up_vol=down_vol=0
+    date_counts={};daily_changes=[];changes3=[];changes5=[];changes21=[];changes_ytd=[]
+    for sym,bars in result:
+     datestr=bars[-1]["date"].isoformat();date_counts[datestr]=date_counts.get(datestr,0)+1
+     vals=[z["close"] for z in bars];last=vals[-1];prev=vals[-2];chg=last/prev-1 if prev else 0
+     daily_changes.append(chg*100)
+     if chg>1e-8:counts["advances"]+=1
+     elif chg< -1e-8:counts["declines"]+=1
+     else:counts["unchanged"]+=1
+     if chg>0:up_vol+=bars[-1]["volume"]
+     elif chg<0:down_vol+=bars[-1]["volume"]
+     for n,key in ((4,"3s"),(6,"5s"),(22,"21s")):
+      if len(vals)>=n and vals[-n]:
+       ret=last/vals[-n]-1
+       win_count[key]["eligible"]+=1
+       if ret>1e-8:win_count[key]["advances"]+=1
+       elif ret< -1e-8:win_count[key]["declines"]+=1
+       else:win_count[key]["unchanged"]+=1
+       {"3s":changes3,"5s":changes5,"21s":changes21}[key].append(ret*100)
+     ytd_bars=[z["close"] for z in bars if z["date"].year==now_et.year]
+     if ytd_bars and ytd_bars[0]:
+      ret=last/ytd_bars[0]-1;win_count["YTD"]["eligible"]+=1
+      if ret>1e-8:win_count["YTD"]["advances"]+=1
+      elif ret< -1e-8:win_count["YTD"]["declines"]+=1
+      else:win_count["YTD"]["unchanged"]+=1
+      changes_ytd.append(ret*100)
+     for n in (20,50,200):
+      if len(vals)>=n:
+       avg=sum(vals[-n:])/n;ma_count[n]["eligible"]+=1
+       if last>avg:ma_count[n]["above"]+=1
+     if len(vals)>=200:
+      hist=vals[-252:];high=max(hist);low=min(hist);high_eligible+=1
+      if last>=high*.99:highs+=1
+      if last<=low*1.01:lows+=1
+    coverage=len(result);session=max(date_counts,key=date_counts.get)
+    def ma_obj(n):
+     z=ma_count[n];den=z["eligible"]
+     return {"count":z["above"],"eligible":den,"percentage":round(100*z["above"]/den,2) if den else None}
+    window_data={}
+    for key,z in win_count.items():
+     eligible=z["eligible"]
+     window_data[key]={"advances":z["advances"],"declines":z["declines"],"unchanged":z["unchanged"],"eligible":eligible,
+                       "advancePct":round(100*z["advances"]/eligible,2) if eligible else None}
+    ndx={
+     "date":session,"updated":stamp,"universe":"Nasdaq-100 constituents","totalStocks":coverage,"expectedConstituents":len(symbols),
+     "coveragePct":round(100*coverage/max(len(symbols),1),1),"advances":counts["advances"],"declines":counts["declines"],"unchanged":counts["unchanged"],
+     "advanceDeclineRatio":round(counts["advances"]/counts["declines"],3) if counts["declines"] else None,
+     "advancePercentage":round(100*counts["advances"]/coverage,2) if coverage else None,
+     "advancingVolume":up_vol,"decliningVolume":down_vol,"volumeRatio":round(up_vol/down_vol,3) if down_vol else None,
+     "near52wHigh":highs,"near52wLow":lows,"highLowEligible":high_eligible,
+     "above20d":ma_obj(20),"above50d":ma_obj(50),"above200d":ma_obj(200),"windowBreadth":window_data,
+     "medianChange1d":round(median(daily_changes),3) if daily_changes else None,
+     "medianChange3s":round(median(changes3),3) if changes3 else None,"medianChange5s":round(median(changes5),3) if changes5 else None,
+     "medianChange21s":round(median(changes21),3) if changes21 else None,"medianChangeYtd":round(median(changes_ytd),3) if changes_ytd else None,
+     "source":"Yahoo Finance adjusted daily closes + Nasdaq-100 constituent list","sourceUrl":"https://query1.finance.yahoo.com/v8/finance/chart/",
+     "constituentsUrl":ndx_list_url,"dataStatus":"REAL / EOD · calculated from public daily closes",
+     "method":"Recuento de avances/descensos vs cierre previo, participación sobre SMA20/50/200 y cercanía al extremo anual dentro del 1%. Cobertura: "+str(coverage)+"/"+str(len(symbols))+" componentes disponibles."}
+    ndx_hist=[x for x in ndx_hist if isinstance(x,dict) and x.get("date")!=session]
+    ndx_hist.append({k:ndx.get(k) for k in ("date","advances","declines","unchanged","advancePercentage","near52wHigh","near52wLow","above20d","above50d","above200d","medianChange1d","medianChange3s","medianChange5s","medianChange21s","medianChangeYtd")})
+    ndx_hist=sorted(ndx_hist,key=lambda x:str(x.get("date") or ""))[-260:]
+   elif ndx:
+    ndx={**ndx,"dataStatus":"STALE · insufficient Yahoo constituent coverage on this attempt"}
+  elif ndx and ndx_age>4:
+   ndx={**ndx,"dataStatus":"STALE · no fresh complete Nasdaq-100 breadth snapshot"}
+ except Exception as e:
+  print("MARKET BREADTH NASDAQ100",type(e).__name__,str(e)[:180])
+  if ndx:ndx={**ndx,"dataStatus":"STALE / UNAVAILABLE · last verified Nasdaq-100 snapshot retained"}
+
+ # Retain a single top-level S&P 500 snapshot for backward compatibility with the current UI.
+ combined={**sp,"sp500":sp,"nasdaq100":ndx,"sp500History":sp_hist,"nasdaq100History":ndx_hist,
+           "nasdaq100AttemptDate":ndx_attempt,"updated":stamp,"source":"S&P 500 public breadth snapshot + Nasdaq-100 breadth calculated from Yahoo daily closes",
+           "sourceUrl":sp_url,
+           "method":"La amplitud es distinta del CNN Fear & Greed. S&P 500: snapshot público calculado por terceros; Nasdaq-100: cálculos propios a partir de precios ajustados de cierre y lista de componentes."}
+ feed["marketBreadth"]=combined
 
 def update_traditional_fear_greed(feed):
  previous=feed.get("traditionalFearGreed",{}) if isinstance(feed.get("traditionalFearGreed"),dict) else {}
