@@ -1964,7 +1964,7 @@ def update_risk(feed):
   v=by["SKEW"]["value"];add("SKEW",3 if v<120 else 1 if v<130 else -2 if v<140 else -4,"riesgo de cola")
  if "MOVE" in by:
   v=by["MOVE"]["value"];add("MOVE",3 if v<70 else 1 if v<85 else -2 if v<110 else -5,"volatilidad de bonos")
- for n,w in [("AUDJPY",2),("DXY",-2),("COPPER",1.5),("BTC",.8),("ETH",.8),("HYG",1.5),("LQD",1)]:
+ for n,w in [("AUDJPY",2),("DXY",-2),("COPPER",1.5),("BTC",.8),("HYG",1.5),("LQD",1)]:
   if n in by:add(n,max(-5,min(5,by[n]["change1w"]*w)),"confirmación intermercado")
  if "GOLD" in by:add("GOLD",max(-3,min(3,-by["GOLD"]["change1w"]*1.2)),"demanda defensiva")
  if "BRENT" in by and "WTI" in by:
@@ -1973,7 +1973,7 @@ def update_risk(feed):
  score=max(0,min(100,score));label="RISK ON" if score>=65 else "RISK OFF" if score<=35 else "NEUTRAL / MIXTO"
  pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp)
  conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
- why={"SP500":"la bolsa amplia acompaña el apetito por riesgo","NASDAQ":"la beta alta acompaña el régimen","VIX":"la volatilidad bursátil está contenida","VVIX":"la volatilidad de la volatilidad no muestra estrés","SKEW":"el riesgo de cola no muestra tensión extrema","MOVE":"la volatilidad de bonos no muestra estrés significativo","HYG":"el crédito high yield acompaña el régimen","LQD":"el crédito investment grade acompaña el régimen","DXY":"el dólar actúa como refugio/liquidez","AUDJPY":"el carry confirma apetito por riesgo","COPPER":"el cobre acompaña la demanda cíclica","GOLD":"el oro muestra demanda defensiva","BTC":"cripto acompaña liquidez/beta","ETH":"cripto acompaña liquidez/beta","TLT/SPY":"la duración frente a acciones aporta contexto","OIL":"el petróleo aporta contexto de inflación/crecimiento"}
+ why={"SP500":"la bolsa amplia acompaña el apetito por riesgo","NASDAQ":"la beta alta acompaña el régimen","VIX":"la volatilidad bursátil está contenida","VVIX":"la volatilidad de la volatilidad no muestra estrés","SKEW":"el riesgo de cola no muestra tensión extrema","MOVE":"la volatilidad de bonos no muestra estrés significativo","HYG":"el crédito high yield acompaña el régimen","LQD":"el crédito investment grade acompaña el régimen","DXY":"el dólar actúa como refugio/liquidez","AUDJPY":"el carry confirma apetito por riesgo","COPPER":"el cobre acompaña la demanda cíclica","GOLD":"el oro muestra demanda defensiva","BTC":"cripto acompaña liquidez/beta","TLT/SPY":"la duración frente a acciones aporta contexto","OIL":"el petróleo aporta contexto de inflación/crecimiento"}
  positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5];negatives=sorted([x for x in comp if x[0]<0])[:5]
  feed["riskOnOff"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"score":round(score,1),"label":label,"confidence":conf,
   "method":"Composite intermercado. 1D/1S/1M = retorno del último cierre disponible; pointChange = cambio absoluto en unidades del propio activo.",
