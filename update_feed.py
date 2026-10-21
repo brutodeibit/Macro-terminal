@@ -49,16 +49,22 @@ def write(feed):
 def yahoo_metrics(symbol):
  try:
   u='https://query1.finance.yahoo.com/v8/finance/chart/'+requests.utils.quote(symbol,safe='')
-  j=get(u,{'range':'3mo','interval':'1d'}).json()['chart']['result'][0]
-  q=[float(x) for x in j.get('indicators',{}).get('quote',[{}])[0].get('close',[]) if x is not None]
-  if len(q)<2:return None
-  last=q[-1]
-  return {'last':last,'change1d':(last/q[-2]-1)*100,
-          'change1w':(last/q[-6]-1)*100 if len(q)>=6 else None,
-          'change1m':(last/q[-22]-1)*100 if len(q)>=22 else None}
+  j=get(u,{'range':'1y','interval':'1d'}).json()['chart']['result'][0]
+  rows=[]
+  for ts,close in zip(j.get('timestamp') or [],j.get('indicators',{}).get('quote',[{}])[0].get('close',[]) or []):
+   if close is not None:rows.append((datetime.fromtimestamp(float(ts),tz=timezone.utc).date(),float(close)))
+  if len(rows)<22:return None
+  q=[x[1] for x in rows];last=q[-1]
+  ytd_rows=[x[1] for x in rows if x[0].year==datetime.now(timezone.utc).year]
+  return {'last':last,'change1d':(last/q[-2]-1)*100,'change3s':(last/q[-4]-1)*100,
+          'change5s':(last/q[-6]-1)*100,'change21s':(last/q[-22]-1)*100,
+          'changeYtd':(last/ytd_rows[0]-1)*100 if ytd_rows and ytd_rows[0] else None,
+          'change1w':(last/q[-6]-1)*100,'change1m':(last/q[-22]-1)*100,
+          'pointChange1d':last-q[-2],'pointChange3s':last-q[-4],
+          'pointChange5s':last-q[-6],'pointChange21s':last-q[-22],
+          'pointChange1w':last-q[-6],'pointChange1m':last-q[-22]}
  except Exception as e:
   print('Yahoo',symbol,e);return None
-
 
 def update_risk(feed):
  data=[]
@@ -66,12 +72,8 @@ def update_risk(feed):
   m=yahoo_metrics(sym)
   if not m:continue
   x={'name':n,'symbol':sym,'value':m['last'],
-     'change1d':m['change1d'],'change1w':m['change1w'],'change1m':m['change1m'],
-     'pointChange1d':m['last']-m['last']/(1+m['change1d']/100) if m['change1d'] is not None and m['change1d']!=-100 else None,
-     'pointChange1w':m['last']-m['last']/(1+m['change1w']/100) if m['change1w'] is not None and m['change1w']!=-100 else None,
-     'pointChange1m':m['last']-m['last']/(1+m['change1m']/100) if m['change1m'] is not None and m['change1m']!=-100 else None,
-     'role':ROLES.get(n,'Confirmación')}
-  w=x.get('change1w')
+     **m,'role':ROLES.get(n,'Confirmación')}
+  w=x.get('change5s')
   data.append(x)
   if w is None:x['marketSignal']='SIN DATO'
   elif n in {'SP500','NASDAQ','HYG','LQD','AUDJPY','COPPER','BTC','ETH','SPY'}:x['marketSignal']='FAVORECE RISK-ON ↑' if w>0.15 else 'TENSIONA RISK-ON ↓' if w<-0.15 else 'NEUTRO →'
@@ -82,7 +84,7 @@ def update_risk(feed):
  def add(n,p,w):
   nonlocal score;score+=p;comp.append((p,n,w))
  for n,w in [('SP500',8),('NASDAQ',8)]:
-  if n in by:add(n,max(-w,min(w,(by[n]['change1w'] or 0)*w/1.5)),'tendencia 1S')
+  if n in by:add(n,max(-w,min(w,(by[n]['change5s'] or 0)*w/1.5)),'tendencia 5S')
  if 'VIX' in by:
   v=by['VIX']['value'];add('VIX',8 if v<15 else 4 if v<20 else -4 if v<25 else -8,'nivel de volatilidad')
  if 'VVIX' in by:
@@ -92,22 +94,21 @@ def update_risk(feed):
  if 'MOVE' in by:
   v=by['MOVE']['value'];add('MOVE',3 if v<70 else 1 if v<85 else -2 if v<110 else -5,'volatilidad de bonos')
  for n,w in [('AUDJPY',2),('DXY',-2),('COPPER',1.5),('BTC',.8),('HYG',1.5),('LQD',1)]:
-  if n in by:add(n,max(-5,min(5,(by[n]['change1w'] or 0)*w)),'confirmación intermercado')
- if 'GOLD' in by:add('GOLD',max(-3,min(3,-(by['GOLD']['change1w'] or 0)*1.2)),'demanda defensiva')
+  if n in by:add(n,max(-5,min(5,(by[n]['change5s'] or 0)*w)),'confirmación intermercado')
+ if 'GOLD' in by:add('GOLD',max(-3,min(3,-(by['GOLD']['change5s'] or 0)*1.2)),'demanda defensiva')
  if 'BRENT' in by and 'WTI' in by:
-  oil=max(by['BRENT']['change1w'] or 0,by['WTI']['change1w'] or 0);add('OIL',-2 if oil>6 else -1 if oil<-6 else 0,'shock energético contextual')
- if 'TLT' in by and 'SPY' in by:add('TLT/SPY',max(-3,min(3,-((by['TLT']['change1w'] or 0)-(by['SPY']['change1w'] or 0))*1.5)),'duración vs acciones')
+  oil=max(by['BRENT']['change5s'] or 0,by['WTI']['change5s'] or 0);add('OIL',-2 if oil>6 else -1 if oil<-6 else 0,'shock energético contextual')
+ if 'TLT' in by and 'SPY' in by:add('TLT/SPY',max(-3,min(3,-((by['TLT']['change5s'] or 0)-(by['SPY']['change5s'] or 0))*1.5)),'duración vs acciones')
  score=max(0,min(100,score));label='RISK ON' if score>=65 else 'RISK OFF' if score<=35 else 'NEUTRAL / MIXTO'
  pos=sum(p>.4 for p,_,_ in comp);neg=sum(p<-.4 for p,_,_ in comp)
  conf=round(max(35,min(90,55+min(20,abs(pos-neg)*3)-(10 if pos and neg and abs(pos-neg)<=1 else 0))))
  why={'SP500':'la bolsa amplia acompaña el apetito por riesgo','NASDAQ':'la beta alta acompaña el régimen','VIX':'la volatilidad bursátil está contenida','VVIX':'la volatilidad de la volatilidad no muestra estrés','SKEW':'el riesgo de cola no muestra tensión extrema','MOVE':'la volatilidad de bonos no muestra estrés significativo','HYG':'el crédito high yield acompaña el apetito por riesgo','LQD':'el crédito investment grade se mantiene estable','DXY':'el dólar actúa como refugio/liquidez','AUDJPY':'el carry confirma apetito por riesgo','COPPER':'el cobre acompaña la demanda cíclica','GOLD':'el oro muestra demanda defensiva','BTC':'cripto acompaña la liquidez/alta beta','ETH':'cripto acompaña la liquidez/alta beta','TLT/SPY':'la duración gana terreno relativo a acciones','OIL':'el petróleo aporta señal de crecimiento/inflación'}
  positives=sorted([x for x in comp if x[0]>0],reverse=True)[:5];negatives=sorted([x for x in comp if x[0]<0])[:5]
  feed['riskOnOff']={'updated':datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),'score':round(score,1),'label':label,'confidence':conf,
-  'method':'Composite intermercado. 1D/1S/1M = variación del último cierre disponible. El fin de semana conserva el último cierre de mercado.',
+  'method':'Composite intermercado. Ventanas basadas en cierres: 1D, 3S, 5S, 21S y YTD. Un activo positivo no es automáticamente risk-on; se interpreta por su función de mercado.',
   'assets':data,'confirmations':[f'{n}: {why.get(n,w)}.' for _,n,w in positives],
   'tensions':[f'{n}: {why.get(n,w)}.' for _,n,w in negatives],
-  'coverage':{'totalAssets':len(data),'windows':['1D','1S','1M'],'symbols':[x['symbol'] for x in data]}}
-
+  'coverage':{'totalAssets':len(data),'windows':['1D','3S','5S','21S','YTD'],'symbols':[x['symbol'] for x in data]}}
 
 def fred_csv(sid):
  try:
@@ -172,17 +173,17 @@ def update_te(feed):
  b=(now+timedelta(days=14)).date().isoformat()
  calendar=[]
  currency_map={"us":"USD","eu":"EUR","de":"EUR","uk":"GBP","ch":"CHF","jp":"JPY","ca":"CAD","au":"AUD","nz":"NZD"}
- relevant=("cpi","inflation","pce","ppi","unemployment","payroll","employment","wage","claims","gdp","retail","industrial production","pmi","ism","core","rate decision","interest rate","consumer confidence","business confidence","ifo","z ew","tankan")
+ relevant=("cpi","ipc","hicp","ipca","inflation","inflación","pce","ppi","índice de precios","unemployment","desempleo","paro","payroll","nóminas","employment","empleo","wage","salario","claims","subsidio de desempleo","gdp","pib","retail","ventas minoristas","industrial production","producción industrial","pmi","ism","core","subyacente","rate decision","decisión de tipos","interest rate","tipo de interés","consumer confidence","confianza del consumidor","business confidence","confianza empresarial","ifo","zew","z ew","tankan")
  meta_map={
-  "cpi":("INFLACIÓN",3,1),"inflation":("INFLACIÓN",3,1),"pce":("INFLACIÓN",3,1),
-  "ppi":("INFLACIÓN",2,1),"unemployment":("EMPLEO",3,-1),"payroll":("EMPLEO",3,1),
-  "employment":("EMPLEO",3,1),"wage":("EMPLEO",2,1),"claims":("EMPLEO",2,-1),
-  "gdp":("CRECIMIENTO",3,1),"retail":("CRECIMIENTO",2,1),
-  "industrial production":("CRECIMIENTO",2,1),"pmi":("CRECIMIENTO",2,1),
-  "ism":("CRECIMIENTO",2,1),"rate decision":("BANCO CENTRAL",3,0),
-  "interest rate":("BANCO CENTRAL",3,0),"consumer confidence":("CONFIANZA",2,1),
-  "business confidence":("CONFIANZA",2,1),"ifo":("CRECIMIENTO",2,1),
-  "z ew":("CRECIMIENTO",2,1),"tankan":("CRECIMIENTO",2,1)
+  "cpi":("INFLACIÓN",3,1),"ipc":("INFLACIÓN",3,1),"hicp":("INFLACIÓN",3,1),"ipca":("INFLACIÓN",3,1),"inflation":("INFLACIÓN",3,1),"inflación":("INFLACIÓN",3,1),"pce":("INFLACIÓN",3,1),"índice de precios":("INFLACIÓN",3,1),
+  "ppi":("INFLACIÓN",2,1),"subyacente":("INFLACIÓN",2,1),"unemployment":("EMPLEO",3,-1),"desempleo":("EMPLEO",3,-1),"paro":("EMPLEO",3,-1),
+  "payroll":("EMPLEO",3,1),"nóminas":("EMPLEO",3,1),"employment":("EMPLEO",3,1),"empleo":("EMPLEO",3,1),"wage":("EMPLEO",2,1),"salario":("EMPLEO",2,1),"claims":("EMPLEO",2,-1),"subsidio de desempleo":("EMPLEO",2,-1),
+  "gdp":("CRECIMIENTO",3,1),"pib":("CRECIMIENTO",3,1),"retail":("CRECIMIENTO",2,1),"ventas minoristas":("CRECIMIENTO",2,1),
+  "industrial production":("CRECIMIENTO",2,1),"producción industrial":("CRECIMIENTO",2,1),"pmi":("CRECIMIENTO",2,1),
+  "ism":("CRECIMIENTO",2,1),"rate decision":("BANCO CENTRAL",3,0),"decisión de tipos":("BANCO CENTRAL",3,0),
+  "interest rate":("BANCO CENTRAL",3,0),"tipo de interés":("BANCO CENTRAL",3,0),"consumer confidence":("CONFIANZA",2,1),"confianza del consumidor":("CONFIANZA",2,1),
+  "business confidence":("CONFIANZA",2,1),"confianza empresarial":("CONFIANZA",2,1),"ifo":("CRECIMIENTO",2,1),
+  "zew":("CRECIMIENTO",2,1),"z ew":("CRECIMIENTO",2,1),"tankan":("CRECIMIENTO",2,1)
  }
  for eid,cfg in ECONOMIES.items():
   try:
