@@ -1033,7 +1033,7 @@
    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
     <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-scale-balanced text-blue-400"></i> Econic personalizado · régimen de mercado</div>
      <h2 class="text-xl md:text-2xl font-black text-white mt-1">RISK ON / RISK OFF</h2>
-     <p class="text-sm text-gray-400 mt-1 max-w-4xl">Lectura intermercado. Los porcentajes son variaciones de precio del último cierre disponible: 1D, 1 semana y 1 mes. La etiqueta de cada activo describe su relación con el régimen, no si “sube = alcista”.</p>
+     <p class="text-sm text-gray-400 mt-1 max-w-4xl">Lectura intermercado. Los porcentajes son variaciones de precio del último cierre disponible: 1D, 5 sesiones y 21 sesiones. La etiqueta de cada activo describe su relación con el régimen, no si “sube = alcista”.</p>
     </div>
     <div class="metric rounded-xl px-5 py-4 min-w-[250px]"><div class="flex items-center justify-between"><div class="text-[10px] uppercase text-gray-500">Régimen actual</div><span class="risk-badge">Confianza ${valid&&r.confidence!==null?esc(String(r.confidence))+'%':'—'}</span></div>
      <div class="text-2xl font-black ${valid?(score>=60?'risk-up':score<=40?'risk-down':'risk-neutral'):'text-gray-400'} mt-1">${esc(r.label||'SIN SINCRONIZAR')}</div>
