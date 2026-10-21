@@ -2017,7 +2017,8 @@ def update_markets_rotation(feed):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:return None
   y=yahoo_ytd(sym) or {}
-  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"d3":(q[-1]/q[-4]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),"p1":q[-1]-q[-2],"p3":q[-1]-q[-4],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
+  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"d3":(q[-1]/q[-4]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),
+          "p1":q[-1]-q[-2],"p3":q[-1]-q[-4],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
  def rel(a,b,key):
   x=series(a);y=series(b)
   if not x or not y:return None
@@ -2025,23 +2026,33 @@ def update_markets_rotation(feed):
  sectors=[]
  for name,sym in sector_cfg:
   x=series(sym)
-  if x:sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],"change3d":x["d3"],"change1w":x["w1"],"change1m":x["m1"],"changeYtd":x.get("ytd"),"pointChange1d":x["p1"],"pointChange1w":x["pw"],"pointChange1m":x["pm"],"vsSpy1d":rel(sym,"SPY","d1"),"vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
+  if x:
+   sectors.append({"name":name,"symbol":sym,"last":x["last"],"change1d":x["d1"],
+    "change3s":x["d3"],"change5s":x["w1"],"change21s":x["m1"],"changeYtd":x.get("ytd"),
+    "change3d":x["d3"],"change1w":x["w1"],"change1m":x["m1"],
+    "pointChange1d":x["p1"],"pointChange3s":x["p3"],"pointChange5s":x["pw"],"pointChange21s":x["pm"],
+    "pointChange1w":x["pw"],"pointChange1m":x["pm"],
+    "vsSpy1d":rel(sym,"SPY","d1"),"vsSpy3s":rel(sym,"SPY","d3"),"vsSpy5s":rel(sym,"SPY","w1"),"vsSpy21s":rel(sym,"SPY","m1"),
+    "vsSpy1w":rel(sym,"SPY","w1"),"vsSpy1m":rel(sym,"SPY","m1")})
  styles=[]
  for name,a1,b1 in style_cfg:
-  a=series(a1);b=series(b1);styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1"),"changeYtd":(a.get("ytd")-b.get("ytd")) if a and b and a.get("ytd") is not None and b.get("ytd") is not None else None})
- up=sum(x["change1w"]>0 for x in sectors);down=sum(x["change1w"]<0 for x in sectors);neutral=len(sectors)-up-down
+  a=series(a1);b=series(b1)
+  styles.append({"name":name,"long":a1,"short":b1,"change1d":rel(a1,b1,"d1"),"change3s":rel(a1,b1,"d3"),
+   "change5s":rel(a1,b1,"w1"),"change21s":rel(a1,b1,"m1"),
+   "changeYtd":(a.get("ytd")-b.get("ytd")) if a and b and a.get("ytd") is not None and b.get("ytd") is not None else None,
+   "change1w":rel(a1,b1,"w1"),"change1m":rel(a1,b1,"m1")})
+ up=sum(x["change5s"]>0 for x in sectors);down=sum(x["change5s"]<0 for x in sectors);neutral=len(sectors)-up-down
  sentiment={"bullishPct":round(up*100/len(sectors),1) if sectors else None,"neutralPct":round(neutral*100/len(sectors),1) if sectors else None,"bearishPct":round(down*100/len(sectors),1) if sectors else None}
- # Equal-weight versus cap-weight ETFs provide a transparent concentration/dispersion proxy.
- # They are not substitutes for exact advancing/declining counts or % above moving averages.
  breadth_proxy={}
  try:
   rsp=series("RSP");spy=series("SPY");qqew=series("QQEW");qqq=series("QQQ")
   if rsp and spy:
-   breadth_proxy["sp500EqualWeightVsCap"]={"fiveSessionRelativePct":round(rsp["w1"]-spy["w1"],3),"twentyOneSessionRelativePct":round(rsp["m1"]-spy["m1"],3),"equalWeightTicker":"RSP","capWeightTicker":"SPY"}
+   breadth_proxy["sp500EqualWeightVsCap"]={"threeSessionRelativePct":round(rsp["d3"]-spy["d3"],3),"fiveSessionRelativePct":round(rsp["w1"]-spy["w1"],3),"twentyOneSessionRelativePct":round(rsp["m1"]-spy["m1"],3),"equalWeightTicker":"RSP","capWeightTicker":"SPY"}
   if qqew and qqq:
-   breadth_proxy["nasdaqEqualWeightVsCap"]={"fiveSessionRelativePct":round(qqew["w1"]-qqq["w1"],3),"twentyOneSessionRelativePct":round(qqew["m1"]-qqq["m1"],3),"equalWeightTicker":"QQEW","capWeightTicker":"QQQ"}
+   breadth_proxy["nasdaqEqualWeightVsCap"]={"threeSessionRelativePct":round(qqew["d3"]-qqq["d3"],3),"fiveSessionRelativePct":round(qqew["w1"]-qqq["w1"],3),"twentyOneSessionRelativePct":round(qqew["m1"]-qqq["m1"],3),"equalWeightTicker":"QQEW","capWeightTicker":"QQQ"}
  except Exception as e:print("BREADTH PROXY",type(e).__name__,str(e)[:120])
- feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"breadthProxy":breadth_proxy,"method":"ETF sectorial: retornos 1D/3/5/21 sesiones/YTD + fuerza relativa vs SPY. RSP/SPY y QQEW/QQQ son proxies de dispersión/concentración, no conteos de acciones."}
+ feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"breadthProxy":breadth_proxy,
+  "method":"ETF sectorial: retornos 1D/3/5/21 sesiones/YTD + fuerza relativa vs SPY. RSP/SPY y QQEW/QQQ son proxies de concentración, no recuentos de acciones."}
 
 def update_global_markets(feed):
  regions={
@@ -2055,10 +2066,14 @@ def update_global_markets(feed):
    r=chart(sym);y=yahoo_ytd(sym) or {}
    q=[float(x) for x in (r or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
    if len(q)<22:continue
-   arr.append({"name":name,"symbol":sym,"last":q[-1],"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"changeYtd":y.get("changeYtd"),"ytdStart":y.get("ytdStart"),"source":"Yahoo Finance public market data"})
+   arr.append({"name":name,"symbol":sym,"last":q[-1],"change1d":(q[-1]/q[-2]-1)*100,
+    "change3s":(q[-1]/q[-4]-1)*100,"change5s":(q[-1]/q[-6]-1)*100,"change21s":(q[-1]/q[-22]-1)*100,"changeYtd":y.get("changeYtd"),"ytdStart":y.get("ytdStart"),
+    "change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,
+    "pointChange1d":q[-1]-q[-2],"pointChange3s":q[-1]-q[-4],"pointChange5s":q[-1]-q[-6],"pointChange21s":q[-1]-q[-22],
+    "source":"Yahoo Finance public market data"})
   out[region]=arr
- feed["globalMarkets"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"regions":out,"source":"Yahoo Finance public market data","method":"Índices de referencia por región. Variaciones 1D/5S/21S/YTD; YTD se calcula desde el primer cierre disponible del año natural."}
-
+ feed["globalMarkets"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"regions":out,"source":"Yahoo Finance public market data",
+  "method":"Índices por región: 1D, 3, 5 y 21 sesiones, y YTD. Se usan cierres observados; el fin de semana conserva el último cierre."}
 
 def _cmc_day(timestamp):
  if timestamp is None:return None
@@ -2106,10 +2121,13 @@ def update_crypto_sentiment(feed):
     hist_fng.append({"date":today_utc,"value":current_value,"classification":fg_now.get("value_classification")})
     hist_fng=sorted(hist_fng,key=lambda x:str(x.get("date") or ""))
  btc=chart("BTC-USD");eth=chart("ETH-USD")
- def ret(r):
+ def ret(r,sym):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None] if r else []
   if len(q)<22:return None
-  return {"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"last":q[-1]}
+  ytd=yahoo_ytd(sym) or {}
+  return {"change1d":(q[-1]/q[-2]-1)*100,"change3s":(q[-1]/q[-4]-1)*100,"change5s":(q[-1]/q[-6]-1)*100,
+          "change21s":(q[-1]/q[-22]-1)*100,"changeYtd":ytd.get("changeYtd"),
+          "change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"last":q[-1]}
  btc_history=[]
  try:
   stamps=btc.get("timestamp",[]) if btc else []
@@ -2129,7 +2147,7 @@ def update_crypto_sentiment(feed):
  feed["cryptoSentiment"]={
   "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
   "fearGreed":{"value":num(fg_now.get("value")) if cmc_ok else prior_fg.get("value"),"classification":fg_now.get("value_classification") if cmc_ok else prior_fg.get("classification"),"previous":num(fg_prev.get("value")) if cmc_ok else prior_fg.get("previous"),"history":hist_fng[-120:]},
-  "btc":ret(btc) or previous.get("btc"),"eth":ret(eth) or previous.get("eth"),"btcHistory":btc_history,
+  "btc":ret(btc,"BTC-USD") or previous.get("btc"),"eth":ret(eth,"ETH-USD") or previous.get("eth"),"btcHistory":btc_history,
   "source":"CoinMarketCap Fear & Greed + Yahoo Finance","sourceUrl":"https://coinmarketcap.com/charts/",
   "sourceStatus":"REAL / DAILY" if cmc_ok else "UNAVAILABLE · last valid CMC snapshot retained",
   "dataStatus":"REAL / DAILY · CMC Fear & Greed is published at 00:00 UTC; BTC series from public market chart data."
@@ -2142,8 +2160,12 @@ def update_bond_market(feed):
   if not r:continue
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:continue
-  out.append({"name":name,"symbol":sym,"change1d":(q[-1]/q[-2]-1)*100,"change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100,"last":q[-1]})
- feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,"method":"ETF price returns; complementa los niveles y spreads de Treasury/BCE por economía."}
+  ytd=yahoo_ytd(sym) or {}
+  out.append({"name":name,"symbol":sym,"last":q[-1],"change1d":(q[-1]/q[-2]-1)*100,
+   "change3s":(q[-1]/q[-4]-1)*100,"change5s":(q[-1]/q[-6]-1)*100,"change21s":(q[-1]/q[-22]-1)*100,"changeYtd":ytd.get("changeYtd"),
+   "change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100})
+ feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,
+  "method":"Retornos de ETFs de bonos: 1D, 3S, 5S, 21S e YTD; complementan, no sustituyen, los rendimientos soberanos por economía."}
 
 def enrich_feed(feed):
  for name,fn in (("FX",update_fx),("COT",update_cot),("OPTIONS",update_options),("MARKET_BREADTH",update_market_breadth),("DARK_POOLS",update_dark_pools),("DARK_PRINTS",update_dark_pool_prints),("DARK_FLOW",update_dark_flow_radar),("SQUAWKFLOW",update_squawkflow),("ROTATION",update_markets_rotation),("GLOBAL_MARKETS",update_global_markets),("CRYPTO",update_crypto_sentiment),("BONDS",update_bond_market),("BOND_CURVES",update_bond_curves),("SENTIMENT",update_traditional_sentiment),("OPTION_STATS",update_options_market_stats),("TRAD_FG",update_traditional_fear_greed)):
