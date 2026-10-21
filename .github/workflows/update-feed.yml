@@ -117,7 +117,13 @@ jobs:
           assert "families.includes(requestedFamily)" in js, 'Options family selection is not preserved'
           assert "Estado del feed:" in js, 'Dark-pool freshness status missing'
           assert "change3d" in js and "changeYtd" in js, 'Rotation 3-session/YTD windows missing'
-          print('Dashboard UI validation OK: options selector, term structure, AAII percentages/history, dark-pool status and rotation windows')
+          assert "function renderWeeklyFxRadar(data)" in js, 'Weekly FX Radar missing from economy panels'
+          assert "Plan de la semana · hipótesis y revisión" in js, 'Weekly FX baseline/revision summary missing'
+          assert "Amplitud y dispersión" in js, 'Traditional market breadth context missing beside Fear & Greed'
+          assert "SIN DATO VÁLIDO" in js, 'Fear & Greed invalid/missing score must not display as zero'
+          assert "oiCoveragePct" in js and "ivCoveragePct" in js, 'Options chain data coverage transparency missing'
+          assert "function fmtNum(v,d=2){ if(v===null||v===undefined||v==='')return '—';" in js, 'Null numeric values must not render as zero'
+          print('Dashboard UI validation OK: weekly FX radar/revisions, sentiment null-safety/breadth, option coverage, AAII history, dark-pool status and rotation windows')
           PY
 
       - name: Commit feed and UI changes safely
