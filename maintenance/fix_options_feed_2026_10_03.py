@@ -4,7 +4,12 @@ import re
 p = Path('market_features.py')
 s = p.read_text(encoding='utf-8')
 start = s.find('def update_options(feed):')
-end = s.find('\ndef update_dark_pools(feed):', start)
+# Replace only update_options. The FINRA implementation was renamed to
+# _update_dark_pools_finra; using the old wrapper as the end marker would
+# silently delete the FINRA implementation on every scheduled feed refresh.
+end = s.find('\ndef _update_dark_pools_finra(feed):', start)
+if end < 0:
+    end = s.find('\ndef update_dark_pools(feed):', start)
 if start < 0 or end < 0:
     raise SystemExit('ABORT: update_options boundaries not found')
 
