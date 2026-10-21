@@ -451,7 +451,7 @@ def update_fx(feed):
    out[c]={"pair":sym,"last":last,"change1d":a1,"change1w":w,"change15d":d15,"change1m":m}
   except Exception as e:print("FX",c,type(e).__name__,str(e)[:120])
  feed["fx"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"currencies":out,
-   "method":"Fuerza frente a USD normalizada. Variaciones: 1D, 1S (~5 sesiones), 15D (~3 semanas de mercado) y 1M (~21 sesiones). Se combina con política, 2Y, tipo real y tendencia."}
+   "method":"Fuerza frente a USD normalizada. Variaciones: 1D, 5S, 15S y 21S, calculadas sobre cierres disponibles. Se combina con política, 2Y, tipo real y tendencia."}
 
 
 def cot_rows(dataset,where,limit=260):
