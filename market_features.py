@@ -1837,7 +1837,7 @@ def update_market_breadth(feed):
     ndx={**ndx,"dataStatus":"STALE · insufficient Yahoo constituent coverage on this attempt"}
   elif ndx and ndx_age>4:
    ndx={**ndx,"dataStatus":"STALE · no fresh complete Nasdaq-100 breadth snapshot"}
- except Exception as e:
+  except Exception as e:
   print("MARKET BREADTH NASDAQ100",type(e).__name__,str(e)[:180])
   if ndx:ndx={**ndx,"dataStatus":"STALE / UNAVAILABLE · last verified Nasdaq-100 snapshot retained"}
 
