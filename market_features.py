@@ -1850,33 +1850,65 @@ def update_market_breadth(feed):
 
 def update_traditional_fear_greed(feed):
  previous=feed.get("traditionalFearGreed",{}) if isinstance(feed.get("traditionalFearGreed"),dict) else {}
- result={**previous,"score":previous.get("score"),"rating":previous.get("rating","—"),"timestamp":previous.get("timestamp"),"previous_close":previous.get("previous_close"),"previous_1_week":previous.get("previous_1_week"),"previous_1_month":previous.get("previous_1_month"),"previous_1_year":previous.get("previous_1_year"),"history":previous.get("history",[]),"components":previous.get("components",{}),"source":"CNN Fear & Greed Index","sourceUrl":"https://www.cnn.com/markets/fear-and-greed","sourceStatus":"UNAVAILABLE · last valid snapshot retained"}
+ def history_rows(raw):
+  rows=[]
+  for x in raw or []:
+   if not isinstance(x,dict):continue
+   xv=num(x.get("x"));yv=num(x.get("y"))
+   if xv is None or yv is None or not 0<=yv<=100:continue
+   try:day=datetime.fromtimestamp(xv/1000,tz=timezone.utc).strftime("%Y-%m-%d")
+   except (ValueError,OverflowError,OSError):continue
+   rows.append({"date":day,"value":yv})
+  return sorted(rows,key=lambda x:x["date"])
+ def credible_zero(snapshot):
+  value=num(snapshot.get("score"))
+  if value!=0:return value is not None and 0<=value<=100
+  rating=str(snapshot.get("rating") or "").strip().lower()
+  stamp=snapshot.get("timestamp")
+  hist=snapshot.get("history") or []
+  recent_values=[num(x.get("value")) for x in hist[-3:] if isinstance(x,dict)]
+  recent_values=[v for v in recent_values if v is not None and 0<=v<=100]
+  # A true zero is possible, but accept it only when CNN's label and nearby history corroborate it.
+  return bool(stamp and "fear" in rating and (not recent_values or min(recent_values)<=3))
+ result={**previous,"score":previous.get("score"),"rating":previous.get("rating","—"),
+  "timestamp":previous.get("timestamp"),"previous_close":previous.get("previous_close"),
+  "previous_1_week":previous.get("previous_1_week"),"previous_1_month":previous.get("previous_1_month"),
+  "previous_1_year":previous.get("previous_1_year"),"history":previous.get("history",[]),
+  "components":previous.get("components",{}),"source":"CNN Fear & Greed Index",
+  "sourceUrl":"https://www.cnn.com/markets/fear-and-greed",
+  "sourceStatus":"UNAVAILABLE · last valid snapshot retained"}
+ # A previously stored 0 without a matching Fear label/timestamp/history is not a trustworthy reading.
+ if not credible_zero(result):
+  result["score"]=None;result["rating"]="—"
+  result["sourceStatus"]="STALE · stored score failed validation; no false zero displayed"
  try:
-  headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36","Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
+  headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153.0 Safari/537.36",
+   "Accept":"application/json, text/plain, */*","Origin":"https://www.cnn.com","Referer":"https://www.cnn.com/"}
   d=get("https://production.dataviz.cnn.io/index/fearandgreed/graphdata",h=headers).json()
-  fg=d.get("fear_and_greed",{})
-  current=num(fg.get("score"))
-  # Never replace a valid snapshot with a null, malformed, or out-of-range score.
-  if current is not None and 0 <= current <= 100:
+  fg=d.get("fear_and_greed",{}) if isinstance(d,dict) else {}
+  current=num(fg.get("score"));rating=str(fg.get("rating") or "").strip()
+  raw_hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
+  clean_hist=history_rows(raw_hist)
+  latest_hist=clean_hist[-1]["value"] if clean_hist else None
+  stamp=fg.get("timestamp")
+  # CNN occasionally serves a placeholder-like 0. Accept zero only when rating, timestamp
+  # and (when available) the recent history agree. Other valid scores retain the normal path.
+  zero_ok=(current!=0) or bool(stamp and "fear" in rating.lower() and
+   (latest_hist is None or latest_hist<=3))
+  if current is not None and 0<=current<=100 and zero_ok:
    for k in ("score","rating","timestamp","previous_close","previous_1_week","previous_1_month","previous_1_year"):
     if fg.get(k) is not None:result[k]=fg.get(k)
-   hist=(d.get("fear_and_greed_historical") or {}).get("data") or []
-   clean_hist=[]
-   for x in hist:
-    xv=num(x.get("x"));yv=num(x.get("y"))
-    if xv is not None and yv is not None and 0 <= yv <= 100:
-     clean_hist.append({"date":datetime.fromtimestamp(xv/1000,tz=timezone.utc).strftime("%Y-%m-%d"),"value":yv})
    if clean_hist:result["history"]=clean_hist[-90:]
    components={}
    for k,v in d.items():
     if k.startswith("market_") or k in ("stock_price_strength","stock_price_breadth","put_call_options","junk_bond_demand","safe_haven_demand"):
      if isinstance(v,dict):
       val=num(v.get("score",v.get("value")))
-      if val is not None:components[k]=val
+      if val is not None and 0<=val<=100:components[k]=val
    if components:result["components"]=components
    result["sourceStatus"]="REAL / DAILY"
   else:
-   result["sourceStatus"]="STALE · invalid CNN response; last valid snapshot retained"
+   result["sourceStatus"]="STALE · invalid/inconsistent CNN response; last valid snapshot retained"
  except Exception as e:
   print("CNN F&G",type(e).__name__,str(e)[:180])
  result["updated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
