@@ -126,6 +126,8 @@ jobs:
           assert "tr3:nval(m.change3s)" in js and "tr21:nval(m.change21s)" in js and "tytd:nval(m.changeYtd)" in js, 'FX comparator must use 3S/5S/21S/YTD returns'
           assert "d.id!=='de'" in js, 'FX comparator must not let Germany overwrite the Euro Area currency row'
           assert "fmtNum(shortBp,1)+' pb'" in js, 'Weekly FX radar must display yield changes as basis points, not percent'
+          assert "function expectationsAreFresh(data,maxAgeDays=7)" in js, 'Rate expectations need a verifiable freshness timestamp'
+          assert "Probabilidades no verificadas" in js and "no se ponderan" in js, 'Stale market-implied probabilities must not be presented as current'
           source=Path('market_features.py').read_text(encoding='utf-8')
           assert 't[target]=round(raw*100,2) if raw is not None else None' in source, 'Bond yield changes are not normalized to basis points'
           assert "SIN DATO VÁLIDO" in js, 'Fear & Greed invalid/missing score must not display as zero'
