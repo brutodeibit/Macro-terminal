@@ -34,7 +34,16 @@ new = r'''def update_options(feed):
   except Exception as e:
    errors.append(f'Yahoo options {sym}: {type(e).__name__}')
 
- out=[]
+ # Cboe public delayed chain is a no-key fallback for high-value ETFs/equities when Yahoo/Massive fail.
+ for sym in ('SPY','QQQ','GLD','IBIT','AAPL','NVDA','IWM','TLT'):
+  if sym in detailed:continue
+  try:
+   x=_cboe_option_chain(sym)
+   if x:detailed[sym]=x
+  except Exception as e:
+   errors.append(f'Cboe {sym}: {type(e).__name__}')
+
+ out=[] 
  for entry in OPTION_CATALOG:
   code=entry['code']; x=detailed.get(code)
   if x:
