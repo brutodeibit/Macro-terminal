@@ -119,10 +119,10 @@ if chart_start >= 0 and chart_end > chart_start:
    empty('opt-gex-chart','Este activo no tiene una cadena completa de strikes disponible en el snapshot actual.');
    empty('opt-oi-chart','El gráfico de OI requiere datos por strike. Se conserva la selección del activo y no se sustituyen sus datos por Bitcoin.');
   }
-  if(term.length){
+  if(term.length>=2){
    P.newPlot('opt-term-chart',[{x:term.map(q=>q.dte),y:term.map(q=>q.iv),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#a78bfa',width:3},marker:{size:7,color:'#c4b5fd',line:{color:'#f8fafc',width:1}},customdata:term.map(q=>[q.expiration,q.bucket,q.source]),hovertemplate:'DTE %{x}<br>Expiración %{customdata[0]}<br>ATM IV %{y:.2f}%<br>%{customdata[1]}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:55,r:20,t:45,b:55},title:{text:'Volatility term structure · ATM IV',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Días hasta expiración (DTE)',gridcolor:'#334155',zerolinecolor:'#64748b'},yaxis:{title:'Volatilidad implícita (%)',gridcolor:'#334155',rangemode:'tozero'},hovermode:'x unified'},cfg);
   }else{
-   empty('opt-term-chart','No hay IV ATM verificable para varios vencimientos de este activo. La term structure permanecerá vacía hasta que exista una superficie de volatilidad válida; no se estiman puntos ficticios.');
+   empty('opt-term-chart','Solo hay '+term.length+' vencimiento(s) con IV ATM válida; se requieren al menos dos expiraciones para dibujar una estructura temporal fiable.');
   }
  }).catch(()=>{
   empty('opt-gex-chart','No se pudo cargar el motor gráfico. Recarga la página para reintentar.');
