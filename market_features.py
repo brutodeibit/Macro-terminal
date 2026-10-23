@@ -360,6 +360,87 @@ def _massive_option_chain(underlying):
  except Exception as e:
   print("MASSIVE OPTIONS",underlying,type(e).__name__,str(e)[:180]);return None
 
+def _cboe_option_chain(sym):
+ """No-key fallback to Cboe's public delayed options chain."""
+ try:
+  symbol=str(sym).upper()
+  url_symbol={"SPX":"_SPX","NDX":"_NDX","RUT":"_RUT","DJI":"_DJX","VIX":"_VIX"}.get(symbol,symbol)
+  payload=get("https://cdn.cboe.com/api/global/delayed_quotes/options/"+requests.utils.quote(url_symbol,safe="")+".json",h={"Accept":"application/json","User-Agent":"Mozilla/5.0 MacroTerminal/6.0"}).json()
+  data=payload.get("data",{}) if isinstance(payload,dict) else {}
+  raw=data.get("options") or data.get("options_chain") or []
+  if not isinstance(raw,list) or not raw:raise ValueError("Cboe returned no option rows")
+  spot_symbol={"SPX":"^GSPC","NDX":"^NDX","RUT":"^RUT","DJI":"^DJI","VIX":"^VIX"}.get(symbol,symbol)
+  quote=chart(spot_symbol);q=(quote or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if quote else []
+  spot=next((float(v) for v in reversed(q) if v is not None),None)
+  qmeta=data.get("quote") or payload.get("quote") or {}
+  if spot is None:
+   for k in ("current_price","last","last_price","close","price","underlying_price"):
+    spot=num(qmeta.get(k) or data.get(k) or payload.get(k))
+    if spot is not None and spot>0:break
+  if spot is None or spot<=0:raise ValueError("Cboe spot price unavailable")
+  today=datetime.now(timezone.utc).date();groups={}
+  for x in raw:
+   code=str(x.get("option") or x.get("symbol") or x.get("option_symbol") or "")
+   mt=re.search(r"(\d{6})([CP])(\d{8})$",code)
+   if not mt:continue
+   try:ex=datetime.strptime(mt.group(1),"%y%m%d").replace(tzinfo=timezone.utc)
+   except ValueError:continue
+   if ex.date()<today or (ex.date()-today).days>100:continue
+   typ=mt.group(2);strike=int(mt.group(3))/1000.0
+   oi_raw=num(x.get("open_interest") if x.get("open_interest") is not None else x.get("openInterest"))
+   vol_raw=num(x.get("volume"));iv_raw=num(x.get("iv") if x.get("iv") is not None else x.get("implied_volatility"))
+   iv=(iv_raw/100.0 if iv_raw is not None and iv_raw>3 else iv_raw) if iv_raw is not None and iv_raw>0 else None
+   delta=num(x.get("delta"));gamma=num(x.get("gamma"));vega=num(x.get("vega"));theta=num(x.get("theta"))
+   bid=num(x.get("bid"));ask=num(x.get("ask"));last=num(x.get("last_trade_price") or x.get("lastPrice"))
+   T=max((ex-datetime.now(timezone.utc)).total_seconds()/31536000,1/3650);vanna=charm=None
+   if iv is not None and 0<iv<3:
+    cd,cg,vanna,charm=_bs_greeks(spot,strike,T,iv,0.04,typ)
+    if delta is None:delta=cd
+    if gamma is None:gamma=cg
+   if iv is None:
+    mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last
+    if mark is not None and mark>0:
+     iv=_implied_volatility(mark,spot,strike,T,0.04,typ)
+     if iv is not None and iv>0:
+      cd,cg,vanna,charm=_bs_greeks(spot,strike,T,iv,0.04,typ)
+      if delta is None:delta=cd
+      if gamma is None:gamma=cg
+   groups.setdefault(ex.date().isoformat(),[]).append({"strike":strike,"openInterest":oi_raw if oi_raw is not None else 0,"oiDataAvailable":oi_raw is not None,
+    "volume":vol_raw if vol_raw is not None else 0,"iv":iv,"ivDataAvailable":iv is not None and 0<iv<3,"ivProviderAvailable":iv_raw is not None and iv_raw>0,
+    "greeksProviderAvailable":any(v is not None for v in (delta,gamma,vega,theta)),"greeksAvailable":all(v is not None for v in (delta,gamma,vega)),
+    "gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":vega,"theta":theta,"type":typ,"expiration":ex,"bid":bid,"ask":ask,"lastPrice":last,"contractSymbol":code})
+  if not groups:raise ValueError("Cboe chain did not contain parseable expirations")
+  exps=sorted(groups);buckets=[]
+  for label,pred in (("0DTE",lambda d:d==0),("NEXT",lambda d:0<d<=7),("7-30D",lambda d:7<d<=30),("30-90D",lambda d:30<d<=90)):
+   matches=[e for e in exps if pred((datetime.fromisoformat(e).date()-today).days)]
+   if matches:buckets.append((label,matches[0]))
+  if not buckets:buckets=[("NEXT",exps[0])]
+  profiles=[];all_raw=[]
+  for label,exs in buckets[:4]:
+   rows=groups[exs];oi_cov=sum(x["oiDataAvailable"] for x in rows)/len(rows) if rows else 0
+   if not rows or oi_cov<0.65:continue
+   exp=datetime.fromisoformat(exs).replace(tzinfo=timezone.utc);p=_option_summary(rows,spot,exp);p["bucket"]=label
+   p["oiCoveragePct"]=round(oi_cov*100,1);p["ivCoveragePct"]=round(sum(x["ivDataAvailable"] for x in rows)/len(rows)*100,1)
+   p["providerIvCoveragePct"]=round(sum(x["ivProviderAvailable"] for x in rows)/len(rows)*100,1)
+   p["providerGreeksCoveragePct"]=round(sum(x["greeksProviderAvailable"] for x in rows)/len(rows)*100,1)
+   p["greeksCoveragePct"]=round(sum(x["greeksAvailable"] for x in rows)/len(rows)*100,1)
+   p["dataStatus"]="REAL / DELAYED · Cboe public chain; provider Greeks + modeled missing values";p["source"]="Cboe delayed options chain"
+   profiles.append(p);all_raw.extend(rows)
+  if not profiles:raise ValueError("Cboe chain has insufficient OI coverage for selected expirations")
+  for p in profiles:
+   rr=[x for x in all_raw if x.get("expiration") and x["expiration"].date().isoformat()==p.get("expiration")]
+   co=sum(x["openInterest"] for x in rr if x["type"]=="C");po=sum(x["openInterest"] for x in rr if x["type"]=="P")
+   cv=sum(x["volume"] for x in rr if x["type"]=="C");pv=sum(x["volume"] for x in rr if x["type"]=="P")
+   p["putCallOi"]=po/co if co else None;p["putCallVolume"]=pv/cv if cv else None;p["putCallVol"]=p["putCallVolume"];p["totalVolume"]=cv+pv
+  return {"name":symbol,"ticker":symbol,"spot":spot,"expiration":profiles[0].get("expiration"),"profiles":profiles,
+   "termStructure":[{"bucket":p.get("bucket"),"expiration":p.get("expiration"),"dte":p.get("daysToExpiry"),"ivAtm":p.get("ivAtm")} for p in profiles],
+   "method":"Cboe public delayed options chain. OI/volume/IV and Greeks supplied by Cboe where available; missing Greeks modeled. GEX/Gamma Flip/DEX remain calculated proxies.",
+   "source":"Cboe delayed options chain","sourceUrl":"https://cdn.cboe.com/api/global/delayed_quotes/options/"+url_symbol+".json","dataStatus":"REAL / DELAYED · Cboe public options chain","asOf":payload.get("timestamp")}
+ except Exception as e:
+  msg="Cboe options "+str(sym)+": "+type(e).__name__+" ("+str(e)[:90]+")"
+  if msg not in _OPTIONS_PROVIDER_ERRORS:_OPTIONS_PROVIDER_ERRORS.append(msg)
+  print("CBOE OPTIONS",sym,type(e).__name__,str(e)[:150]);return None
+
 def opt(sym):
  try:
   base=_yahoo_option_chain(sym)
@@ -795,12 +876,12 @@ def _farside_num(v):
 
 def _crypto_spot_etf_flows(asset="BTC"):
  try:
-  slug="btc" if str(asset).upper()=="BTC" else "eth"
+  slug="bitcoin-etf-flow-all-data" if str(asset).upper()=="BTC" else "ethereum-etf-flow-all-data"
   html=get(f"https://farside.co.uk/{slug}/").text
   soup=BeautifulSoup(html,"html.parser");table=None
   for tbl in soup.find_all("table"):
    sample=" ".join(" ".join(td.stripped_strings) for td in tbl.find_all("tr")[:5]).lower()
-   if "total" in sample and (("ibit" in sample and slug=="btc") or ("etha" in sample and slug=="eth")):
+   if "total" in sample and (("ibit" in sample and slug=="bitcoin-etf-flow-all-data") or ("etha" in sample and slug=="ethereum-etf-flow-all-data")):
     table=tbl;break
   if table is None:return None
   rows=[]
@@ -1062,6 +1143,14 @@ def update_options(feed):
    if x:detailed[sym]=x
   except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:160])
 
+ # Cboe public delayed chain is a no-key fallback for high-value ETFs/equities when Yahoo/Massive fail.
+ for sym in ("SPY","QQQ","GLD","IBIT","AAPL","NVDA","IWM","TLT"):
+  if sym in detailed:continue
+  try:
+   x=_cboe_option_chain(sym)
+   if x:detailed[sym]=x
+  except Exception as e:print("CBOE FALLBACK",sym,type(e).__name__,str(e)[:140])
+
  out=[]
  for entry in OPTION_CATALOG:
   code=entry["code"]
@@ -1243,8 +1332,15 @@ def update_dark_pools(feed):
     except Exception as e:
         print("FINRA DARK POOLS WRAPPER",type(e).__name__,str(e)[:140])
     current=feed.get("darkPools",{}) if isinstance(feed.get("darkPools"),dict) else {}
-    if current.get("markets"):
+    current_age=None
+    try:
+        current_dt=datetime.strptime(str(current.get("updated") or "" ),"%d/%m/%Y %H:%M UTC").replace(tzinfo=timezone.utc)
+        current_age=(datetime.now(timezone.utc)-current_dt).total_seconds()/86400
+    except Exception:pass
+    if current.get("markets") and (current_age is None or current_age<=10):
         return
+    if current.get("markets") and current_age is not None and current_age>10:
+        print("FINRA snapshot stale; trying clearly labelled public daily off-exchange fallback",round(current_age,1),"days")
     symbols=("SPY","QQQ","GLD","USO","AAPL","NVDA","HYG","IWM","DIA")
     markets=[];history={}
     for sym in symbols:
@@ -1269,7 +1365,7 @@ def update_dark_pools(feed):
     if markets:
         feed["darkPools"]={
             "updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),
-            "markets":markets,"history":history,
+            "markets":markets,"history":history,"finraSnapshot":before if before.get("markets") else None,
             "source":"ChartExchange public exchange-volume page",
             "sourceUrl":"https://chartexchange.com/symbol/nyse-spy/exchange-volume/dark-pool-prints/",
             "method":"Public daily off-exchange aggregates. This fallback is not FINRA's weekly ATS/OTC firm-level dataset and does not identify buyer/seller.",
@@ -1702,13 +1798,13 @@ def update_market_breadth(feed):
    "advancingVolumePct":num(vol.get("advancing_volume_pct")),"volumeRatio":num(vol.get("volume_ratio")),
    "near52wHigh":num(hl.get("stocks_near_52w_high")),"near52wLow":num(hl.get("stocks_near_52w_low")),
    "near52wHighPct":num(hl.get("pct_near_52w_high")),"near52wLowPct":num(hl.get("pct_near_52w_low")),
-   "above20d":ma_entry("above_20_day_ma"),"above50d":ma_entry("above_50_day_ma"),"above200d":ma_entry("above_200_day_ma"),
+   "above20d":ma_entry("above_20_day_ma"),"above50d":ma_entry("above_50_day_ma"),"above100d":ma_entry("above_100_day_ma"),"above200d":ma_entry("above_200_day_ma"),
    "source":"DeanFinancials/deanfi-data · Yahoo Finance/yfinance","sourceUrl":sp_url,
    "dataStatus":"REAL / DAILY · third-party calculation" if age<=1 else "REAL / DAILY · last completed trading day",
    "method":"Breadth derivada del S&P 500. Máximos/mínimos cercanos dentro del 1% del extremo anual; fuente externa de terceros, no dato oficial del índice."
   }
   sp_hist=[x for x in sp_hist if isinstance(x,dict) and x.get("date")!=day]
-  sp_hist.append({k:sp.get(k) for k in ("date","advances","declines","unchanged","advancePercentage","advanceDeclineRatio","near52wHigh","near52wLow","above20d","above50d","above200d")})
+  sp_hist.append({k:sp.get(k) for k in ("date","advances","declines","unchanged","advancePercentage","advanceDeclineRatio","near52wHigh","near52wLow","above20d","above50d","above100d","above200d")})
   sp_hist=sorted(sp_hist,key=lambda x:str(x.get("date") or ""))[-260:]
  except Exception as e:
   print("MARKET BREADTH SP500",type(e).__name__,str(e)[:160])
@@ -1772,7 +1868,7 @@ def update_market_breadth(feed):
    if len(result)>=minimum:
     counts={"advances":0,"declines":0,"unchanged":0}
     win_count={k:{"advances":0,"declines":0,"unchanged":0,"eligible":0} for k in ("3s","5s","21s","YTD")}
-    ma_count={20:{"above":0,"eligible":0},50:{"above":0,"eligible":0},200:{"above":0,"eligible":0}}
+    ma_count={20:{"above":0,"eligible":0},50:{"above":0,"eligible":0},100:{"above":0,"eligible":0},200:{"above":0,"eligible":0}}
     highs=lows=high_eligible=up_vol=down_vol=0
     date_counts={};daily_changes=[];changes3=[];changes5=[];changes21=[];changes_ytd=[]
     for sym,bars in result:
@@ -1799,7 +1895,7 @@ def update_market_breadth(feed):
       elif ret< -1e-8:win_count["YTD"]["declines"]+=1
       else:win_count["YTD"]["unchanged"]+=1
       changes_ytd.append(ret*100)
-     for n in (20,50,200):
+     for n in (20,50,100,200):
       if len(vals)>=n:
        avg=sum(vals[-n:])/n;ma_count[n]["eligible"]+=1
        if last>avg:ma_count[n]["above"]+=1
@@ -1823,7 +1919,7 @@ def update_market_breadth(feed):
      "advancePercentage":round(100*counts["advances"]/coverage,2) if coverage else None,
      "advancingVolume":up_vol,"decliningVolume":down_vol,"volumeRatio":round(up_vol/down_vol,3) if down_vol else None,
      "near52wHigh":highs,"near52wLow":lows,"highLowEligible":high_eligible,
-     "above20d":ma_obj(20),"above50d":ma_obj(50),"above200d":ma_obj(200),"windowBreadth":window_data,
+     "above20d":ma_obj(20),"above50d":ma_obj(50),"above100d":ma_obj(100),"above200d":ma_obj(200),"windowBreadth":window_data,
      "medianChange1d":round(median(daily_changes),3) if daily_changes else None,
      "medianChange3s":round(median(changes3),3) if changes3 else None,"medianChange5s":round(median(changes5),3) if changes5 else None,
      "medianChange21s":round(median(changes21),3) if changes21 else None,"medianChangeYtd":round(median(changes_ytd),3) if changes_ytd else None,
@@ -1831,7 +1927,7 @@ def update_market_breadth(feed):
      "constituentsUrl":ndx_list_url,"dataStatus":"REAL / EOD · calculated from public daily closes",
      "method":"Recuento de avances/descensos vs cierre previo, participación sobre SMA20/50/200 y cercanía al extremo anual dentro del 1%. Cobertura: "+str(coverage)+"/"+str(len(symbols))+" componentes disponibles."}
     ndx_hist=[x for x in ndx_hist if isinstance(x,dict) and x.get("date")!=session]
-    ndx_hist.append({k:ndx.get(k) for k in ("date","advances","declines","unchanged","advancePercentage","near52wHigh","near52wLow","above20d","above50d","above200d","medianChange1d","medianChange3s","medianChange5s","medianChange21s","medianChangeYtd")})
+    ndx_hist.append({k:ndx.get(k) for k in ("date","advances","declines","unchanged","advancePercentage","near52wHigh","near52wLow","above20d","above50d","above100d","above200d","medianChange1d","medianChange3s","medianChange5s","medianChange21s","medianChangeYtd")})
     ndx_hist=sorted(ndx_hist,key=lambda x:str(x.get("date") or ""))[-260:]
    elif ndx:
     ndx={**ndx,"dataStatus":"STALE · insufficient Yahoo constituent coverage on this attempt"}
