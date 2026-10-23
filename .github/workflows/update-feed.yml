@@ -126,6 +126,7 @@ jobs:
           assert "Flujos netos BTC / ETH" in js, 'ETF flow panel missing'
           assert "farside.co.uk/bitcoin-etf-flow-all-data/" in js, 'Bitcoin ETF flow source link missing'
           assert "Solo hay '+term.length+' vencimiento(s)" in js, 'Options term-structure validation missing'
+          source=Path('market_features.py').read_text(encoding='utf-8')
           assert "def _cboe_option_chain(sym):" in source, 'Cboe public options fallback missing'
           assert "bitcoin-etf-flow-all-data" in source, 'Farside BTC flow endpoint missing'
           assert "Cboe public delayed chain is a no-key fallback" in Path('maintenance/fix_options_feed_2026_10_03.py').read_text(encoding='utf-8'), 'Cboe fallback loop must persist across scheduled runs'
