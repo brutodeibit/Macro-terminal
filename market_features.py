@@ -22,15 +22,37 @@ def _vanna_proxy(spot,strike,iv,t):
  except Exception:return None
 
 def _max_pain(calls,puts):
- """Strike with the lowest aggregate holder payoff at expiration from public OI."""
- strikes=sorted({float(x.get("strike") or 0) for x in calls+puts if float(x.get("strike") or 0)>0})
+ """Strike with the lowest aggregate holder payoff; O(n log n), suitable for full Cboe chains."""
+ call_oi={};put_oi={}
+ for x in calls:
+  k=float(x.get("strike") or 0);oi=float(x.get("openInterest") or 0)
+  if k>0 and oi>0:call_oi[k]=call_oi.get(k,0.0)+oi
+ for x in puts:
+  k=float(x.get("strike") or 0);oi=float(x.get("openInterest") or 0)
+  if k>0 and oi>0:put_oi[k]=put_oi.get(k,0.0)+oi
+ strikes=sorted(set(call_oi)|set(put_oi))
  if not strikes:return None
- losses=[]
- for settlement in strikes:
-  call_loss=sum(max(0.0,settlement-float(x.get("strike") or 0))*float(x.get("openInterest") or 0) for x in calls)
-  put_loss=sum(max(0.0,float(x.get("strike") or 0)-settlement)*float(x.get("openInterest") or 0) for x in puts)
-  losses.append((settlement,call_loss+put_loss))
- return min(losses,key=lambda x:x[1])[0] if losses else None
+ n=len(strikes);call_prefix_oi=[0.0]*n;call_prefix_koi=[0.0]*n
+ put_suffix_oi=[0.0]*n;put_suffix_koi=[0.0]*n
+ for i,k in enumerate(strikes):
+  oi=call_oi.get(k,0.0)
+  call_prefix_oi[i]=(call_prefix_oi[i-1] if i else 0.0)+oi
+  call_prefix_koi[i]=(call_prefix_koi[i-1] if i else 0.0)+k*oi
+ for i in range(n-1,-1,-1):
+  k=strikes[i];oi=put_oi.get(k,0.0)
+  put_suffix_oi[i]=(put_suffix_oi[i+1] if i+1<n else 0.0)+oi
+  put_suffix_koi[i]=(put_suffix_koi[i+1] if i+1<n else 0.0)+k*oi
+ best_strike=None;best_loss=None
+ for i,k in enumerate(strikes):
+  lower_oi=call_prefix_oi[i-1] if i else 0.0
+  lower_koi=call_prefix_koi[i-1] if i else 0.0
+  upper_oi=put_suffix_oi[i+1] if i+1<n else 0.0
+  upper_koi=put_suffix_koi[i+1] if i+1<n else 0.0
+  loss=max(0.0,k*lower_oi-lower_koi)+max(0.0,upper_koi-k*upper_oi)
+  if best_loss is None or loss<best_loss:
+   best_strike=k;best_loss=loss
+ return best_strike
+
 
 def _option_gex(calls,puts,spot):
  scale=float(spot or 0)**2*0.01*100.0
