@@ -2063,9 +2063,10 @@ def update_bond_curves(feed):
    t["change1d"]=row.get("DailyPercentualChange")
    t["change1w"]=row.get("WeeklyPercentualChange")
    t["change1m"]=row.get("MonthlyPercentualChange")
-   t["change1dBp"]=row.get("DailyChange")
-   t["change1wBp"]=row.get("WeeklyChange")
-   t["change1mBp"]=row.get("MonthlyChange")
+   # Trading Economics expresses bond-yield changes in percentage points; convert to basis points (1 pp = 100 bp).
+   for target,source in (("change1dBp","DailyChange"),("change1wBp","WeeklyChange"),("change1mBp","MonthlyChange")):
+    raw=num(row.get(source))
+    t[target]=round(raw*100,2) if raw is not None else None
    t["source"]="Trading Economics / government bond market"
  feed["bondCurvesUpdated"]=datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
 
