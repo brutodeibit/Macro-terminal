@@ -404,7 +404,14 @@ def opt(sym):
      iv=iv_raw if iv_raw is not None and iv_raw>0 else None
      oi=oi_raw if oi_raw is not None else 0;vol=vol_raw if vol_raw is not None else 0
      delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv if iv is not None and iv<3 else (iv/100 if iv is not None else None),0.04,typ)
-     vega=(float(_norm_pdf(((math.log(spot/K)+(0.04+0.5*(iv if iv<3 else iv/100)**2)*T)/((iv if iv<3 else iv/100)*math.sqrt(T))))*spot*math.sqrt(T)) if iv else None
+     sigma=(iv if iv<3 else iv/100) if iv is not None and iv>0 else None
+     vega=None
+     if sigma and sigma>0 and spot>0 and K>0 and T>0:
+      try:
+       d1=(math.log(spot/K)+(0.04+0.5*sigma*sigma)*T)/(sigma*math.sqrt(T))
+       vega=float(_norm_pdf(d1))*spot*math.sqrt(T)
+      except (ValueError,ZeroDivisionError,OverflowError):
+       vega=None
      rows.append({"strike":K,"openInterest":oi,"oiDataAvailable":oi_raw is not None,"volume":vol,"iv":iv,"ivDataAvailable":iv is not None,
       "ivProviderAvailable":iv_provider_available,"greeksProviderAvailable":False,"greeksAvailable":all(v is not None for v in (delta,gamma,vega)),
       "gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":vega,"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
