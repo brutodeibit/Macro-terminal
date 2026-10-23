@@ -1838,8 +1838,8 @@ def update_market_breadth(feed):
   elif ndx and ndx_age>4:
    ndx={**ndx,"dataStatus":"STALE · no fresh complete Nasdaq-100 breadth snapshot"}
   except Exception as e:
-  print("MARKET BREADTH NASDAQ100",type(e).__name__,str(e)[:180])
-  if ndx:ndx={**ndx,"dataStatus":"STALE / UNAVAILABLE · last verified Nasdaq-100 snapshot retained"}
+   print("MARKET BREADTH NASDAQ100",type(e).__name__,str(e)[:180])
+   if ndx:ndx={**ndx,"dataStatus":"STALE / UNAVAILABLE · last verified Nasdaq-100 snapshot retained"}
 
  # Retain a single top-level S&P 500 snapshot for backward compatibility with the current UI.
  combined={**sp,"sp500":sp,"nasdaq100":ndx,"sp500History":sp_hist,"nasdaq100History":ndx_hist,
