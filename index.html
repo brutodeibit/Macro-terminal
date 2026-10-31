@@ -699,12 +699,15 @@
             const el=document.getElementById('topTabs');
             if(!el) return;
             const global=currentCountryKey==='__global';
+            // Orden de decisión: primero el régimen, después los catalizadores
+            // de la semana y, al final, los módulos de comprobación profunda.
             const tabs=global?[
-              ['sec-resumen','PANEL GLOBAL'],['sec-risk','RISK ON/OFF'],['sec-fx','DIVISAS / CARRY'],
-              ['sec-cot','COT'],['sec-options','OPCIONES / GAMMA'],['sec-darkpool','DARK POOLS / OTC'],['sec-rotation','MERCADOS & ROTACIÓN'],['sec-sentiment','SENTIMIENTO / BONOS']
+              ['sec-resumen','AHORA · RESUMEN'],['sec-risk','AHORA · RÉGIMEN'],
+              ['sec-fx','SEMANA · DIVISAS'],['sec-sentiment','SEMANA · FLUJOS / SENTIMIENTO'],['sec-rotation','SEMANA · ROTACIÓN'],
+              ['sec-options','PROFUNDIDAD · OPCIONES'],['sec-darkpool','PROFUNDIDAD · DARK POOLS'],['sec-cot','PROFUNDIDAD · COT']
             ]:[
-              ['sec-fx-weekly','FOREX RADAR'],['sec-tipos','TIPOS'],['sec-conferencia','RUEDA DE PRENSA'],['sec-bonos','CURVA'],
-              ['sec-indicadores','INDICADORES']
+              ['sec-fx-weekly','AHORA · SESGO FX'],['sec-tipos','SEMANA · TIPOS'],['sec-conferencia','SEMANA · BANCO CENTRAL'],
+              ['sec-bonos','PROFUNDIDAD · CURVA'],['sec-indicadores','PROFUNDIDAD · INDICADORES']
             ];
             el.innerHTML=tabs.map(([id,label],i)=>`<button class="tab-btn ${i===0?'active':''} pb-3 whitespace-nowrap" onclick="scrollToSection('${id}')">${label}</button>`).join('');
         }
@@ -1921,3 +1924,4 @@ function renderContent() {
 
 </body>
 </html>
+
