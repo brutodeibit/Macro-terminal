@@ -558,7 +558,10 @@ def chart(sym):
 def yahoo_ytd(sym):
  try:
   u="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(sym,safe="")
-  j=get(u,{"range":"1y","interval":"1d"}).json().get("chart",{}).get("result",[])
+  # Request enough history to retain the final observable close of the prior
+  # calendar year.  Using the first price returned in January silently changes
+  # the YTD base when a market was closed or the provider omits a session.
+  j=get(u,{"range":"2y","interval":"1d"}).json().get("chart",{}).get("result",[])
   if not j:return None
   r=j[0];ts=r.get("timestamp") or [];q=(r.get("indicators",{}).get("quote") or [{}])[0].get("close") or []
   rows=[]
@@ -567,10 +570,14 @@ def yahoo_ytd(sym):
    d=datetime.fromtimestamp(float(t),tz=timezone.utc).date()
    rows.append((d,float(v)))
   if not rows:return None
-  year=datetime.now(timezone.utc).year;start=next(((d,v) for d,v in rows if d.year==year),None)
-  if not start:return None
+  year=datetime.now(timezone.utc).year
+  prior=[(d,v) for d,v in rows if d.year==year-1]
+  if not prior:return None
+  start=prior[-1]
   last=rows[-1][1]
-  return {"changeYtd":(last/start[1]-1)*100,"ytdStart":start[1],"last":last,"ytdDate":start[0].isoformat()}
+  return {"changeYtd":(last/start[1]-1)*100,"ytdStart":start[1],"last":last,
+          "ytdBaseDate":start[0].isoformat(),"ytdDate":rows[-1][0].isoformat(),
+          "ytdMethod":"Último cierre observable del año natural anterior"}
  except Exception as e:
   print("YTD",sym,type(e).__name__,str(e)[:120]);return None
 
@@ -1152,26 +1159,26 @@ def update_options(feed):
  old_by={m.get("ticker"):m for m in previous.get("markets",[]) if isinstance(m,dict) and m.get("ticker")}
  chain_targets=("SPX","SPY","NDX","QQQ","RUT","IWM","DIA","GLD","IAU","SLV","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT")
  detailed={}
- # Preferred chain source: Massive. Yahoo remains a public fallback.
+ # Preferred chain source: Massive.  Cboe is the no-login delayed fallback for
+ # listed US options; Yahoo is deliberately last because its public endpoint
+ # frequently rejects unattended requests.
  for sym in chain_targets:
   try:
    x=_massive_option_chain(sym)
    if x:detailed[sym]=x
   except Exception as e:print("MASSIVE TARGET",sym,type(e).__name__,str(e)[:120])
- for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
-  if sym in detailed:continue
-  try:
-   x=opt(sym)
-   if x:detailed[sym]=x
-  except Exception as e:print("OPTIONS",sym,type(e).__name__,str(e)[:160])
-
- # Cboe public delayed chain is a no-key fallback for high-value ETFs/equities when Yahoo/Massive fail.
- for sym in ("SPY","QQQ","GLD","IBIT","AAPL","NVDA","IWM","TLT"):
+ for sym in ("SPX","SPY","NDX","QQQ","RUT","IWM","DIA","GLD","IAU","SLV","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
   if sym in detailed:continue
   try:
    x=_cboe_option_chain(sym)
    if x:detailed[sym]=x
   except Exception as e:print("CBOE FALLBACK",sym,type(e).__name__,str(e)[:140])
+ for sym in ("SPY","QQQ","DIA","IWM","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","TLT","IBIT"):
+  if sym in detailed:continue
+  try:
+   x=opt(sym)
+   if x:detailed[sym]=x
+  except Exception as e:print("YAHOO FALLBACK",sym,type(e).__name__,str(e)[:160])
 
  out=[]
  for entry in OPTION_CATALOG:
@@ -2392,5 +2399,6 @@ def update_risk(feed):
   "method":"Composite intermercado. 1D/5S/21S = retorno del último cierre disponible; pointChange = cambio absoluto en unidades del propio activo.",
   "assets":data,"confirmations":[f"{n}: {why.get(n,w)}." for _,n,w in positives],"tensions":[f"{n}: {why.get(n,w)}." for _,n,w in negatives],
   "coverage":{"totalAssets":len(data),"windows":["1D","5S","21S"],"symbols":[x["symbol"] for x in data]}}
+
 
 
