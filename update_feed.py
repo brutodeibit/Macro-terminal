@@ -8,6 +8,7 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup
 from market_features import enrich_feed
+from data_integrity import bls_observation, transform_monthly
 
 ROOT=Path(__file__).resolve().parent
 FEED_PATH=ROOT/'macro-feed.json'
@@ -52,7 +53,7 @@ def num(x):
 def fmt(v,u=''):
  if v is None:return ''
  if u=='%':return f'{v:.2f}%'
- if u=='K':return f'{v/1000:.0f}K' if abs(v)>10000 else f'{v:.0f}K'
+ if u=='K':return f'{v:.0f}K'
  return f'{v:.2f}'
 
 def load():
@@ -71,10 +72,14 @@ def yahoo_metrics(symbol):
    if close is not None:rows.append((datetime.fromtimestamp(float(ts),tz=timezone.utc).date(),float(close)))
   if len(rows)<22:return None
   q=[x[1] for x in rows];last=q[-1]
-  ytd_rows=[x[1] for x in rows if x[0].year==datetime.now(timezone.utc).year]
+  ytd_rows=[x for x in rows if x[0].year==datetime.now(timezone.utc).year-1]
+  base=ytd_rows[-1] if ytd_rows else None
   return {'last':last,'change1d':(last/q[-2]-1)*100,'change3s':(last/q[-4]-1)*100,
           'change5s':(last/q[-6]-1)*100,'change21s':(last/q[-22]-1)*100,
-          'changeYtd':(last/ytd_rows[0]-1)*100 if ytd_rows and ytd_rows[0] else None,
+          'changeYtd':(last/base[1]-1)*100 if base and base[1] else None,
+          'pointChangeYtd':last-base[1] if base else None,
+          'ytdBaseDate':base[0].isoformat() if base else None,
+          'observedAt':rows[-1][0].isoformat(),
           'change1w':(last/q[-6]-1)*100,'change1m':(last/q[-22]-1)*100,
           'pointChange1d':last-q[-2],'pointChange3s':last-q[-4],
           'pointChange5s':last-q[-6],'pointChange21s':last-q[-22],
@@ -129,6 +134,11 @@ def update_risk(feed):
 def fred_csv(sid):
  try:
   txt=get('https://fred.stlouisfed.org/graph/fredgraph.csv',{'id':sid}).text
+  if sid in ('PCEPILFE','PCEPI'):
+   values={line.split(',')[0][:7]:float(line.split(',')[1]) for line in txt.splitlines()[1:] if ',' in line and num(line.split(',')[1]) is not None}
+   if not values:return None
+   period=max(values); value=transform_monthly(values,period,'yoy')
+   return (value,period) if value is not None else None
   for line in reversed(txt.splitlines()[1:]):
    if ',' not in line:continue
    d,v=line.split(',',1); n=num(v)
@@ -142,7 +152,10 @@ def update_us(feed):
  for name,(sid,cat,sign,imp,unit) in FRED.items():
   res=fred_csv(sid)
   if not res:continue
-  v,d=res; row=by.get(name) or {'cat':cat,'name':name,'actual':'','est':'','surprise':'','date':'','imp':'★'*imp,'source':'FRED','rateImpact':sign}
+  v,d=res
+  if sid in ('ICNSA','CCNSA'):v/=1000
+  row=by.get(name) or {'cat':cat,'name':name,'actual':'','est':'','surprise':'','date':'','imp':'★'*imp,'source':'FRED','rateImpact':sign}
+  if row.get('date')!=d:row.update(est='',surprise='')
   row.update(actual=fmt(v,unit),date=d,source='Federal Reserve Bank of St. Louis (FRED)',rateImpact=sign)
   if name not in by:inds.append(row)
  # BLS one request for all series
@@ -153,10 +166,12 @@ def update_us(feed):
   for name,(sid,cat,sign,imp,unit) in BLS.items():
    rows=next((x['data'] for x in j.get('Results',{}).get('series',[]) if x.get('seriesID')==sid),[])
    if not rows:continue
-   r=rows[0]; v=num(r.get('value')); 
-   if v is None:continue
+   observation=bls_observation(rows,sid)
+   if observation is None:continue
+   v,period,transformation=observation
    row=by.get(name) or {'cat':cat,'name':name,'actual':'','est':'','surprise':'','date':'','imp':'★'*imp,'source':'BLS','rateImpact':sign}
-   row.update(actual=fmt(v,unit),date=f"{r.get('year','')}-{r.get('periodName','')[:3]}",source='U.S. Bureau of Labor Statistics',rateImpact=sign)
+   if row.get('date')!=period:row.update(est='',surprise='')
+   row.update(actual=fmt(v,unit),date=period,source='U.S. Bureau of Labor Statistics',sourceUrl='https://data.bls.gov/timeseries/'+sid,transformation=transformation,rateImpact=sign)
    if name not in by:inds.append(row)
  except Exception as e:print('BLS',e)
 
@@ -272,8 +287,8 @@ def normalize_central_bank_history(feed):
  for eco in feed.get('economies',{}).values():
   conference=eco.get('conference') or {}
   history=list(conference.get('history') or [])
-  current={k:conference.get(k) for k in ('date','title','tone','summary','keyPoints')}
-  if current.get('date') and current.get('title') and not any(x.get('date')==current['date'] and x.get('title')==current['title'] for x in history):
+  current={k:conference.get(k) for k in ('date','title','tone','summary','keyPoints','sourceUrl')}
+  if current.get('date') and current.get('title') and not any(x.get('date')==current['date'] for x in history):
    history.insert(0,current)
   if history: conference['history']=history[:3]
   eco['conference']=conference

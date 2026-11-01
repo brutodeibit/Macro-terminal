@@ -84,7 +84,9 @@ def _option_gex(calls,puts,spot):
  effect="Los hedges modelados pueden reforzar el movimiento" if net<0 else "Los hedges modelados pueden amortiguar el movimiento" if net>0 else "Sin sesgo de gamma agregado"
  return {
   "gammaPositive":pos,"gammaNegative":neg,"gammaNet":net,"gammaTotal":net,
-  "gammaRegime":regime,"gammaEffect":effect,"gammaFlip":flip,"zeroGamma":flip,
+  "gammaRegime":regime,"gammaEffect":effect,"gammaFlip":None,"zeroGamma":None,
+  "cumulativeStrikeCrossing":flip,
+  "gammaFlipStatus":"Unavailable: cumulative strike crossing is not a spot-price gamma root",
   "callWall":callWall.get("strike") if callWall else None,
   "putWall":putWall.get("strike") if putWall else None,
   "positiveZones":sorted(posZones,key=lambda x:x["gamma"],reverse=True)[:8],

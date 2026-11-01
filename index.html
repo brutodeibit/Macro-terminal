@@ -733,6 +733,9 @@
         function dirIcon(score){ return policyBias(score).icon; }
         function expectationsAreFresh(data,maxAgeDays=7){
  const raw=data?.rates?.expectationsUpdated||data?.rates?.expectationsDate||data?.rates?.expectationsTimestamp;
+ if(!data?.rates?.expectationsSource || !/^https:\/\//.test(data?.rates?.expectationsUrl||''))return false;
+ const values=(data?.rates?.expectations||[]).map(e=>parseNum(e.value));
+ if(!values.length || values.some(v=>!Number.isFinite(v)||v<0||v>100) || Math.abs(values.reduce((a,b)=>a+b,0)-100)>1)return false;
  if(raw===null||raw===undefined||raw==='')return false;
  const stamp=typeof raw==='number'?(raw<1000000000000?raw*1000:raw):Date.parse(String(raw));
  if(!Number.isFinite(stamp))return false;
@@ -1027,7 +1030,7 @@
         function riskToneClass(sig){ return sig==='risk-on'?'risk-up':sig==='risk-off'?'risk-down':'risk-neutral'; }
         function renderRiskOnOff(){
  const r=macroDatabase.__riskOnOff||{score:null,label:'SIN SINCRONIZAR',confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
- const score=Number(r.score),valid=Number.isFinite(score),width=valid?Math.max(0,Math.min(100,score)):0;
+ const score=Number(r.score),valid=r.score!==null&&r.score!==undefined&&r.score!==''&&Number.isFinite(score),width=valid?Math.max(0,Math.min(100,score)):0;
  const assets=(r.assets||[]).map(a=>`
  <div class="risk-cell">
   <div class="flex items-center justify-between gap-2"><span class="text-[12px] font-black uppercase tracking-wide text-gray-200">${esc(a.name||a.symbol)}</span><span class="risk-badge">${esc(a.marketSignal||'—')}</span></div>
@@ -1326,7 +1329,7 @@ renderDarkPoolSection=function(){
   host.dataset.plotlyReady='1';
   __loadPlotly().then(P=>{
    const base=ps.map(x=>({ts:Number(x.ts),price:Number(x.price)})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)).sort((a,b)=>a.ts-b.ts);
-   const prints=(a.prints||[]).map((p,i)=>{const price=Number(p.price??p.priceApprox),ts=Number(p.approxTs);return {ts:Number.isFinite(ts)?ts:(base[i]?.ts||base[0]?.ts),price,side:p.side||'PRINT',size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp||''};}).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price));
+   const prints=(a.prints||[]).filter(p=>p.realPrint===true&&p.price!=null&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:'UNKNOWN',size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
    const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:3.4},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
    if(prints.length){
     const largest=[...prints].sort((a,b)=>b.notional-a.notional).slice(0,12);
@@ -1344,9 +1347,9 @@ function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '
         function fmtPct(v,d=2){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }
         function fmtNum(v,d=2){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }
         function fxBiasLabel(score){ if(score>=2) return 'Muy alcista'; if(score>=0.9) return 'Alcista'; if(score>=0.35) return 'Levemente alcista'; if(score<=-2) return 'Muy bajista'; if(score<=-0.9) return 'Bajista'; if(score<=-0.35) return 'Levemente bajista'; return 'Neutral'; }
-        function fxRiskRegime(){const r=macroDatabase.__riskOnOff||{};const label=String(r.label||'').toLowerCase();const s=Number(r.score);if(label.includes('risk off')||label.includes('aversión')||label.includes('defensivo')||(Number.isFinite(s)&&s<=-1))return -1;if(label.includes('risk on')||label.includes('apetito')||(Number.isFinite(s)&&s>=1))return 1;return 0;}
+        function fxRiskRegime(){const r=macroDatabase.__riskOnOff||{};if(r.score===null||r.score===undefined||r.score==='')return 0;const s=Number(r.score);return Number.isFinite(s)?(s<=35?-1:s>=65?1:0):0;}
         function fxBiasClass(score){ return score>0.35?'bias-up':score<-0.35?'bias-down':'bias-flat'; }
-        function parseRate(v){ const s=String(v??'').replace(',','.').replace('%','').replace('–','-'); const nums=s.match(/-?\d+(?:\.\d+)?/g); if(!nums) return NaN; return nums.length===2?(Number(nums[0])+Number(nums[1]))/2:Number(nums[0]); }
+        function parseRate(v){ const s=String(v??'').trim().replace(/,/g,'.').replace(/%/g,'');const m=s.match(/^(-?\d+(?:\.\d+)?)\s*[-–—]\s*(-?\d+(?:\.\d+)?)$/);if(m)return (Number(m[1])+Number(m[2]))/2;return s!==''&&Number.isFinite(Number(s))?Number(s):NaN; }
         function buildFxComparator(){
             const fx=macroDatabase.__fx||{currencies:{}};
             const all=Object.values(macroDatabase).filter(d=>d&&d.id&&d.id!=='de');
@@ -1507,14 +1510,10 @@ function renderGlobalView(){
    </div>
    <div class="metric rounded-xl px-4 py-3 min-w-[235px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo monetario agregado</div><div class="text-lg font-black ${avgBias.cls} mt-1">${avgBias.icon} ${avgBias.label}</div><div class="text-[10px] text-gray-500 mt-1">${entries.length} economías cargadas.</div></div>
   </div></div>
-  <div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Estado de carga</div>
-   <div class="flex flex-wrap gap-2 text-[10px]"><span class="mini-pill">Feed ${esc(macroDatabase.__riskOnOff?.updated||macroDatabase.__cot?.updated||'—')}</span><span class="mini-pill">Módulos aislados</span><span class="mini-pill">Una fuente caída no oculta el Panel completo</span></div>
-  </div>
   <div class="glass rounded-2xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">MAPA MACRO · ECONOMÍAS</div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
    ${entries.map(({d,bias,expect})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-xl p-3 row-hover transition">
     <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-[10px] font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
-    <div class="mt-2 text-[10px] text-gray-500">Tipo ${esc(d.rates?.official||'—')} · Próxima ${esc(d.rates?.nextMeeting||'—')}</div>
-    <div class="mt-2 text-[10px] ${expect.cls}">${esc(expect.label)}</div>
+    <div class="mt-2 text-[10px] text-gray-500">${esc(d.updated||'Fecha no disponible')}</div>
    </button>`).join('')}
   </div></div>
  </section>${sections}`;

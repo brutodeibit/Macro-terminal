@@ -35,11 +35,8 @@ jobs:
       - name: Validate Python
         run: python -m py_compile update_feed.py market_features.py maintenance/fix_ui_2026_10_02.py maintenance/fix_options_feed_2026_10_03.py
 
-      - name: Apply dashboard UI fixes
-        run: python maintenance/fix_ui_2026_10_02.py
-
-      - name: Apply options feed fixes
-        run: python maintenance/fix_options_feed_2026_10_03.py
+      # Historical migrations are kept for recovery. Scheduled refreshes must
+      # never rewrite application source from old embedded templates.
 
       - name: Update feed
         env:
@@ -158,8 +155,6 @@ jobs:
             else
               git rebase --abort || true
               git reset --hard origin/main
-              python maintenance/fix_ui_2026_10_02.py
-              python maintenance/fix_options_feed_2026_10_03.py
               python update_feed.py
               git add index.html macro-feed.json maintenance/fix_ui_2026_10_02.py maintenance/fix_options_feed_2026_10_03.py .github/workflows/update-feed.yml
               git commit -m "fix: resilient options feed and asset isolation" --allow-empty
