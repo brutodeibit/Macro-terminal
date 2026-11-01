@@ -9,6 +9,13 @@
 - `update_feed.py` para actualizar automáticamente.
 - GitHub Actions cada 15 minutos.
 
+## Integridad de expectativas y bancos centrales
+
+- El panel no muestra porcentajes de la próxima reunión si faltan `expectationsUpdated`, `expectationsSource` y `expectationsUrl`. No sustituye ese hueco por probabilidades antiguas ni por estimaciones.
+- `update_feed.py` elimina cualquier snapshot de expectativas que no tenga esos tres campos y no lo incorpora al sesgo FX.
+- El calendario de decisiones y ruedas de prensa se incorpora desde las páginas oficiales de los bancos centrales. Cada evento conserva un enlace a su fuente; el calendario se actualiza sin requerir una clave de Trading Economics.
+- El historial de comunicados usa una lista de hasta tres entradas. Un futuro conector de comunicado sólo debe insertar documentos oficiales con fecha, URL y título; nunca debe borrar un comunicado anterior por un fallo de fuente.
+
 ## GitHub
 Sube el contenido de esta carpeta a la raíz del repositorio que usas para GitHub Pages. El workflow se ejecuta cada 15 minutos y hace commit de `macro-feed.json`.
 

@@ -25,6 +25,22 @@ ROLES={'SP500':'Acciones / apetito de riesgo','NASDAQ':'Growth / beta alta','VIX
 BLS={'Nóminas no agrícolas (NFP)':('CES0000000001','EMPLEO',+1,3,'K'),'Tasa de desempleo':('LNS14000000','EMPLEO',-1,3,'%'),'Salarios (AHE YoY)':('CES0500000003','EMPLEO',+1,2,'%'),'JOLTS Vacantes':('JTS000000000000000JOL','EMPLEO',+1,2,'K'),'JOLTS Tasa de abandonos':('JTS000000000000000QUR','EMPLEO',+1,2,'%')}
 FRED={'PCE subyacente (Anual)':('PCEPILFE','INFLACIÓN',+1,3,'%'),'PCE (Anual)':('PCEPI','INFLACIÓN',+1,3,'%'),'PIB (Trimestral)':('A191RL1Q225SBEA','CRECIMIENTO',+1,3,'%'),'Initial Jobless Claims':('ICNSA','EMPLEO',-1,2,'K'),'Continuing Claims':('CCNSA','EMPLEO',-1,2,'K'),'HY OAS':('BAMLH0A0HYM2','CONDICIONES FINANCIERAS',-1,2,'%')}
 
+# Fechas de decisión publicadas por los propios bancos centrales. Se usan como
+# disparadores de actualización y calendario, nunca como una inferencia de tipos.
+CENTRAL_BANK_EVENTS=(
+ {'economyId':'au','currency':'AUD','date':'2026-11-03T03:30:00Z','event':'RBA · decisión de política monetaria','country':'Australia','source':'Reserve Bank of Australia','sourceUrl':'https://www.rba.gov.au/coming-up/'},
+ {'economyId':'uk','currency':'GBP','date':'2026-11-05T12:00:00Z','event':'BoE · decisión MPC y rueda de prensa','country':'Reino Unido','source':'Bank of England','sourceUrl':'https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates'},
+ {'economyId':'au','currency':'AUD','date':'2026-12-08T03:30:00Z','event':'RBA · decisión de política monetaria','country':'Australia','source':'Reserve Bank of Australia','sourceUrl':'https://www.rba.gov.au/coming-up/'},
+ {'economyId':'us','currency':'USD','date':'2026-12-09T19:00:00Z','event':'Fed · decisión FOMC y rueda de prensa','country':'Estados Unidos','source':'Federal Reserve','sourceUrl':'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'},
+ {'economyId':'ca','currency':'CAD','date':'2026-12-09T14:45:00Z','event':'BoC · decisión de tipos','country':'Canadá','source':'Bank of Canada','sourceUrl':'https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/'},
+ {'economyId':'nz','currency':'NZD','date':'2026-12-09T01:00:00Z','event':'RBNZ · OCR y Monetary Policy Statement','country':'Nueva Zelanda','source':'Reserve Bank of New Zealand','sourceUrl':'https://www.rbnz.govt.nz/news-and-events/how-we-release-information/ocr-decision-dates-and-financial-stability-report-dates-to-feb-2028'},
+ {'economyId':'ch','currency':'CHF','date':'2026-12-10T08:30:00Z','event':'SNB · evaluación monetaria y rueda de prensa','country':'Suiza','source':'Swiss National Bank','sourceUrl':'https://www.snb.ch/en/services-events/digital-services/event-schedule'},
+ {'economyId':'eu','currency':'EUR','date':'2026-12-17T13:15:00Z','event':'BCE · decisión y rueda de prensa','country':'Eurozona','source':'European Central Bank','sourceUrl':'https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html'},
+ {'economyId':'de','currency':'EUR','date':'2026-12-17T13:15:00Z','event':'BCE · decisión y rueda de prensa','country':'Eurozona','source':'European Central Bank','sourceUrl':'https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html'},
+ {'economyId':'uk','currency':'GBP','date':'2026-12-17T12:00:00Z','event':'BoE · decisión MPC','country':'Reino Unido','source':'Bank of England','sourceUrl':'https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates'},
+ {'economyId':'jp','currency':'JPY','date':'2026-12-18T03:00:00Z','event':'BoJ · decisión de política monetaria','country':'Japón','source':'Bank of Japan','sourceUrl':'https://www.boj.or.jp/en/mopo/mpmsche_minu/'},
+)
+
 def get(url,params=None,method='get'):
  r=requests.request(method,url,params=params or {},headers=HEADERS,timeout=TIMEOUT); r.raise_for_status(); return r
 
@@ -231,13 +247,50 @@ def update_te(feed):
   feed['economicCalendar']={"updated":datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),
    "events":[],"source":"Trading Economics calendar","dataStatus":"UNAVAILABLE · no verified calendar rows"}
 
+def update_central_bank_calendar(feed):
+ now=datetime.now(timezone.utc)
+ previous=(feed.get('economicCalendar') or {}).get('events') or []
+ official=[dict(x,actual='',forecast='',previous='',importance=3) for x in CENTRAL_BANK_EVENTS if datetime.fromisoformat(x['date'].replace('Z','+00:00')) >= now-timedelta(days=2)]
+ # Mantiene las publicaciones macro ya presentes y sustituye sólo el calendario
+ # de decisiones con la versión oficial, sin duplicar eventos.
+ other=[x for x in previous if 'economyId' in x and not str(x.get('event','')).lower().startswith(('fed ·','bce ·','boe ·','boj ·','snb ·','rba ·','rbnz ·','boc ·'))]
+ merged={}
+ for event in other+official:
+  merged[(event.get('economyId'),event.get('date'),event.get('event'))]=event
+ events=sorted(merged.values(),key=lambda x:(str(x.get('date') or ''),-int(x.get('importance') or 0)))
+ feed['economicCalendar']={
+  'updated':now.strftime('%d/%m/%Y %H:%M UTC'), 'events':events,
+  'source':'Calendarios oficiales de bancos centrales + calendario macro cuando está disponible',
+  'dataStatus':'CALENDARIO OFICIAL · decisiones y ruedas de prensa con fuente enlazada'}
+ for eco in feed.get('economies',{}).values():
+  candidates=[x for x in official if x['economyId']==eco.get('id')]
+  if candidates:
+   event=min(candidates,key=lambda x:x['date'])
+   eco.setdefault('rates',{})['nextMeeting']=event['date'][:10]
+
+def normalize_central_bank_history(feed):
+ for eco in feed.get('economies',{}).values():
+  conference=eco.get('conference') or {}
+  history=list(conference.get('history') or [])
+  current={k:conference.get(k) for k in ('date','title','tone','summary','keyPoints')}
+  if current.get('date') and current.get('title') and not any(x.get('date')==current['date'] and x.get('title')==current['title'] for x in history):
+   history.insert(0,current)
+  if history: conference['history']=history[:3]
+  eco['conference']=conference
+  rates=eco.setdefault('rates',{})
+  # Nunca presentar porcentajes guardados sin proveedor, URL y fecha UTC.
+  required=('expectationsUpdated','expectationsSource','expectationsUrl')
+  if not all(rates.get(k) for k in required):
+   rates.pop('expectations',None)
+   rates['expectationsStatus']='UNAVAILABLE · falta proveedor fechado de expectativas de mercado'
+
 def ensure_slots(feed):
  for eco in feed.get('economies',{}).values():
   b=eco.setdefault('bonds',{}); old={x.get('term'):x for x in b.get('tenors',[])}
   b['tenors']=[old.get(t,{'term':t,'yield':'','change':'','isKey':t in ('2Y','10Y'),'note':'No hay benchmark exacto conectado; no se interpola.'}) for t in ['3M','1Y','2Y','5Y','10Y','20Y','30Y']]
 
 def main():
- feed=load();update_us(feed);update_treasury(feed);update_te(feed);ensure_slots(feed);update_risk(feed)
+ feed=load();update_us(feed);update_treasury(feed);update_te(feed);update_central_bank_calendar(feed);normalize_central_bank_history(feed);ensure_slots(feed);update_risk(feed)
  enrich_feed(feed)
  stamp=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC');feed['version']=6;feed['updated']=stamp;feed['automation']={'updatedAt':stamp,'runner':'GitHub Actions / update_feed.py','intervalMinutes':15,'notes':['Mercado/Risk-On-Off se refresca cada 15 min cuando Yahoo responde; todos los activos muestran 1D/5S/21S.','Indicadores macro solo cambian cuando se publica un nuevo dato.','Las curvas usan benchmarks reales disponibles; no se interpolan silenciosamente.','COT es semanal; opciones usan gamma proxy; dark pools/OTC son datos agregados y con retraso.']};write(feed);print('Feed actualizado',stamp)
 
