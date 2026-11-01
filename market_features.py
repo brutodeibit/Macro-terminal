@@ -2401,3 +2401,4 @@ def update_risk(feed):
   "coverage":{"totalAssets":len(data),"windows":["1D","5S","21S"],"symbols":[x["symbol"] for x in data]}}
 
 
+
