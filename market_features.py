@@ -2245,7 +2245,7 @@ def update_markets_rotation(feed):
 
 def update_global_markets(feed):
  regions={
-  "ASIA":[("Hong Kong · Hang Seng","^HSI"),("Japón · Nikkei 225","^N225"),("Corea del Sur · KOSPI","^KS11"),("China continental · Shanghai Composite","000001.SS"),("Taiwán · TAIEX","^TWII")],
+  "ASIA":[("Hong Kong · Hang Seng","^HSI"),("Japón · Nikkei 225","^N225"),("Corea del Sur · KOSPI","^KS11"),("China continental · Shanghai Composite","000001.SS"),("Taiwán · TAIEX","^TWII"),("India · Nifty 50","^NSEI")],
   "EUROPA":[("STOXX Europe 600","^STOXX"),("Alemania · DAX","^GDAXI"),("Reino Unido · FTSE 100","^FTSE"),("Francia · CAC 40","^FCHI"),("España · IBEX 35","^IBEX")]
  }
  out={}
