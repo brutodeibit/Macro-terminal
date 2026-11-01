@@ -743,7 +743,7 @@
  return age>=-86400000&&age<=maxAgeDays*86400000;
 }
         function expectationLabel(data){
-            if(!expectationsAreFresh(data))return {label:'Expectativas de tipos no disponibles',cls:'bias-flat'};
+            if(!expectationsAreFresh(data))return {label:'',cls:'bias-flat'};
             const ex=data?.rates?.expectations||[];
             let up=0,hold=0,down=0;
             ex.forEach(e=>{
@@ -1342,7 +1342,7 @@ renderDarkPoolSection=function(){
  return html;
 };
 
-function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
+function fmtCompactMoney(v){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); if(!Number.isFinite(n)) return '—'; const a=Math.abs(n); const sign=n<0?'-':''; if(a>=1e9) return sign+(a/1e9).toFixed(2)+'B'; if(a>=1e6) return sign+(a/1e6).toFixed(1)+'M'; if(a>=1e3) return sign+(a/1e3).toFixed(0)+'K'; return sign+a.toFixed(0); }
 
         function fmtPct(v,d=2){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(d)+'%':'—'; }
         function fmtNum(v,d=2){ if(v===null||v===undefined||v==='')return '—'; const n=Number(v); return Number.isFinite(n)?n.toFixed(d):'—'; }
@@ -1357,8 +1357,8 @@ function fmtCompactMoney(v){ const n=Number(v); if(!Number.isFinite(n)) return '
             const rows=all.map(d=>{ const code=d.id==='us'?'USD':d.id==='eu'?'EUR':d.id==='uk'?'GBP':d.id==='jp'?'JPY':d.id==='au'?'AUD':d.id==='nz'?'NZD':d.id==='ca'?'CAD':'CHF'; const m=fx.currencies?.[code]||{}; return {id:d.id,code,name:d.name,pol:macroInterpretation(d).score,rate:parseRate(d.rates?.official),y2:parseRate((d.bonds?.tenors||[]).find(x=>x.term==='2Y')?.yield),real:parseRate(d.rates?.real),tr3:nval(m.change3s),tr5:nval(m.change5s),tr21:nval(m.change21s),tytd:nval(m.changeYtd)}; });
             const by=Object.fromEntries(rows.map(x=>[x.code,x]));
             const diff=(x,y)=>x===null||x===undefined||y===null||y===undefined?0:x-y;
-            function score(a,b){ const A=by[a],B=by[b]; if(!A||!B) return 0; let v=0.95*(A.pol-B.pol)+0.75*((A.y2||0)-(B.y2||0))+0.45*((A.real||0)-(B.real||0))+0.32*diff(A.tr5,B.tr5)+0.14*diff(A.tr21,B.tr21); const regime=fxRiskRegime(); const safe={CHF:0.42,JPY:0.34}; if(regime<0){if(safe[a])v+=safe[a];if(safe[b])v-=safe[b];}else if(regime>0){if(safe[a])v-=safe[a]*0.45;if(safe[b])v+=safe[b]*0.45;} return v; }
-            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); const safeHaven=(c==='CHF'||c==='JPY'); const regime=fxRiskRegime(); return {...x,score:sc,label:fxBiasLabel(sc),safeHaven,regime,defensiveNote:safeHaven?(regime<0?'Prima defensiva activa':regime>0?'Prima refugio reducida':'Sin prima refugio confirmada'):'—'};});
+            function score(a,b){ const A=by[a],B=by[b]; if(!A||!B) return 0; const finite=(x,y)=>Number.isFinite(x)&&Number.isFinite(y)?x-y:0; return 0.95*finite(A.pol,B.pol)+0.75*finite(A.y2,B.y2)+0.45*finite(A.real,B.real)+0.32*diff(A.tr5,B.tr5)+0.14*diff(A.tr21,B.tr21); }
+            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); const safeHaven=(c==='CHF'||c==='JPY'); const regime=fxRiskRegime(); const relative=Number.isFinite(x?.tr5)&&Number.isFinite(by.USD?.tr5)?x.tr5-by.USD.tr5:null; return {...x,score:sc,label:fxBiasLabel(sc),safeHaven,regime,defensiveNote:safeHaven?(regime<0&&relative>0?'Fortaleza relativa observada en aversión al riesgo':regime<0&&relative<0?'El precio no confirma demanda defensiva':'Sin confirmación defensiva en esta ventana'):'—'};});
             const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD']; const matrix=codes.map(base=>({base,cols:codes.map(q=>base===q?null:score(base,q))}));
             return {updated:fx.updated||'—',rows:vsUsd,matrix};
         }
@@ -1692,7 +1692,7 @@ function renderContent() {
                                     <div class="text-2xl font-black text-white mt-0.5">${data.rates.real}</div>
                                 </div>
                             </div>
-                            ${expFresh ? `<div class="text-xs font-medium text-gray-400 mb-2">Expectativas de mercado · próxima reunión (${esc(data.rates.nextMeeting||'—')})</div><div class="space-y-0.5">${expHtml}</div>` : `<div class="text-xs text-gray-500 mt-2">No se muestra pricing de mercado hasta recibir una fuente fechada y trazable.</div>`}
+                            ${expFresh ? `<div class="text-xs font-medium text-gray-400 mb-2">Expectativas de mercado · próxima reunión (${esc(data.rates.nextMeeting||'—')})</div><div class="space-y-0.5">${expHtml}</div>` : ''}
                         </div>
                     </div>
 

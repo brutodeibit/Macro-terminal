@@ -131,8 +131,7 @@ jobs:
           assert "d.id!=='de'" in js, 'FX comparator must not let Germany overwrite the Euro Area currency row'
           assert "fmtNum(shortBp,1)+' pb'" in js, 'Weekly FX radar must display yield changes as basis points, not percent'
           assert "function expectationsAreFresh(data,maxAgeDays=7)" in js, 'Rate expectations need a verifiable freshness timestamp'
-          assert "Expectativas de tipos no disponibles" in js, 'The UI must not present stale market-implied probabilities as current'
-          assert "No se muestra pricing de mercado hasta recibir una fuente fechada y trazable." in js, 'Unverified market pricing must stay hidden'
+          assert "if(!expectationsAreFresh(data))return {label:'',cls:'bias-flat'}" in js, 'Unverified market pricing must stay hidden'
           source=Path('market_features.py').read_text(encoding='utf-8')
           assert 't[target]=round(raw*100,2) if raw is not None else None' in source, 'Bond yield changes are not normalized to basis points'
           assert "SIN DATO VÁLIDO" in js, 'Fear & Greed invalid/missing score must not display as zero'
