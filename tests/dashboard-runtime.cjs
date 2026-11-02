@@ -4,6 +4,9 @@ const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=
 const element=()=>({innerHTML:'',textContent:'',className:'',classList:{add(){},remove(){}},querySelectorAll:()=>[]});
 const ctx={console,window:{addEventListener(){}},document:{getElementById:element,querySelector:element,querySelectorAll:()=>[]},localStorage:{getItem:()=>null,setItem(){}},setTimeout(){},setInterval(){},location:{protocol:'https:'}};
 vm.createContext(ctx); for(const script of scripts)vm.runInContext(script,ctx);
+assert.equal(vm.runInContext('__optNum(null)',ctx),null);
+assert.equal(vm.runInContext("__optNum('')",ctx),null);
+assert.equal(vm.runInContext('__optNum(0)',ctx),0);
 assert.equal(vm.runInContext("parseRate('3.75–4.00%')",ctx),3.875);
 assert.equal(vm.runInContext("parseRate('-0.25%')",ctx),-.25);
 for(const [score,expected] of [[null,0],[50,0],[35,-1],[65,1]]){
