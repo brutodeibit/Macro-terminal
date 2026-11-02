@@ -2,6 +2,7 @@
 """MacroTerminal feed updater: free-first, conservative and non-destructive."""
 from __future__ import annotations
 import json, os, re
+from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,21 @@ CENTRAL_BANK_EVENTS=(
  {'economyId':'uk','currency':'GBP','date':'2026-12-17T12:00:00Z','event':'BoE · decisión MPC','country':'Reino Unido','source':'Bank of England','sourceUrl':'https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates'},
  {'economyId':'jp','currency':'JPY','date':'2026-12-18T03:00:00Z','event':'BoJ · decisión de política monetaria','country':'Japón','source':'Bank of Japan','sourceUrl':'https://www.boj.or.jp/en/mopo/mpmsche_minu/'},
 )
+
+# Official publication endpoints are deliberately kept separate from the meeting
+# calendar.  A calendar date is not a released decision.  The collector only
+# promotes an item to the three-meeting history after an official publication
+# is actually visible and retains the last valid history on outages.
+CENTRAL_BANK_PUBLICATIONS={
+ 'us':{'bank':'Federal Reserve','feed':'https://www.federalreserve.gov/feeds/press_all.xml','match':r'Federal Reserve issues FOMC statement|FOMC statement|implementation note issued'},
+ 'eu':{'bank':'European Central Bank','feed':'https://www.ecb.europa.eu/rss/press.html','match':r'monetary policy decisions|monetary policy statement'},
+ 'uk':{'bank':'Bank of England','feed':'https://www.bankofengland.co.uk/rss/news','match':r'Bank Rate|Monetary Policy Report|Monetary Policy Summary'},
+ 'ca':{'bank':'Bank of Canada','feed':'https://www.bankofcanada.ca/feed/','match':r'policy interest rate|Monetary Policy Report'},
+ 'au':{'bank':'Reserve Bank of Australia','feed':'https://www.rba.gov.au/rss/rss-cb.xml','match':r'monetary policy decision|Statement by the Reserve Bank Board'},
+ 'nz':{'bank':'Reserve Bank of New Zealand','feed':'https://www.rbnz.govt.nz/rss.xml','match':r'Official Cash Rate|Monetary Policy Statement'},
+ 'ch':{'bank':'Swiss National Bank','feed':'https://www.snb.ch/public/en/rss/news','match':r'monetary policy assessment|SNB maintains|SNB lowers|SNB raises'},
+ 'jp':{'bank':'Bank of Japan','feed':'https://www.boj.or.jp/en/rss/whatsnew.xml','match':r'Statement on Monetary Policy|Monetary Policy Meeting'},
+}
 
 def get(url,params=None,method='get'):
  r=requests.request(method,url,params=params or {},headers=HEADERS,timeout=TIMEOUT); r.raise_for_status(); return r
@@ -283,6 +299,78 @@ def update_central_bank_calendar(feed):
    event=min(candidates,key=lambda x:x['date'])
    eco.setdefault('rates',{})['nextMeeting']=event['date'][:10]
 
+def _publication_date(item):
+ for key in ('published','updated','pubDate','date'):
+  raw=item.get(key)
+  if not raw: continue
+  try:
+   if isinstance(raw,datetime): return raw.astimezone(timezone.utc)
+   text=str(raw).replace('Z','+00:00')
+   return datetime.fromisoformat(text).astimezone(timezone.utc)
+  except Exception:
+   try:return parsedate_to_datetime(str(raw)).astimezone(timezone.utc)
+   except Exception:pass
+ return None
+
+def _official_feed_items(url):
+ """Small tolerant Atom/RSS reader; intentionally returns no rows on format changes."""
+ xml=get(url).text
+ soup=BeautifulSoup(xml,'xml')
+ entries=soup.find_all(['entry','item'])
+ result=[]
+ for entry in entries[:30]:
+  title=entry.find('title'); title=title.get_text(' ',strip=True) if title else ''
+  link=entry.find('link'); href=''
+  if link:
+   href=link.get('href') or link.get_text(' ',strip=True)
+  if not href:
+   guid=entry.find('guid'); href=guid.get_text(' ',strip=True) if guid else ''
+  summary=entry.find(['summary','description','content'])
+  summary=BeautifulSoup(summary.get_text(' ',strip=True) if summary else '','html.parser').get_text(' ',strip=True)
+  rawdate=entry.find(['published','updated','pubDate','date'])
+  result.append({'title':title,'link':href,'summary':summary,'published':rawdate.get_text(' ',strip=True) if rawdate else ''})
+ return result
+
+def update_central_bank_publications(feed):
+ economies=feed.get('economies',{})
+ now=datetime.now(timezone.utc)
+ for eid,cfg in CENTRAL_BANK_PUBLICATIONS.items():
+  eco=economies.get(eid)
+  if not isinstance(eco,dict):continue
+  try:
+   candidates=[]
+   for item in _official_feed_items(cfg['feed']):
+    published=_publication_date(item)
+    title=str(item.get('title') or '')
+    if not published or published>now+timedelta(hours=6) or not re.search(cfg['match'],title,re.I):continue
+    candidates.append((published,item))
+   if not candidates:continue
+   published,item=max(candidates,key=lambda x:x[0])
+   conference=eco.setdefault('conference',{})
+   history=list(conference.get('history') or [])
+   record={'date':published.strftime('%Y-%m-%d %H:%M UTC'),'title':item['title'],'tone':'Sin clasificación automática',
+           'summary':(item.get('summary') or 'Comunicado oficial publicado; requiere lectura del texto original.')[:700],
+           'keyPoints':[],'sourceUrl':item.get('link') or cfg['feed'],'source':cfg['bank'],'publicationType':'Comunicado oficial'}
+   # Identidad por URL, con fecha+título como respaldo cuando el RSS no incluye URL.
+   identity=(record['sourceUrl'],record['date'],record['title'])
+   old={(str(x.get('sourceUrl') or ''),str(x.get('date') or ''),str(x.get('title') or '')) for x in history if isinstance(x,dict)}
+   if identity not in old:
+    history.insert(0,record)
+   history=sorted([x for x in history if isinstance(x,dict)],key=lambda x:str(x.get('date') or ''),reverse=True)[:3]
+   conference['history']=history
+   if history:
+    latest=history[0]
+    # A newly published official item may replace the headline, but never gets
+    # an invented hawkish/dovish label or analyst interpretation.
+    conference.update({k:latest.get(k) for k in ('date','title','tone','summary','keyPoints','sourceUrl')})
+   conference['lastOfficialCheck']=now.strftime('%d/%m/%Y %H:%M UTC')
+   conference['sourceStatus']='OFICIAL · RSS/Atom del banco central'
+  except Exception as e:
+   # Preserve history and make the failure inspectable without polluting cards.
+   eco.setdefault('conference',{})['lastOfficialCheck']=now.strftime('%d/%m/%Y %H:%M UTC')
+   eco['conference']['sourceStatus']='Último comunicado válido retenido; fuente oficial no respondió'
+   print('CENTRAL BANK PUBLICATION',eid,type(e).__name__,str(e)[:160])
+
 def normalize_central_bank_history(feed):
  for eco in feed.get('economies',{}).values():
   conference=eco.get('conference') or {}
@@ -305,7 +393,7 @@ def ensure_slots(feed):
   b['tenors']=[old.get(t,{'term':t,'yield':'','change':'','isKey':t in ('2Y','10Y'),'note':'No hay benchmark exacto conectado; no se interpola.'}) for t in ['3M','1Y','2Y','5Y','10Y','20Y','30Y']]
 
 def main():
- feed=load();update_us(feed);update_treasury(feed);update_te(feed);update_central_bank_calendar(feed);normalize_central_bank_history(feed);ensure_slots(feed);update_risk(feed)
+ feed=load();update_us(feed);update_treasury(feed);update_te(feed);update_central_bank_calendar(feed);update_central_bank_publications(feed);normalize_central_bank_history(feed);ensure_slots(feed);update_risk(feed)
  enrich_feed(feed)
  stamp=datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC');feed['version']=6;feed['updated']=stamp;feed['automation']={'updatedAt':stamp,'runner':'GitHub Actions / update_feed.py','intervalMinutes':15,'notes':['Mercado/Risk-On-Off se refresca cada 15 min cuando Yahoo responde; todos los activos muestran 1D/5S/21S.','Indicadores macro solo cambian cuando se publica un nuevo dato.','Las curvas usan benchmarks reales disponibles; no se interpolan silenciosamente.','COT es semanal; opciones usan gamma proxy; dark pools/OTC son datos agregados y con retraso.']};write(feed);print('Feed actualizado',stamp)
 

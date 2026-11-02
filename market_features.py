@@ -599,7 +599,9 @@ def update_fx(feed):
    if c in ("JPY","CAD","CHF"):
     for k,v in list(vals.items()):
      if v is not None:vals[k]=-v
-   vals.update({"pair":sym,"last":q[-1],"change1w":vals["change5s"],"change15d":(q[-1]/q[-16]-1)*100,"change1m":vals["change21s"],"source":"Yahoo Finance public FX quote"})
+   stamps=(r or {}).get("timestamp") or []
+   observed=datetime.fromtimestamp(float(stamps[-1]),tz=timezone.utc).date().isoformat() if stamps else None
+   vals.update({"pair":sym,"last":q[-1],"change1w":vals["change5s"],"change15d":(q[-1]/q[-16]-1)*100,"change1m":vals["change21s"],"observedAt":observed,"source":"Yahoo Finance public FX quote"})
    if c in ("JPY","CAD","CHF") and vals.get("change15d") is not None:vals["change15d"]=-vals["change15d"]
    out[c]=vals
   except Exception as e:print("FX",c,type(e).__name__,str(e)[:120])
@@ -610,7 +612,9 @@ def update_fx(feed):
    ytd=yahoo_ytd(sym) or {}
    vals={"change1d":(q[-1]/q[-2]-1)*100,"change3s":(q[-1]/q[-4]-1)*100,"change5s":(q[-1]/q[-6]-1)*100,
          "change21s":(q[-1]/q[-22]-1)*100,"changeYtd":ytd.get("changeYtd")}
-   vals.update({"pair":"DXY proxy","last":q[-1],"change1w":vals["change5s"],"change15d":(q[-1]/q[-16]-1)*100,"change1m":vals["change21s"],
+   stamps=(r or {}).get("timestamp") or []
+   observed=datetime.fromtimestamp(float(stamps[-1]),tz=timezone.utc).date().isoformat() if stamps else None
+   vals.update({"pair":"DXY proxy","last":q[-1],"change1w":vals["change5s"],"change15d":(q[-1]/q[-16]-1)*100,"change1m":vals["change21s"],"observedAt":observed,
                 "source":"Yahoo Finance · DXY basket proxy","note":"DXY aproxima el USD frente a una cesta; no equivale a una cotización bilateral."})
    out["USD"]=vals
  except Exception as e:print("FX USD DXY",type(e).__name__,str(e)[:120])
@@ -618,7 +622,8 @@ def update_fx(feed):
   out["USD"]={"pair":"DXY proxy","change1d":None,"change3s":None,"change5s":None,"change21s":None,"changeYtd":None,
               "change1w":None,"change15d":None,"change1m":None,"source":"DXY unavailable"}
  feed["fx"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"currencies":out,
-   "method":"Fuerza normalizada frente al USD: 1D, 3S, 5S, 21S y YTD. Para JPY/CAD/CHF se invierte el retorno del par cotizado. USD usa DXY como proxy explícito. Retornos de mercado son confirmación, no causalidad."}
+   "method":"Fuerza normalizada frente al USD: 1D, 3S, 5S, 21S y YTD. Para JPY/CAD/CHF se invierte el retorno del par cotizado. USD usa DXY como proxy explícito. Un retorno con observedAt vencido se excluye del sesgo relativo; los retornos de mercado son confirmación, no causalidad.",
+   "freshnessPolicy":"FX diario: máximo 5 días naturales desde observedAt; macro: cada indicador se invalida según su frecuencia y no se sustituye por cero."}
 
 def cot_rows(dataset,where,limit=260):
  try:
