@@ -873,10 +873,10 @@ def _deribit_options(currency):
    # Individual contracts stay available for the compact chart; strikeMap is cleaner for the main plots.
    cluster_rows=[{"strike":x["strike"],"gex":(1 if x["type"]=="C" else -1)*x["oi"]*(x["gamma"] or 0)*idx*idx*0.01,"oi":x["oi"],"volume":x["volume"],"type":x["type"],"iv":x["iv"]} for x in contracts if x["oi"]>0]
    callwall=max(call_oi.items(),key=lambda x:x[1],default=(None,0));putwall=max(put_oi.items(),key=lambda x:x[1],default=(None,0))
-   strikes=[x["strike"] for x in strike_map];gex_by={x["strike"]:x["gex"] for x in strike_map};cum=0;prev=None;flip=None
+   strikes=[x["strike"] for x in strike_map];gex_by={x["strike"]:x["gex"] for x in strike_map};cum=0;prev=None;crossing=None
    for strike in strikes:
     nxt=cum+gex_by[strike]
-    if prev is not None and ((cum<0<=nxt) or (cum>0>=nxt)):flip=prev;break
+    if prev is not None and ((cum<0<=nxt) or (cum>0>=nxt)):crossing=prev;break
     prev=strike;cum=nxt
    # Max Pain from this expiry's reported OI, not from other maturities.
    payout=[]
@@ -887,7 +887,9 @@ def _deribit_options(currency):
    profiles.append({
     "expiration":exp.date().isoformat(),"daysToExpiry":round(days,3),"bucket":bucket,"spot":idx,
     "ivAtm":iv_atm,"atmDelta":atm_delta,"atmGamma":atm_gamma,"atmVega":atm_vega,
-    "gammaNet":sum(x["gex"] for x in strike_map),"gammaFlip":flip,"maxPain":max_pain,
+    # A cumulative crossing by strike is not a zero-gamma *price*.  Keep it
+    # diagnostically but never present it as Gamma Flip to the user.
+    "gammaNet":sum(x["gex"] for x in strike_map),"gammaFlip":None,"zeroGamma":None,"cumulativeStrikeCrossing":crossing,"gammaFlipStatus":"Unavailable: per-strike OI does not determine a spot-price gamma root","maxPain":max_pain,
     "callWall":callwall[0],"putWall":putwall[0],"callWallOi":callwall[0],"putWallOi":putwall[0],
     "callOi":sum(call_oi.values()),"putOi":sum(put_oi.values()),
     "callVolume":sum(call_vol.values()),"putVolume":sum(put_vol.values()),
