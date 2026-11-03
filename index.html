@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root{--ink:#e7edf6;--muted:#8d9bb0;--panel:#101722;--panel-2:#0b111a;--line:#243247;--accent:#72a7ff;--cyan:#49d6d4}
+        body.theme-warm{--ink:#f2e8d8;--muted:#b7a78f;--accent:#d8a64a;--cyan:#d7b36a;background:radial-gradient(900px 460px at 82% -8%,rgba(170,112,36,.24),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(119,83,36,.13),transparent 68%),#15110d}
+        body.theme-carbon{--ink:#e3ebe8;--muted:#96a8a5;--accent:#58c7b4;--cyan:#76d6ca;background:radial-gradient(900px 460px at 82% -8%,rgba(32,118,103,.22),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(41,70,75,.18),transparent 68%),#08100f}
         body { background:radial-gradient(900px 460px at 82% -8%,rgba(49,92,158,.22),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(17,119,132,.11),transparent 68%),#070b12; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing:.005em; }
         h1,h2,h3,.font-black { letter-spacing:-.025em; }
         .card { background:linear-gradient(145deg,rgba(19,28,42,.94),rgba(10,16,25,.96)); border: 1px solid rgba(58,76,103,.55); box-shadow:0 12px 32px rgba(0,0,0,.14); }
@@ -94,6 +96,11 @@
                 <a href="statistical-monitor.html" class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
                     <i class="fa-solid fa-chart-column mr-1"></i> Monitor estadístico
                 </a>
+                <div class="flex items-center gap-1 text-[10px] bg-gray-900 border border-gray-800 px-1.5 py-1 rounded-full" aria-label="Apariencia">
+                    <button onclick="setTheme('midnight')" class="px-2 py-1 rounded-full hover:bg-slate-700">Azul noche</button>
+                    <button onclick="setTheme('warm')" class="px-2 py-1 rounded-full hover:bg-amber-900/40">Grafito dorado</button>
+                    <button onclick="setTheme('carbon')" class="px-2 py-1 rounded-full hover:bg-emerald-900/40">Carbón</button>
+                </div>
                 <div class="flex items-center gap-2 text-xs bg-gray-900 border border-gray-800 text-gray-400 px-3 py-1.5 rounded-full w-fit">
                     <span id="feedDot" class="w-2 h-2 rounded-full bg-yellow-500"></span>
                     <span id="feedStatus">Feed automático · 15 min</span>
@@ -1342,7 +1349,7 @@ renderDarkPoolSection=function(){
   host.dataset.plotlyReady='1';
   __loadPlotly().then(P=>{
    const base=ps.map(x=>({ts:Number(x.ts),price:Number(x.price)})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)).sort((a,b)=>a.ts-b.ts);
-   const prints=(a.prints||[]).filter(p=>p.realPrint===true&&p.price!=null&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:'UNKNOWN',size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
+   const prints=(a.prints||[]).filter(p=>p.realPrint===true&&p.price!=null&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:String(p.side||'UNKNOWN').toUpperCase(),size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
    const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:3.4},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
    let annotations=[];
    if(prints.length){
@@ -1351,7 +1358,7 @@ renderDarkPoolSection=function(){
     const offsets=[[50,-55],[-55,55],[65,45],[-65,-45],[85,-20],[-85,20]];
     annotations=largest.slice(0,6).map((p,i)=>({x:new Date(p.ts*1000),y:p.price,xref:'x',yref:'y',text:'Print '+fmtCompactMoney(p.notional),showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#94a3b8',ax:offsets[i][0],ay:offsets[i][1],bgcolor:'rgba(15,23,42,0.65)',bordercolor:'rgba(148,163,184,0.45)',borderwidth:1,borderpad:3,font:{size:10,color:'#f8fafc'}}));
    }
-   host.replaceChildren();
+   host.replaceChildren();host.style.height='390px';host.style.minHeight='390px';
    P.newPlot(host,trace,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:60,r:20,t:15,b:55},xaxis:{title:'Fecha · selecciona 1S / 1M / 3M',gridcolor:'#1f2937',tickfont:{size:11,color:'#cbd5e1'},rangeslider:{visible:true,thickness:.08},rangeselector:{bgcolor:'#111827',activecolor:'#334155',font:{color:'#e5e7eb',size:10},buttons:[{count:7,label:'1S',step:'day',stepmode:'backward'},{count:1,label:'1M',step:'month',stepmode:'backward'},{count:3,label:'3M',step:'month',stepmode:'backward'},{step:'all',label:'Todo'}]}},yaxis:{title:'Precio',gridcolor:'#1f2937',tickfont:{size:11,color:'#e5e7eb'},tickformat:',.2f',automargin:true},annotations:annotations,hovermode:'closest'}, {responsive:true,displaylogo:false,scrollZoom:true});
   }).catch(()=>{});
  },40);
@@ -1392,6 +1399,9 @@ function renderFxComparator(){
         function renderDarkPoolSection(){
  const t=macroDatabase.__darkPoolPrints||{assets:{}},assets=t.assets||{},keys=Object.keys(assets),selected=(window.__darkPoolTicker&&assets[window.__darkPoolTicker])?window.__darkPoolTicker:(keys[0]||'SPY');window.__darkPoolTicker=selected;
  const a=assets[selected]||{ticker:selected,lastPrice:null,priceSeries:[],prints:[],venueClusters:[],dailyOffExchange:{}},ps=a.priceSeries||[],dpx=a.dailyOffExchange||{};
+ // The source/methodology is shown in the data-status cards; do not repeat a
+ // yellow technical warning below the venue concentration table.
+ a.note='';
  const W=980,H=390,L=60,R=80,T=28,B=58,lo=ps.length?Math.min(...ps.map(x=>+x.price)):0,hi=ps.length?Math.max(...ps.map(x=>+x.price)):1,pad=(hi-lo||1)*.12,y0=lo-pad,y1=hi+pad,minTs=ps.length?Math.min(...ps.map(p=>+p.ts)):0,maxTs=ps.length?Math.max(...ps.map(p=>+p.ts)):1,span=Math.max(maxTs-minTs,1);
  const x=ts=>L+(+ts-minTs)*(W-L-R)/span,y=price=>H-B-(+price-y0)/(y1-y0)*(H-T-B);
  const pts=ps.map(p=>x(p.ts).toFixed(1)+','+y(p.price).toFixed(1)).join(' ');
@@ -1413,7 +1423,7 @@ function renderFxComparator(){
   venueRows.push({venue:'ATS · FINRA semanal',shares:Number(finraAsset.atsShares)||0,kind:'FINRA'},{venue:'OTC · FINRA semanal',shares:Number(finraAsset.otcShares)||0,kind:'FINRA'});
  }
  const venueDenom=Math.max(Number(a.shareCount)||0,Number(finraAsset?.totalOffExchange)||0,1);
- const vc=venueRows.map(v=>'<div class="grid grid-cols-[135px_1fr_95px] gap-2 items-center text-xs"><b class="text-white">'+esc(v.venue)+'</b><div class="h-2 bg-gray-900 rounded"><div class="h-full '+(v.kind==='FINRA'?'bg-violet-400/80':'bg-blue-400/80')+' rounded" style="width:'+Math.min(100,(v.shares/venueDenom)*100)+'%"></div></div><span class="text-right text-gray-300">'+v.shares.toLocaleString('es-ES')+'</span></div>').join('');
+ const vc=venueRows.map(v=>'<div class="grid grid-cols-[135px_1fr_95px] gap-2 items-center text-xs"><b class="text-white">'+esc(v.venue)+'<span class="block text-[9px] font-normal text-gray-500">'+(v.kind==='FINRA'?esc(finraAsset?.weekStart||finraAsset?.lastReportedDate||'semana N/D'):'prints individuales')+'</span></b><div class="h-2 bg-gray-900 rounded"><div class="h-full '+(v.kind==='FINRA'?'bg-violet-400/80':'bg-blue-400/80')+' rounded" style="width:'+Math.min(100,(v.shares/venueDenom)*100)+'%"></div></div><span class="text-right text-gray-300">'+v.shares.toLocaleString('es-ES')+'</span></div>').join('');
  const darkAgg=macroDatabase.__darkPools||{},darkRadar=macroDatabase.__darkFlowRadar||{};
  const finraMarkets=(darkAgg.markets||[]).filter(Boolean);
  const radarSignals=(darkRadar.signals||[]).slice(0,12);
@@ -1507,7 +1517,23 @@ function renderCryptoBondSection(){
  setTimeout(()=>{const host=document.getElementById('crypto-etf-flow-chart');if(!host||host.dataset.ready)return;host.dataset.ready='1';__loadPlotly().then(P=>{const rows=[...etfPlotRows(btcEtfFlow,'BTC'),...etfPlotRows(ethEtfFlow,'ETH')];const traces=['BTC','ETH'].map(asset=>{const r=rows.filter(x=>x.asset===asset);return {type:'bar',name:asset,x:r.map(x=>x.date),y:r.map(x=>x.value),marker:{color:r.map(x=>x.value>=0?(asset==='BTC'?'#34d399':'#60a5fa'):'#fb7185')},hovertemplate:asset+' %{x}<br>Flujo neto %{y:.1f} M$<extra></extra>'};});P.newPlot(host,traces,{barmode:'group',paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:10},margin:{l:48,r:12,t:18,b:42},xaxis:{type:'category',tickfont:{size:9},gridcolor:'#263244'},yaxis:{title:'M USD',gridcolor:'#263244',zerolinecolor:'#64748b'},legend:{orientation:'h',y:1.16},hovermode:'x unified',uirevision:'etf-flows'}, {responsive:true,displaylogo:false,scrollZoom:true});}).catch(()=>{});},40);
  return '<section id="sec-sentiment" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">MERCADO TRADICIONAL</div><h2 class="text-xl font-black text-white mt-1">SENTIMIENTO · FEAR & GREED</h2><p class="text-sm text-gray-400 mt-1">CNN Fear & Greed y AAII son dos lecturas complementarias del mismo mercado; no son el mismo indicador.</p></div><span class="mini-pill">'+esc(fg.sourceStatus||fg.updated||'—')+'</span></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5"><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">CNN FEAR & GREED INDEX</div><b class="text-white text-sm">Régimen de sentimiento</b></div><span class="mini-pill">REAL / DAILY</span></div><div class="grid grid-cols-1 gap-3 items-center mt-3"><div class="relative mt-2"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg);opacity:'+(Number.isFinite(score)?'1':'0')+'"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><b class="text-3xl text-white">'+(Number.isFinite(score)?score.toFixed(0):'—')+'</b><div class="text-xs text-gray-400 uppercase">'+esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')+'</div></div></div>'+'</div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]"><div>Ahora<br><b>'+fmtNum(fg.score,0)+'</b></div><div>Ayer<br><b>'+fmtNum(fg.previous_close,0)+'</b></div><div>1 semana<br><b>'+fmtNum(fg.previous_1_week,0)+'</b></div><div>1 mes<br><b>'+fmtNum(fg.previous_1_month,0)+'</b></div></div>'+aaiiInline+'<div class="mt-4 h-16 flex items-end gap-[2px]">'+histBars+'</div><div class="mt-3"><div class="text-[9px] uppercase tracking-wider text-gray-400 mb-1">Histórico semanal · últimos 5 puntos</div>'+weeklyHist+'</div><p class="text-[9px] text-gray-500 mt-1">0–24 Extreme Fear · 25–44 Fear · 45–55 Neutral · 56–74 Greed · 75–100 Extreme Greed.</p></div><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">AAII · HISTÓRICO SEMANAL</div><b class="text-white text-sm">Evolución de porcentajes semanales</b></div><span class="mini-pill">REAL / WEEKLY</span></div><div class="space-y-5 mt-5">'+aaiiHistoryTable+'</div>'+breadthMini+'<div class="grid grid-cols-2 gap-3 mt-5"><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ALCISTAS − BAJISTAS</div><b class="'+(Number(aaii.bullBearSpread)>=0?'text-emerald-300':'text-red-300')+'">'+(aaii.bullBearSpread!=null?fmtNum(aaii.bullBearSpread,1)+' pp':'—')+'</b></div><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ÚLTIMA ENCUESTA</div><b>'+esc(aaii.week||aaii.updated||'—')+'</b></div></div></div></div></div><div class="glass rounded-2xl p-5"><div class="flex flex-wrap justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">CRYPTO · COINMARKETCAP</div><h2 class="text-xl font-black text-white mt-1">CRYPTO FEAR & GREED · BTC</h2><p class="text-sm text-gray-400 mt-1">BTC/USD (eje izquierdo) y Fear & Greed 0–100 (eje derecho), sincronizados por fecha.</p></div><div class="grid grid-cols-1 lg:grid-cols-[auto_minmax(360px,1fr)] gap-3 items-stretch"><div class="metric rounded-xl px-4 py-3 min-w-[132px]"><div class="text-[9px] text-gray-500">ÍNDICE ACTUAL</div><b class="text-2xl text-white">'+(crypto.value??'—')+'</b><span class="ml-2 text-sm">'+esc(crypto.classification||'—')+'</span><div class="text-[9px] text-gray-500">Anterior '+(crypto.previous??'—')+'</div></div></div>'+etfFlowPanel+'</div></div><div class="metric rounded-xl p-4 mt-4"><div class="flex justify-between text-[10px] text-gray-500"><span>BTC / USD</span><span>FEAR & GREED · 0–100</span></div><svg viewBox="0 0 980 265" class="block w-full h-[315px] mt-2" role="img" aria-label="BTC USD y CoinMarketCap Fear Greed por fecha"><rect x="56" y="38" width="792" height="48" fill="#22c55e" opacity=".12"/><rect x="56" y="86" width="792" height="49" fill="#84cc16" opacity=".11"/><rect x="56" y="135" width="792" height="48" fill="#f59e0b" opacity=".11"/><rect x="56" y="183" width="792" height="49" fill="#ef4444" opacity=".12"/><path d="M56 38H848M56 86H848M56 135H848M56 183H848M56 232H848" stroke="#475569" stroke-dasharray="3 4"/><path d="M56 38V232M848 38V232" stroke="#64748b"/><text x="2" y="42" fill="#60a5fa" font-size="10">BTC</text><text x="2" y="90" fill="#60a5fa" font-size="10">USD</text><text x="858" y="42" fill="#f59e0b" font-size="10">100</text><text x="858" y="232" fill="#f59e0b" font-size="10">0</text><polyline points="'+btcPts+'" fill="none" stroke="#60a5fa" stroke-width="3.2"/><polyline points="'+fgPts+'" fill="none" stroke="#f59e0b" stroke-width="2.6"/>'+hoverTargets+dots+dates+'</svg><div class="flex flex-wrap gap-x-5 gap-y-1 text-[10px] mt-2"><span class="text-blue-300">● BTC / USD · eje izquierdo</span><span class="text-amber-300">● Fear & Greed · eje derecho</span><span class="text-gray-500">Fondos: Extreme Greed → Extreme Fear</span></div></div><div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">'+cryptoReturns+'</div></div><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA FIJA · ETF MARKET RETURN</div><h2 class="text-xl font-black text-white mt-1">BONOS · RETORNO DE MERCADO</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">'+bonds+'</div></div></section>';
 }
-        function renderGlobalMarkets(){
+/* Crypto chart upgrade: preserve the SVG as a no-JS fallback, then replace it
+   with a zoomable two-axis Plotly chart when the library is available. */
+const __renderCryptoBondLegacy=renderCryptoBondSection;
+renderCryptoBondSection=function(){
+ const html=__renderCryptoBondLegacy();
+ setTimeout(()=>{
+  const svg=document.querySelector('#sec-sentiment svg[aria-label*="BTC USD"]');if(!svg||svg.dataset.plotlyReady)return;
+  const rows=(macroDatabase.__cryptoSentiment?.btcHistory||[]).filter(x=>x&&Number.isFinite(Number(x.price))&&x.date);
+  const fear=rows.filter(x=>Number.isFinite(Number(x.fearGreed))&&Number(x.fearGreed)>=0&&Number(x.fearGreed)<=100);
+  if(rows.length<2)return;
+  svg.dataset.plotlyReady='1';const host=document.createElement('div');host.className='w-full h-[350px] mt-2';svg.replaceWith(host);
+  __loadPlotly().then(P=>P.newPlot(host,[{x:rows.map(x=>x.date),y:rows.map(x=>Number(x.price)),type:'scatter',mode:'lines',name:'BTC / USD',line:{color:'#60a5fa',width:3},hovertemplate:'%{x}<br>BTC $%{y:,.0f}<extra></extra>'},{x:fear.map(x=>x.date),y:fear.map(x=>Number(x.fearGreed)),type:'scatter',mode:'lines+markers',name:'Fear & Greed',yaxis:'y2',line:{color:'#f7b955',width:2.4},marker:{size:5},hovertemplate:'%{x}<br>Fear & Greed %{y:.0f}/100<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:58,r:58,t:25,b:58},xaxis:{type:'date',gridcolor:'#263244',rangeslider:{visible:true,thickness:.08,bgcolor:'#0b111a'}},yaxis:{title:'BTC / USD',gridcolor:'#263244',tickprefix:'$'},yaxis2:{title:'Fear & Greed',range:[0,100],overlaying:'y',side:'right',gridcolor:'#263244'},legend:{orientation:'h',y:1.16},hovermode:'x unified',uirevision:'crypto-fear-greed'}, {responsive:true,displaylogo:false,scrollZoom:true})).catch(()=>{});
+ },60);
+ return html;
+};
+
+function renderGlobalMarkets(){
  const g=macroDatabase.__globalMarkets||{regions:{},updated:'—'},regions=g.regions||{};
  const regionBlock=(name)=>{const arr=regions[name]||[];return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between mb-3"><b class="text-sm text-white">'+name+'</b><span class="mini-pill">1D · 5S · 21S · YTD</span></div><div class="overflow-x-auto"><table class="w-full min-w-[620px] table-fixed"><thead><tr class="text-[9px] text-gray-500 uppercase border-b border-gray-800"><th class="text-left py-2 px-2 w-[40%]">Índice</th><th class="text-right py-2 px-2">Precio</th><th class="text-right py-2 px-2">1D</th><th class="text-right py-2 px-2">5S</th><th class="text-right py-2 px-2">21S</th><th class="text-right py-2 px-2">YTD</th></tr></thead><tbody>'+arr.map(x=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs font-semibold text-white">'+esc(x.name)+'</td><td class="py-2 px-2 text-xs text-right">'+fmtNum(x.last,2)+'</td><td class="py-2 px-2 text-xs text-right '+(x.change1d>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1d)+'</td><td class="py-2 px-2 text-xs text-right '+(x.change1w>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1w)+'</td><td class="py-2 px-2 text-xs text-right '+(x.change1m>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1m)+'</td><td class="py-2 px-2 text-xs text-right">'+fmtPct(x.changeYtd)+'</td></tr>').join('')+'</tbody></table></div></div>';};
  return '<section id="sec-global-markets" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA VARIABLE GLOBAL</div><h2 class="text-xl font-black text-white mt-1">ASIA + EUROPA · MAPA DE MERCADOS</h2><p class="text-sm text-gray-400 mt-1">Cinco referencias por región con precio y variación 1D / 5 sesiones / 21 sesiones.</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+regionBlock('ASIA')+regionBlock('EUROPA')+'</div><div class="text-[9px] text-gray-600">Fuente: Yahoo Finance pública. Las variaciones se calculan sobre cierres disponibles.</div></section>';
@@ -1912,6 +1938,14 @@ function renderContent() {
             if(d) d.className='w-2 h-2 rounded-full '+(ok?'bg-green-500':'bg-yellow-500');
         }
 
+        function setTheme(theme){
+            const body=document.body;
+            body.classList.remove('theme-warm','theme-carbon');
+            if(theme==='warm')body.classList.add('theme-warm');
+            if(theme==='carbon')body.classList.add('theme-carbon');
+            try{localStorage.setItem('macroTerminalTheme',theme);}catch(e){}
+        }
+        try{setTheme(localStorage.getItem('macroTerminalTheme')||'midnight');}catch(e){}
         function manualRefresh(){
             setFeedStatus('Buscando feed…', false);
             loadExternalFeed();
