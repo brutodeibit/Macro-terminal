@@ -60,6 +60,8 @@
         .sentiment-gauge:after{content:'';position:absolute;inset:14px 14px 0;background:#0b1018;border-radius:140px 140px 0 0}
         .sentiment-needle{position:absolute;bottom:7px;left:50%;width:3px;height:62px;background:rgba(248,250,252,.42);transform-origin:50% 100%;z-index:3;border-radius:4px;box-shadow:0 0 5px rgba(255,255,255,.16)} .sentiment-value{position:absolute;z-index:5;left:50%;bottom:20px;transform:translateX(-50%);font-size:30px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none}
         #sec-darkpool .text-amber-300:empty{display:none}
+        #opt-gex-chart,#opt-oi-chart{min-height:500px} #opt-term-chart{min-height:420px}
+        .js-plotly-plot .ytick text,.js-plotly-plot .y2tick text{font-size:14px!important}
     </style>
 </head>
 <body class="flex min-h-screen overflow-hidden">
@@ -1532,8 +1534,8 @@ renderCryptoBondSection=function(){
   const rows=(macroDatabase.__cryptoSentiment?.btcHistory||[]).filter(x=>x&&Number.isFinite(Number(x.price))&&x.date);
   const fear=rows.filter(x=>Number.isFinite(Number(x.fearGreed))&&Number(x.fearGreed)>=0&&Number(x.fearGreed)<=100);
   if(rows.length<2)return;
-  svg.dataset.plotlyReady='1';const host=document.createElement('div');host.className='w-full h-[350px] mt-2';svg.replaceWith(host);
-  __loadPlotly().then(P=>P.newPlot(host,[{x:rows.map(x=>x.date),y:rows.map(x=>Number(x.price)),type:'scatter',mode:'lines',name:'BTC / USD',line:{color:'#60a5fa',width:3},hovertemplate:'%{x}<br>BTC $%{y:,.0f}<extra></extra>'},{x:fear.map(x=>x.date),y:fear.map(x=>Number(x.fearGreed)),type:'scatter',mode:'lines+markers',name:'Fear & Greed',yaxis:'y2',line:{color:'#f7b955',width:2.4},marker:{size:5},hovertemplate:'%{x}<br>Fear & Greed %{y:.0f}/100<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:58,r:58,t:25,b:58},xaxis:{type:'date',gridcolor:'#263244',rangeslider:{visible:true,thickness:.08,bgcolor:'#0b111a'}},yaxis:{title:'BTC / USD',gridcolor:'#263244',tickprefix:'$'},yaxis2:{title:'Fear & Greed',range:[0,100],overlaying:'y',side:'right',gridcolor:'#263244'},legend:{orientation:'h',y:1.16},hovermode:'x unified',uirevision:'crypto-fear-greed'}, {responsive:true,displaylogo:false,scrollZoom:true})).catch(()=>{});
+  svg.dataset.plotlyReady='1';const host=document.createElement('div');host.className='w-full h-[520px] mt-2';host.style.height='520px';svg.replaceWith(host);
+  __loadPlotly().then(P=>P.newPlot(host,[{x:rows.map(x=>x.date),y:rows.map(x=>Number(x.price)),type:'scatter',mode:'lines',name:'BTC / USD',line:{color:'#60a5fa',width:3},hovertemplate:'%{x}<br>BTC $%{y:,.0f}<extra></extra>'},{x:fear.map(x=>x.date),y:fear.map(x=>Number(x.fearGreed)),type:'scatter',mode:'lines+markers',name:'Fear & Greed',yaxis:'y2',line:{color:'#f7b955',width:2.4},marker:{size:5},hovertemplate:'%{x}<br>Fear & Greed %{y:.0f}/100<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:14},margin:{l:85,r:85,t:45,b:75},xaxis:{type:'date',gridcolor:'#263244',rangeslider:{visible:true,thickness:.08,bgcolor:'#0b111a'}},yaxis:{title:'BTC / USD',gridcolor:'#263244',tickprefix:'$'},yaxis2:{title:'Fear & Greed',range:[0,100],overlaying:'y',side:'right',gridcolor:'#263244'},legend:{orientation:'h',y:1.16},hovermode:'x unified',shapes:[[0,25,'#ef4444'],[25,45,'#f59e0b'],[45,55,'#94a3b8'],[55,75,'#84cc16'],[75,100,'#22c55e']].map(([a,b,c])=>({type:'rect',xref:'paper',x0:0,x1:1,yref:'y2',y0:a,y1:b,fillcolor:c,opacity:0.09,line:{width:0},layer:'below'})),uirevision:'crypto-fear-greed'}, {responsive:true,displaylogo:false,scrollZoom:true})).catch(()=>{});
  },60);
  // Keep ETF flows as their own block immediately below Crypto Fear & Greed,
  // rather than cramming a second analytical module into its header.
