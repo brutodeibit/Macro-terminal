@@ -306,6 +306,8 @@ def _massive_option_chain(underlying):
   for x in base_rows:
    spot=num((x.get("underlying_asset") or {}).get("price") or x.get("underlying_price"))
    if spot is not None:break
+  if str(underlying).upper()=="DJX" and spot is not None and spot>3000:
+   spot=spot/100.0  # Avoid mixing DJIA index level with DJX 1/100-scale strikes.
   exps=sorted({str((x.get("details") or {}).get("expiration_date") or x.get("expiration_date") or "")[:10] for x in base_rows if (x.get("details") or {}).get("expiration_date") or x.get("expiration_date")})
   exps=[x for x in exps if x]
   if not exps:return None
@@ -401,6 +403,8 @@ def _cboe_option_chain(sym):
    for k in ("current_price","last","last_price","close","price","underlying_price"):
     spot=num(qmeta.get(k) or data.get(k) or payload.get(k))
     if spot is not None and spot>0:break
+  if symbol=="DJX" and spot is not None and spot>3000:
+   spot=spot/100.0  # DJX option strikes are 1/100 of the DJI price index (Cboe contract specification).
   if spot is None or spot<=0:raise ValueError("Cboe spot price unavailable")
   today=datetime.now(timezone.utc).date();groups={}
   for x in raw:
