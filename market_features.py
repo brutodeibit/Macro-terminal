@@ -913,27 +913,49 @@ def _farside_num(v):
  except Exception:return None
 
 def _crypto_spot_etf_flows(asset="BTC"):
+ """Extract verified daily net totals from Farside's public US$ million tables."""
+ symbol=str(asset).upper()
+ slug="bitcoin-etf-flow-all-data" if symbol=="BTC" else "ethereum-etf-flow-all-data"
+ url=f"https://farside.co.uk/{slug}/"
  try:
-  slug="bitcoin-etf-flow-all-data" if str(asset).upper()=="BTC" else "ethereum-etf-flow-all-data"
-  html=get(f"https://farside.co.uk/{slug}/").text
-  soup=BeautifulSoup(html,"html.parser");table=None
+  html=get(url,h={"Accept":"text/html,application/xhtml+xml","User-Agent":"Mozilla/5.0 (compatible; MacroTerminal/6.0; public market-data research)"}).text
+  soup=BeautifulSoup(html,"html.parser")
+  table=None
   for tbl in soup.find_all("table"):
-   sample=" ".join(" ".join(td.stripped_strings) for td in tbl.find_all("tr")[:5]).lower()
-   if "total" in sample and (("ibit" in sample and slug=="bitcoin-etf-flow-all-data") or ("etha" in sample and slug=="ethereum-etf-flow-all-data")):
+   head=" ".join(" ".join(c.stripped_strings) for tr in tbl.find_all("tr")[:8] for c in tr.find_all(["th","td"])).lower()
+   if "total" in head and (("ibit" in head) if symbol=="BTC" else ("etha" in head or "ethereum" in head)):
     table=tbl;break
-  if table is None:return None
-  rows=[]
+  if table is None:
+   print("FARSIDE ETF",symbol,"NO_TABLE","Total / instrument header not found")
+   return None
+  records={}
   for tr in table.find_all("tr"):
    cells=[re.sub(r"\s+"," "," ".join(td.stripped_strings)).strip() for td in tr.find_all(["th","td"])]
    if len(cells)<3:continue
-   if re.match(r"^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$",cells[0]):
-    total=_farside_num(cells[-1])
-    if total is not None:rows.append({"date":cells[0],"netFlowUsdM":total})
-  if not rows:return None
+   iso=None
+   for fmt in ("%d %b %Y","%d %B %Y","%Y-%m-%d","%d/%m/%Y"):
+    try:
+     iso=datetime.strptime(cells[0],fmt).date().isoformat()
+     break
+    except ValueError:pass
+   if not iso:continue
+   total=_farside_num(cells[-1])
+   if total is None:continue  # Missing is not zero; retain real published 0.0.
+   records[iso]={"date":iso,"netFlowUsdM":total}
+  rows=[records[k] for k in sorted(records)]
+  if not rows:
+   print("FARSIDE ETF",symbol,"NO_ROWS","No dated published total parsed")
+   return None
   vals=[x["netFlowUsdM"] for x in rows]
-  return {"provider":"Farside Investors","source":f"U.S. spot {asset} ETF flow table","sourceUrl":f"https://farside.co.uk/{slug}/","asOf":rows[-1]["date"],"netFlowUsdM":rows[-1]["netFlowUsdM"],"netFlow1d":rows[-1]["netFlowUsdM"],"netFlow5d":sum(vals[-5:]),"netFlow21d":sum(vals[-21:]),"history":rows[-60:],"note":f"Flujo neto agregado de todos los emisores ETF spot {asset} incluidos en la columna Total de Farside."}
+  return {"provider":"Farside Investors","source":f"U.S. spot {symbol} ETF flows; all issuers",
+          "sourceUrl":url,"asOf":rows[-1]["date"],"netFlowUsdM":vals[-1],
+          "netFlow1d":vals[-1],"netFlow5d":round(sum(vals[-5:]),2),
+          "netFlow21d":round(sum(vals[-21:]),2),"history":rows[-90:],
+          "unit":"USD million","dataStatus":"PUBLIC / DELAYED · Farside daily totals",
+          "note":f"Daily flows from Farside Total column; negative values are outflows, not price changes. Last date {rows[-1]['date']}."}
  except Exception as e:
-  print("FARSIDE ETF",asset,type(e).__name__,str(e)[:180]);return None
+  print("FARSIDE ETF",symbol,type(e).__name__,str(e)[:180])
+  return None
 
 def _bitcoin_etf_flows():
  return _crypto_spot_etf_flows("BTC")
@@ -1078,7 +1100,8 @@ OPTION_CATALOG=[
  {"family":"Acciones referencia","code":"NVDA","label":"NVIDIA","kind":"stock","yahoo":"NVDA","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/NVDA/"},
  {"family":"Macro · Crédito","code":"HYG","label":"iShares High Yield Corporate Bond ETF","kind":"etf","yahoo":"HYG","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/HYG/"},
  {"family":"Macro · Crédito","code":"LQD","label":"iShares Investment Grade Corporate Bond ETF","kind":"etf","yahoo":"LQD","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/LQD/"},
- {"family":"Macro · Duración","code":"TLT","label":"iShares 20+ Year Treasury Bond ETF","kind":"etf","yahoo":"TLT","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/TLT/"}
+ {"family":"Macro · Duración","code":"TLT","label":"iShares 20+ Year Treasury Bond ETF","kind":"etf","yahoo":"TLT","source":"Yahoo Finance · Nasdaq","sourceUrl":"https://finance.yahoo.com/quote/TLT/"},
+ {"family":"Macro · Duración","code":"SGOV","label":"iShares 0-3 Month Treasury Bond ETF","kind":"etf","yahoo":"SGOV","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/SGOV/"}
 ]
 
 def _latest_yahoo_quote(sym):
@@ -1156,7 +1179,7 @@ def _option_reference_entry(entry):
 def update_options(feed):
  previous=feed.get("options",{}) if isinstance(feed.get("options"),dict) else {}
  old_by={m.get("ticker"):m for m in previous.get("markets",[]) if isinstance(m,dict) and m.get("ticker")}
- chain_targets=("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","IBIT")
+ chain_targets=("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT")
  detailed={}
  # Preferred chain source: Massive.  Cboe is the no-login delayed fallback for
  # listed US options; Yahoo is deliberately last because its public endpoint
@@ -1166,13 +1189,13 @@ def update_options(feed):
    x=_massive_option_chain(sym)
    if x:detailed[sym]=x
   except Exception as e:print("MASSIVE TARGET",sym,type(e).__name__,str(e)[:120])
- for sym in ("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","IBIT"):
+ for sym in ("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
   if sym in detailed:continue
   try:
    x=_cboe_option_chain(sym)
    if x:detailed[sym]=x
   except Exception as e:print("CBOE FALLBACK",sym,type(e).__name__,str(e)[:140])
- for sym in ("SPY","QQQ","DIA","IWM","EWG","FEZ","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","LQD","TLT","IBIT"):
+ for sym in ("SPY","QQQ","DIA","IWM","EWG","FEZ","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
   if sym in detailed:continue
   try:
    x=opt(sym)
@@ -1246,7 +1269,7 @@ def update_options(feed):
         "source":entry.get("source","Referencia pública"),"sourceUrl":entry.get("sourceUrl"),
         "dataStatus":"UNAVAILABLE · activo conservado en selector",
         "method":"No se ha recibido una cotización ni cadena válida en esta actualización. El activo permanece seleccionable; no se inventan precios ni métricas por strike."}
-   if code in ("SPY","QQQ","DIA","IWM","EWG","FEZ","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","LQD","TLT","IBIT"):
+   if code in ("SPY","QQQ","DIA","IWM","EWG","FEZ","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
     try:
      st=_barchart_option_overview(code)
      if st:ref["stats"]=st
