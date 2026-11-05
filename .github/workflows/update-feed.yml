@@ -35,6 +35,9 @@ jobs:
       - name: Validate Python
         run: python -m py_compile update_feed.py market_features.py maintenance/fix_ui_2026_10_02.py maintenance/fix_options_feed_2026_10_03.py
 
+      - name: Test Farside parser without network requests
+        run: python -m unittest discover -s tests -p test_farside_parser.py -v
+
       # Historical migrations are kept for recovery. Scheduled refreshes must
       # never rewrite application source from old embedded templates.
 
