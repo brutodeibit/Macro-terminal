@@ -1251,17 +1251,26 @@ def update_options(feed):
  # Crypto options: Deribit is primary; CME is a separate layer, never merged into Deribit metrics.
  for ccy in ("BTC","ETH"):
   try:
+   # ETF spot flows are independent of the Deribit options chain. A failed
+   # Deribit request must never hide an otherwise verified Farside daily total.
+   flows=_crypto_spot_etf_flows(ccy)
    der=_deribit_options(ccy)
    if der:
     crypto=dict(der);crypto["ticker"]=ccy;crypto["instrumentCode"]=ccy;crypto["family"]="Cripto";crypto["referenceOnly"]=False
     crypto["dataStatus"]="REAL / DELAYED · Deribit public options"
     crypto["method"]="Deribit public options. GEX/Gamma Flip are modeled from public OI/Greeks; CME and ETF layers remain separate."
     crypto["cryptoPerspective"]=True
-    crypto["layers"]={"deribit":der,"spotEtfFlows":_crypto_spot_etf_flows(ccy)}
+    crypto["layers"]={"deribit":der,"spotEtfFlows":flows}
     if ccy=="BTC":
      crypto["btcPerspective"]=True
      crypto["layers"]["cme"]=_cme_btc_option_layer()
     out=[m for m in out if m.get("ticker")!=ccy];out.append(crypto)
+   elif flows:
+    out=[m for m in out if m.get("ticker")!=ccy]
+    out.append({"ticker":ccy,"instrumentCode":ccy,"name":ccy,"family":"Cripto",
+      "referenceOnly":True,"profiles":[],"cryptoPerspective":True,
+      "layers":{"spotEtfFlows":flows},"dataStatus":"ETF FLOWS AVAILABLE · Deribit chain unavailable",
+      "method":"Farside daily ETF flows are independently verified. No options-chain values are imputed."})
   except Exception as e:print("CRYPTO OPTIONS",ccy,type(e).__name__,str(e)[:160])
 
  present={str(x.get("ticker") or x.get("instrumentCode") or "").upper() for x in out}
