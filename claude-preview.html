@@ -1350,7 +1350,7 @@ renderDarkPoolSection=function(){
   __loadPlotly().then(P=>{
    const base=ps.map(x=>({ts:Number(x.ts),price:Number(x.price)})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)).sort((a,b)=>a.ts-b.ts);
    const prints=(a.prints||[]).filter(p=>(!window.__darkSide||window.__darkSide==='ALL'||String(p.side||'UNKNOWN').toUpperCase()===window.__darkSide)&&Number(p.notional||0)>=Number(window.__darkMinNotional||0)).filter(p=>p.realPrint===true&&p.price!=null&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:String(p.side||'UNKNOWN').toUpperCase(),size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
-   const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:4.5},fill:'tozeroy',fillcolor:'rgba(56,189,248,.10)',hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
+   const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:4.5},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
    let annotations=[];
    if(prints.length){
     const largest=[...prints].sort((a,b)=>b.notional-a.notional).slice(0,12);
