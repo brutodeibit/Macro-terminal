@@ -1904,7 +1904,11 @@ def update_market_breadth(feed):
  except Exception:ndx_age=999
  after_close=now_et.weekday()<5 and (now_et.hour>16 or (now_et.hour==16 and now_et.minute>=20))
  weekend=now_et.weekday()>=5
- should_calc=after_close and not weekend and ndx_date!=today_et and ndx_attempt!=today_et
+ # Catch up after downtime, including weekends and before the next opening.
+ target=now_et.date()
+ if not after_close:target-=timedelta(days=1)
+ while target.weekday()>=5:target-=timedelta(days=1)
+ should_calc=ndx_date<target.isoformat() and ndx_attempt!=today_et
  ndx_list_url="https://raw.githubusercontent.com/Gary-Strauss/NASDAQ100_Constituents/master/data/nasdaq100_constituents.csv"
  if should_calc:
   # Remember the attempt even if Yahoo has a temporary outage; avoid re-requesting ~100 symbols every 15 minutes.

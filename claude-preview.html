@@ -1383,14 +1383,14 @@ renderDarkPoolSection=function(){
    const base=ps.map(x=>({ts:Number(x.ts),price:Number(x.price)})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)).sort((a,b)=>a.ts-b.ts);
    const prints=(a.prints||[]).filter(v7PrintAllowed).filter(p=>(!window.__darkSide||window.__darkSide==='ALL'||String(p.side||'UNKNOWN').toUpperCase()===window.__darkSide)&&Number(p.notional||0)>=Number(window.__darkMinNotional||0)).filter(p=>p.realPrint===true&&p.price!=null&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:String(p.side||'UNKNOWN').toUpperCase(),size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
    const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:4.5},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
-   const candles=(a.ohlc||[]).filter(c=>['open','high','low','close'].every(k=>Number.isFinite(c[k])));
-   if(candles.length>1)trace[0]={type:'candlestick',name:'OHLC diario',x:candles.map(c=>new Date(c.ts*1000)),open:candles.map(c=>c.open),high:candles.map(c=>c.high),low:candles.map(c=>c.low),close:candles.map(c=>c.close),increasing:{line:{color:'#34d399'}},decreasing:{line:{color:'#f87171'}}};
+   const frame=window.__darkTimeframe||'1d';const candles=(a.ohlcTimeframes?.[frame]?.candles||(frame==='1d'?a.ohlc:[])||[]).filter(c=>['open','high','low','close'].every(k=>Number.isFinite(c[k])));
+   if(candles.length>1)trace[0]={type:'candlestick',name:'OHLC · '+frame,x:candles.map(c=>new Date(c.ts*1000)),open:candles.map(c=>c.open),high:candles.map(c=>c.high),low:candles.map(c=>c.low),close:candles.map(c=>c.close),opacity:1,increasing:{fillcolor:'#2de2b1',line:{color:'#7fffe1',width:1.6}},decreasing:{fillcolor:'#ff5577',line:{color:'#ffb0c0',width:1.6}}};
    let annotations=[];
    if(prints.length){
     const largest=[...prints].sort((a,b)=>b.notional-a.notional).slice(0,12);
     trace.push({x:prints.map(x=>new Date(x.ts*1000)),y:prints.map(x=>x.price),type:'scatter',mode:'markers',name:'Prints',marker:{size:prints.map(x=>Math.max(8,Math.min(24,Math.sqrt(Math.max(x.size,1))/5))),color:prints.map(x=>x.side==='BUY'?'#34d399':x.side==='SELL'?'#f87171':'#facc15'),opacity:.88,line:{width:1.3,color:'#e5e7eb'}},customdata:prints.map(x=>[x.side,x.size,x.notional,x.time]),hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<br>%{customdata[0]} · %{customdata[1]:,.0f} sh<br>Notional %{customdata[2]:,.0f}<br>%{customdata[3]}<extra></extra>'});
     const offsets=[[50,-55],[-55,55],[65,45],[-65,-45],[85,-20],[-85,20]];
-    annotations=largest.slice(0,6).map((p,i)=>({x:new Date(p.ts*1000),y:p.price,xref:'x',yref:'y',text:fmtNum(p.price,2)+' · '+fmtCompactMoney(p.notional),showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#94a3b8',ax:offsets[i][0],ay:offsets[i][1],bgcolor:'rgba(15,23,42,0)',bordercolor:'rgba(148,163,184,0.45)',borderwidth:1,borderpad:3,font:{size:10,color:'#f8fafc'}}));
+    annotations=largest.slice(0,6).map((p,i)=>({x:new Date(p.ts*1000),y:p.price,xref:'x',yref:'y',text:fmtNum(p.price,2)+' · '+fmtCompactMoney(p.notional)+'<br>'+esc(p.time)+' · '+fmtNum(p.size,0)+' sh · '+esc(p.side),showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#94a3b8',ax:offsets[i][0],ay:offsets[i][1],bgcolor:'rgba(15,23,42,0)',bordercolor:'rgba(148,163,184,0.45)',borderwidth:1,borderpad:3,font:{size:10,color:'#f8fafc'}}));
    }
    host.replaceChildren();host.style.height='720px';host.style.minHeight='720px';host.style.background='linear-gradient(180deg,#1a2b40,#142235)';
    P.newPlot(host,trace,{paper_bgcolor:'transparent',plot_bgcolor:'rgba(8,17,28,.92)',font:{color:'#e2e8f0',size:12},margin:{l:78,r:28,t:30,b:85},xaxis:{title:'Fecha',gridcolor:'#334155',tickfont:{size:12,color:'#e2e8f0'},rangeslider:{visible:true,thickness:.08},rangeselector:{bgcolor:'#111827',activecolor:'#334155',font:{color:'#e5e7eb',size:10},buttons:[{count:7,label:'1S',step:'day',stepmode:'backward'},{count:1,label:'1M',step:'month',stepmode:'backward'},{count:3,label:'3M',step:'month',stepmode:'backward'},{step:'all',label:'Todo'}]}},yaxis:{title:'Precio',gridcolor:'#334155',tickfont:{size:12,color:'#e2e8f0'},tickformat:',.2f',automargin:true},shapes:prints.map(p=>({type:'line',xref:'x',x0:new Date(p.ts*1000),x1:new Date(base[base.length-1].ts*1000),yref:'y',y0:p.price,y1:p.price,line:{color:'#a78bfa',width:1,dash:'dash'},opacity:.65})),annotations:annotations,hovermode:'closest'}, {responsive:true,displaylogo:false,scrollZoom:true});
@@ -2094,6 +2094,6 @@ new MutationObserver(()=>{drawFG();drawETF();}).observe(document.body,{childList
         });
     </script>
 
-    <script src="./v7-ui.js?v=20261107.3"></script>
+    <script src="./v7-ui.js?v=20261107.4"></script>
 </body>
 </html>

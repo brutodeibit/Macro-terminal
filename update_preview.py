@@ -99,21 +99,8 @@ def etf_flows(feed):
 
 
 def dark_ohlc(feed):
-    for symbol, asset in feed.get('darkPoolPrints',{}).get('assets',{}).items():
-        response = mf.get('https://query1.finance.yahoo.com/v8/finance/chart/'+symbol,
-                          {'range':'1y','interval':'1d'}).json()
-        series = (response.get('chart',{}).get('result') or [{}])[0]
-        q = (series.get('indicators',{}).get('quote') or [{}])[0]
-        candles = []
-        for i,ts in enumerate(series.get('timestamp',[])):
-            values = {k:q.get(k,[])[i] if i<len(q.get(k,[])) else None for k in ('open','high','low','close')}
-            if all(isinstance(v,(int,float)) for v in values.values()):
-                candles.append({'ts':ts, **values})
-        if candles:
-            asset['ohlc'] = candles
-            asset['ohlcSource'] = 'Yahoo Finance · daily OHLC'
-            asset['ohlcObservedAt'] = datetime.fromtimestamp(candles[-1]['ts'],timezone.utc).isoformat()
-            asset['priceSeries'] = [{'ts':c['ts'],'price':c['close']} for c in candles]
+    from v7_dark import update
+    update(feed, mf.get)
 
 
 def finalize(feed):
@@ -265,7 +252,7 @@ JOBS = {
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
  'OPTIONS':(mf.update_options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
  'COT':(mf.update_cot, 24), 'DARK_PRINTS':(mf.update_dark_pool_prints, 12),
- 'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 24), 'RISK':(legacy.update_risk, 1),
+ 'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 6), 'RISK':(legacy.update_risk, 1),
  'BONDS':(mf.update_bond_market, 6), 'SENTIMENT':(mf.update_traditional_sentiment, 24),
  'FEAR':(mf.update_traditional_fear_greed, 6), 'OHLC':(dark_ohlc,12),
 }
