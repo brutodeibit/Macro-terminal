@@ -2,6 +2,8 @@
 
 Fecha de trabajo: 7 de noviembre de 2026. Base `a79564a`. Respaldo: rama `backup/pre-v7-claude-2026-11-07`.
 
+Publicación comprobada: implementación `ad47f78`; datos automáticos `8e3e9cc` (principal) y `87b4f13` (Claude). Los workflows [principal](https://github.com/brutodeibit/Macro-terminal/actions/runs/42375056421), [preview](https://github.com/brutodeibit/Macro-terminal/actions/runs/42375056467) y [Pages](https://github.com/brutodeibit/Macro-terminal/actions/runs/42375056250) terminaron correctamente. Comparación HTTP posterior: `macro-feed.json` publicado con 13:05 UTC y `macro-feed-v7.json` con 13:07:10 UTC, ambos iguales al contenido de los commits automáticos. La verificación HTTP no sustituye a la visual.
+
 La entrega afecta a `claude-preview.html`, su extensión `v7-ui.js`, el feed aislado `macro-feed-v7.json` y los recolectores/pruebas. `index.html` conserva el blob Git `d41eb31711158bbac4bd772b94cc0d61ebf4f780`. No se ha convertido Claude en página principal. No se han contratado servicios.
 
 ## Inventario de implementación
@@ -31,6 +33,8 @@ Los snapshots diarios comienzan con datos realmente capturados. No hay cinco ses
 Referencias: [especificación DJX](https://www.cboe.com/tradable-products/dow-jones/dow-jones-industrial-average-options/djx-specifications/), [ODAX](https://www.eurex.com/ex-en/markets/idx/dax/DAX-Options-139884), [EWG](https://www.ishares.com/us/products/239650/ishares-msci-germany-etf), [EXSA](https://www.borsaitaliana.it/borsa/etf/scheda/DE0002635307-ETFP.html).
 
 DJIA es el índice; Yahoo usa `^DJI`. DJX son opciones Cboe sobre 1/100 del índice, con multiplicador contractual 100; DIA es un ETF distinto. Tener un precio DAX/SX5E/SXXP no proporciona automáticamente OI, IV ni una cadena completa. Eurex publica productos y estadísticas, pero no se ha validado en este trabajo un conector gratuito y redistribuible de cadenas completas ODAX/OESX/OXXP. No se ha usado la cuenta TradingView ni sorteado restricciones.
+
+La ficha Dow añade la referencia DJIA/DJI y mantiene el selector DJX/DIA, sin tercer panel redundante. Cuando el snapshot aún no tiene el precio de referencia sin escalar, el equivalente DJX × 100 se identifica como calculado. El recolector conserva la cotización original cuando procede de Yahoo.
 
 LQD aporta crédito investment grade, aunque mezcla exposición a tipos y spreads; complementa HYG. SGOV representa letras 0–3 meses y liquidez, no un “TLT corto” simétrico ni una fuente de GEX tan informativa como un índice de renta variable. Mantenerlos como contexto y habilitar métricas solo si la cadena las soporta. ICE BofA OAS es un indicador, no un ETF con opciones. El OAS HY existente no prueba que el IG esté conectado.
 

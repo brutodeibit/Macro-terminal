@@ -410,6 +410,7 @@ def _cboe_option_chain(sym):
    for k in ("current_price","last","last_price","close","price","underlying_price"):
     spot=num(qmeta.get(k) or data.get(k) or payload.get(k))
     if spot is not None and spot>0:break
+  reference_index_spot=spot if symbol=='DJX' and spot is not None and spot>3000 else None
   if symbol=="DJX" and spot is not None and spot>3000:
    spot=spot/100.0  # DJX option strikes are 1/100 of the DJI price index (Cboe contract specification).
   if spot is None or spot<=0:raise ValueError("Cboe spot price unavailable")
@@ -480,7 +481,8 @@ def _cboe_option_chain(sym):
    "termStructure":[{"bucket":p.get("bucket"),"expiration":p.get("expiration"),"dte":p.get("daysToExpiry"),"ivAtm":p.get("ivAtm")} for p in profiles],
    "method":"Cboe public delayed options chain. OI/volume/IV and Greeks supplied by Cboe where available; missing Greeks modeled. GEX/Gamma Flip/DEX remain calculated proxies.",
    "source":"Cboe delayed options chain","sourceUrl":"https://cdn.cboe.com/api/global/delayed_quotes/options/"+url_symbol+".json","dataStatus":"REAL / DELAYED · Cboe public options chain","asOf":payload.get("timestamp"),
-   "observedAt":payload.get("timestamp"),"publishedAt":None,"fetchedAt":datetime.now(timezone.utc).isoformat(),"timestampConvention":"Provider timestamp; original timezone retained as supplied", "spotSource":"Yahoo Finance" if spot_from_yahoo else "Cboe"}
+   "observedAt":payload.get("timestamp"),"publishedAt":None,"fetchedAt":datetime.now(timezone.utc).isoformat(),"timestampConvention":"Provider timestamp; original timezone retained as supplied", "spotSource":"Yahoo Finance" if spot_from_yahoo else "Cboe",
+   "referenceIndex":{"name":"DJIA","symbol":"^DJI","price":reference_index_spot,"source":"Yahoo Finance" if spot_from_yahoo else "Cboe"} if symbol=='DJX' else None}
  except Exception as e:
   msg="Cboe options "+str(sym)+": "+type(e).__name__+" ("+str(e)[:90]+")"
   if msg not in _OPTIONS_PROVIDER_ERRORS:_OPTIONS_PROVIDER_ERRORS.append(msg)

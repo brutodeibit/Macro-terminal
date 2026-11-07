@@ -31,5 +31,7 @@ if(process.argv[2]==='claude-preview.html'){
  assert(meetings.includes('ecb.europa.eu'));
  ctx.expired={profiles:[{expiration:new Date().toISOString().slice(0,10),expirationAt:new Date(Date.now()-1000).toISOString()}]};
  assert.equal(vm.runInContext('optionsUsableProfiles(expired).length',ctx),0);
+ vm.runInContext("window.__optTicker='DJX';window.__optFamily='Dow Jones'",ctx);
+ assert(vm.runInContext('renderOptionsSection()',ctx).includes('Dow Jones · DJIA / DJI'));
  console.log('FX symmetry, meeting links and same-day expiry: OK');
 }
