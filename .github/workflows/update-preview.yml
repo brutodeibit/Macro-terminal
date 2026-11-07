@@ -1,0 +1,48 @@
+name: Claude V7 preview feed
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */2 * * *'
+  push:
+    branches: [main]
+    paths: ['update_preview.py', 'v7_quant.py', 'v7_meetings.py', 'v7_curves.py', 'v7-meeting-bootstrap.json', 'v7-ui.js', 'claude-preview.html', '.github/workflows/update-preview.yml']
+permissions:
+  contents: write
+concurrency:
+  group: macroterminal-main-writer
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -v
+      - run: node tests/dashboard-runtime.cjs claude-preview.html
+      - run: node tests/chart-config.cjs
+      - name: Collect isolated preview feed
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          TE_API_KEY: ${{ secrets.TE_API_KEY }}
+          FINRA_API_CLIENT_ID: ${{ secrets.FINRA_API_CLIENT_ID }}
+          FINRA_API_CLIENT_SECRET: ${{ secrets.FINRA_API_CLIENT_SECRET }}
+          FINRA_API_TOKEN: ${{ secrets.FINRA_API_TOKEN }}
+        run: python -u update_preview.py
+      - name: Validate preview data
+        run: python validate_preview.py
+      - name: Publish only preview snapshot
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add macro-feed-v7.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'data: update isolated Claude V7 snapshot'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

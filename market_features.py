@@ -102,6 +102,12 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
  delta_coverage=sum(x.get("delta") is not None for x in rows)/len(rows) if rows else 0
  iv_coverage=sum((x.get("ivDataAvailable") if "ivDataAvailable" in x else (x.get("iv") is not None and float(x.get("iv") or 0)>0)) for x in rows)/len(rows) if rows else 0
  gp=_option_gex(calls,puts,spot)
+ # Opt-in until the V7 preview has been validated; production calculations stay unchanged.
+ if os.getenv('MACRO_V7') == '1':
+  from v7_quant import gamma_flip
+  valuation_time=datetime.now(timezone.utc)
+  model_rows=[dict(x,yearsToExpiry=(x['expiration']-valuation_time).total_seconds()/31536000 if isinstance(x.get('expiration'),datetime) else ex/365.0) for x in rows]
+  gp.update(gamma_flip(model_rows,spot,ex/365.0))
  total_oi=co+po
  above_oi=sum(float(x.get("openInterest",0) or 0) for x in rows if float(x.get("strike") or 0)>spot)
  below_oi=sum(float(x.get("openInterest",0) or 0) for x in rows if float(x.get("strike") or 0)<spot)
@@ -398,6 +404,7 @@ def _cboe_option_chain(sym):
   spot_symbol={"SPX":"^GSPC","NDX":"^NDX","RUT":"^RUT","DJX":"^DJI","VIX":"^VIX"}.get(symbol,symbol)
   quote=chart(spot_symbol);q=(quote or {}).get("indicators",{}).get("quote",[{}])[0].get("close",[]) if quote else []
   spot=next((float(v) for v in reversed(q) if v is not None),None)
+  spot_from_yahoo=spot is not None
   qmeta=data.get("quote") or payload.get("quote") or {}
   if spot is None:
    for k in ("current_price","last","last_price","close","price","underlying_price"):
@@ -411,7 +418,11 @@ def _cboe_option_chain(sym):
    code=str(x.get("option") or x.get("symbol") or x.get("option_symbol") or "")
    mt=re.search(r"(\d{6})([CP])(\d{8})$",code)
    if not mt:continue
-   try:ex=datetime.strptime(mt.group(1),"%y%m%d").replace(tzinfo=timezone.utc)
+   try:
+    ex=datetime.strptime(mt.group(1),"%y%m%d").replace(tzinfo=timezone.utc)
+    if os.getenv('MACRO_V7')=='1':
+     am=symbol in ('SPX','NDX','RUT','DJX','VIX') and not any(w in code for w in ('SPXW','NDXP','RUTW','DJXW','VIXW'))
+     ex=ex.replace(tzinfo=ZoneInfo('America/New_York'),hour=9 if am else 16,minute=30 if am else 0).astimezone(timezone.utc)
    except ValueError:continue
    if ex.date()<today or (ex.date()-today).days>100:continue
    typ=mt.group(2);strike=int(mt.group(3))/1000.0
@@ -447,7 +458,12 @@ def _cboe_option_chain(sym):
   for label,exs in buckets[:4]:
    rows=groups[exs];oi_cov=sum(x["oiDataAvailable"] for x in rows)/len(rows) if rows else 0
    if not rows or oi_cov<0.65:continue
-   exp=datetime.fromisoformat(exs).replace(tzinfo=timezone.utc);p=_option_summary(rows,spot,exp);p["bucket"]=label
+   exp=max(x['expiration'] for x in rows) if os.getenv('MACRO_V7')=='1' else datetime.fromisoformat(exs).replace(tzinfo=timezone.utc)
+   if os.getenv('MACRO_V7')=='1':
+    rows=[x for x in rows if x['expiration']>datetime.now(timezone.utc)]
+    if not rows:continue
+   p=_option_summary(rows,spot,exp);p["bucket"]=label
+   if os.getenv('MACRO_V7')=='1':p['expirationAt']=exp.isoformat()
    p["oiCoveragePct"]=round(oi_cov*100,1);p["ivCoveragePct"]=round(sum(x["ivDataAvailable"] for x in rows)/len(rows)*100,1)
    p["providerIvCoveragePct"]=round(sum(x["ivProviderAvailable"] for x in rows)/len(rows)*100,1)
    p["providerGreeksCoveragePct"]=round(sum(x["greeksProviderAvailable"] for x in rows)/len(rows)*100,1)
@@ -463,7 +479,8 @@ def _cboe_option_chain(sym):
   return {"name":symbol,"ticker":symbol,"spot":spot,"expiration":profiles[0].get("expiration"),"profiles":profiles,
    "termStructure":[{"bucket":p.get("bucket"),"expiration":p.get("expiration"),"dte":p.get("daysToExpiry"),"ivAtm":p.get("ivAtm")} for p in profiles],
    "method":"Cboe public delayed options chain. OI/volume/IV and Greeks supplied by Cboe where available; missing Greeks modeled. GEX/Gamma Flip/DEX remain calculated proxies.",
-   "source":"Cboe delayed options chain","sourceUrl":"https://cdn.cboe.com/api/global/delayed_quotes/options/"+url_symbol+".json","dataStatus":"REAL / DELAYED · Cboe public options chain","asOf":payload.get("timestamp")}
+   "source":"Cboe delayed options chain","sourceUrl":"https://cdn.cboe.com/api/global/delayed_quotes/options/"+url_symbol+".json","dataStatus":"REAL / DELAYED · Cboe public options chain","asOf":payload.get("timestamp"),
+   "observedAt":payload.get("timestamp"),"publishedAt":None,"fetchedAt":datetime.now(timezone.utc).isoformat(),"timestampConvention":"Provider timestamp; original timezone retained as supplied", "spotSource":"Yahoo Finance" if spot_from_yahoo else "Cboe"}
  except Exception as e:
   msg="Cboe options "+str(sym)+": "+type(e).__name__+" ("+str(e)[:90]+")"
   if msg not in _OPTIONS_PROVIDER_ERRORS:_OPTIONS_PROVIDER_ERRORS.append(msg)
@@ -1216,6 +1233,7 @@ def update_options(feed):
     x["stats"]=stats
     p0=(x.get("profiles") or [{}])[0]
     for k in ("ivRank","ivPercentile","iv","putCallVol","putCallOi","expectedMove","expectedMovePct"):
+     if os.getenv('MACRO_V7')=='1' and k not in ('ivRank','ivPercentile'):continue
      if stats.get(k) is not None:p0[k]=stats[k]
    x["family"]=entry["family"];x["instrumentCode"]=code;x["instrumentKind"]=entry["kind"]
    x["sourceDate"]=x.get("asOf") or datetime.now(timezone.utc).isoformat()
