@@ -28,9 +28,13 @@ vm.runInContext(html.slice(start,end),ctx);
  for(const t of etf.data){assert.equal(t.type,'bar');assert(t.y.length>=21);for(let i=0;i<t.y.length;i++)assert.equal(t.marker.color[i],t.y[i]>=0?'#22c55e':'#ef4444');}
  for(const p of plots){assert.equal(p.config.scrollZoom,true);assert(p.config.modeBarButtonsToRemove.includes('lasso2d'));}
  for(const id of ['sec-options','opt-gex-chart','opt-oi-chart','opt-term-chart'])nodes.set(id,elem(id));
- vm.runInContext("__drawOptionsCharts(macroDatabase.__options.markets.find(m=>m.ticker==='SPX'),macroDatabase.__options.markets.find(m=>m.ticker==='SPX').profiles[0])",ctx);
+ // Provider expiry/outage must not turn a presentation test into a global data gate.
+ const expiry=days=>new Date(Date.now()+days*86400000).toISOString().slice(0,10);
+ ctx.optionFixture={ticker:'TEST',spot:100,profiles:[{expiration:expiry(7),ivAtm:.8,maxPain:100,gammaFlip:99,callWallOi:102,putWallOi:98,strikeMap:[{strike:98,gex:-10,putOi:100},{strike:102,gex:15,callOi:150}]},{expiration:expiry(30),ivAtm:1.2}]};
+ vm.runInContext('__drawOptionsCharts(optionFixture,optionFixture.profiles[0])',ctx);
  await new Promise(setImmediate);
  const term=plots.find(p=>p.id==='opt-term-chart');assert(term);assert(term.data[0].y.every(v=>v>0&&v<500));
+ assert.equal(term.data[0].y[0],.8,'Sub-3% IV must stay in percent units');
  assert(!nodes.get('opt-term-chart').innerHTML.includes('Cargando'));
  assert.notEqual(plots.find(p=>p.id==='opt-gex-chart').layout.annotations.find(a=>a.text.startsWith('Max Pain')).y,plots.find(p=>p.id==='opt-gex-chart').layout.annotations.find(a=>a.text.startsWith('Spot')).y);
  console.log('Chart contracts: unique FG/ETF plots, separate axes, sign colors, full history, interactivity, IV units and staggered labels OK');
