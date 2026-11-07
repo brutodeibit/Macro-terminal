@@ -265,7 +265,7 @@ JOBS = {
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
  'OPTIONS':(mf.update_options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
  'COT':(mf.update_cot, 24), 'DARK_PRINTS':(mf.update_dark_pool_prints, 12),
- 'GLOBAL':(mf.update_global_markets, 6), 'RISK':(legacy.update_risk, 1),
+ 'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 24), 'RISK':(legacy.update_risk, 1),
  'BONDS':(mf.update_bond_market, 6), 'SENTIMENT':(mf.update_traditional_sentiment, 24),
  'FEAR':(mf.update_traditional_fear_greed, 6), 'OHLC':(dark_ohlc,12),
 }

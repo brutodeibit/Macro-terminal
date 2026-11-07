@@ -1845,6 +1845,7 @@ def update_market_breadth(feed):
  from concurrent.futures import ThreadPoolExecutor, as_completed
  from statistics import median
  from zoneinfo import ZoneInfo
+ from v7_breadth import price_metrics, same_session
 
  previous=feed.get("marketBreadth",{}) if isinstance(feed.get("marketBreadth"),dict) else {}
  # Migrate both older scalar snapshots and the newer paired shape.
@@ -1921,7 +1922,7 @@ def update_market_breadth(feed):
     try:
      ticker=sym.replace(".","-")
      url="https://query1.finance.yahoo.com/v8/finance/chart/"+requests.utils.quote(ticker,safe="")
-     root=(get(url,{"range":"1y","interval":"1d"}).json().get("chart",{}).get("result") or [])
+     root=(get(url,{"range":"2y","interval":"1d"}).json().get("chart",{}).get("result") or [])
      if not root:return None
      rr=root[0];ts=rr.get("timestamp") or [];quote=(rr.get("indicators",{}).get("quote") or [{}])[0]
      closes=quote.get("close") or [];volumes=quote.get("volume") or []
@@ -1948,12 +1949,15 @@ def update_market_breadth(feed):
        if row:result.append(row)
       except Exception:pass
    except Exception as e:print("NASDAQ100 THREADS",type(e).__name__,str(e)[:140])
+   # Never combine stale member closes with the current-session breadth sample.
+   result=same_session(result)
    minimum=max(80,int(len(symbols)*0.80))
    if len(result)>=minimum:
     counts={"advances":0,"declines":0,"unchanged":0}
     win_count={k:{"advances":0,"declines":0,"unchanged":0,"eligible":0} for k in ("3s","5s","21s","YTD")}
     ma_count={20:{"above":0,"eligible":0},50:{"above":0,"eligible":0},100:{"above":0,"eligible":0},200:{"above":0,"eligible":0}}
     highs=lows=high_eligible=up_vol=down_vol=0
+    new_highs=new_lows=new_eligible=0
     date_counts={};daily_changes=[];changes3=[];changes5=[];changes21=[];changes_ytd=[]
     for sym,bars in result:
      datestr=bars[-1]["date"].isoformat();date_counts[datestr]=date_counts.get(datestr,0)+1
@@ -1972,9 +1976,9 @@ def update_market_breadth(feed):
        elif ret< -1e-8:win_count[key]["declines"]+=1
        else:win_count[key]["unchanged"]+=1
        {"3s":changes3,"5s":changes5,"21s":changes21}[key].append(ret*100)
-     ytd_bars=[z["close"] for z in bars if z["date"].year==now_et.year]
-     if ytd_bars and ytd_bars[0]:
-      ret=last/ytd_bars[0]-1;win_count["YTD"]["eligible"]+=1
+     metrics=price_metrics(bars,now_et.year)
+     if metrics['ytd'] is not None:
+      ret=metrics['ytd'];win_count["YTD"]["eligible"]+=1
       if ret>1e-8:win_count["YTD"]["advances"]+=1
       elif ret< -1e-8:win_count["YTD"]["declines"]+=1
       else:win_count["YTD"]["unchanged"]+=1
@@ -1983,10 +1987,12 @@ def update_market_breadth(feed):
       if len(vals)>=n:
        avg=sum(vals[-n:])/n;ma_count[n]["eligible"]+=1
        if last>avg:ma_count[n]["above"]+=1
-     if len(vals)>=200:
-      hist=vals[-252:];high=max(hist);low=min(hist);high_eligible+=1
-      if last>=high*.99:highs+=1
-      if last<=low*1.01:lows+=1
+     if metrics['nearHigh'] is not None:
+      high_eligible+=1
+      highs+=int(metrics['nearHigh']);lows+=int(metrics['nearLow'])
+     if metrics['newClosingHigh'] is not None:
+      new_eligible+=1
+      new_highs+=int(metrics['newClosingHigh']);new_lows+=int(metrics['newClosingLow'])
     coverage=len(result);session=max(date_counts,key=date_counts.get)
     def ma_obj(n):
      z=ma_count[n];den=z["eligible"]
@@ -2003,6 +2009,7 @@ def update_market_breadth(feed):
      "advancePercentage":round(100*counts["advances"]/coverage,2) if coverage else None,
      "advancingVolume":up_vol,"decliningVolume":down_vol,"volumeRatio":round(up_vol/down_vol,3) if down_vol else None,
      "near52wHigh":highs,"near52wLow":lows,"highLowEligible":high_eligible,
+     "newClosingHigh252":new_highs,"newClosingLow252":new_lows,"newClosingEligible":new_eligible,
      "above20d":ma_obj(20),"above50d":ma_obj(50),"above100d":ma_obj(100),"above200d":ma_obj(200),"windowBreadth":window_data,
      "medianChange1d":round(median(daily_changes),3) if daily_changes else None,
      "medianChange3s":round(median(changes3),3) if changes3 else None,"medianChange5s":round(median(changes5),3) if changes5 else None,
