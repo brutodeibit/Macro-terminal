@@ -105,10 +105,12 @@ def dark_ohlc(feed):
 
 def finalize(feed):
     """Archive real snapshots once per observation day and expiry, never backfill."""
+    from v7_economy_state import synchronize
+    synchronize(feed,NOW().date().isoformat())
     for economy in feed.get('economies',{}).values():
         latest=(economy.get('conference',{}).get('history') or [{}])[0]
         if latest.get('manuallyVerifiedAt') and latest.get('newRate') is not None:
-            economy.setdefault('rates',{}).update(official=f"{latest['newRate']:.2f}%",
+            economy.setdefault('rates',{}).update(official=latest.get('officialRateLabel') or f"{latest['newRate']:.2f}%",
                 officialObservedAt=latest['date'], officialSourceUrl=latest['sourceUrl'])
         bonds=economy.get('bonds',{})
         if bonds.get('history'):
@@ -244,11 +246,15 @@ def calendar(feed):
         candidates = [e for e in legacy.CENTRAL_BANK_EVENTS if e['economyId']==('eu' if eid=='de' else eid) and datetime.fromisoformat(e['date'].replace('Z','+00:00'))>NOW()]
         economy.setdefault('rates',{})['nextMeeting'] = min((e['date'][:10] for e in candidates), default='Calendario por actualizar')
 
+def release_calendar(feed):
+    from v7_calendar import update
+    update(feed, mf.get)
+
 
 JOBS = {
  'TREASURY':(treasury, 6), 'CURVES':(curves, 6), 'CANADA_CURVE':(v7_curves.canada, 24), 'ECB_CURVE':(v7_curves.euro_area, 24),
  'ETF':(etf_flows, 6), 'MEETINGS':(meetings, 2),
- 'CALENDAR':(calendar, 24), 'ECONOMIC_CALENDAR':(legacy.update_te, 6),
+ 'CALENDAR':(calendar, 24), 'ECONOMIC_CALENDAR':(legacy.update_te, 6), 'RELEASE_CALENDAR':(release_calendar, 6),
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
  'OPTIONS':(mf.update_options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
  'COT':(mf.update_cot, 24), 'DARK_PRINTS':(mf.update_dark_pool_prints, 12),
