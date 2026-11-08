@@ -1,7 +1,23 @@
 import unittest
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch, Mock
+from datetime import datetime, timezone
 from v7_economy_state import synchronize
 
 class EconomyStateTests(unittest.TestCase):
+    def test_reviewed_updates_apply_when_network_jobs_are_cached(self):
+        import update_preview as p
+        job=Mock()
+        with tempfile.TemporaryDirectory() as folder:
+            target=Path(folder)/'feed.json'
+            target.write_text(json.dumps({'economies':{'au':{'conference':{},'rates':{}}},
+                'sourceHealth':{'CACHED':{'checkedAt':datetime.now(timezone.utc).isoformat()}}}),encoding='utf-8')
+            with patch.object(p,'TARGET',target),patch.object(p,'JOBS',{'CACHED':(job,24)}):
+                p.run()
+            job.assert_not_called()
+            self.assertEqual(json.loads(target.read_text(encoding='utf-8'))['economies']['au']['rates']['official'],'4.85%')
     def test_latest_reviewed_decision_for_all_banks(self):
         keys=['us','eu','uk','jp','au','nz','ca','ch']
         f={'economies':{k:{'conference':{},'rates':{}} for k in keys}}

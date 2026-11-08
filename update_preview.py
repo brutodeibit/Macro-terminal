@@ -300,6 +300,16 @@ def run(selected=None, force=False):
         tmp = TARGET.with_suffix('.tmp')
         tmp.write_text(json.dumps(feed, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
         tmp.replace(TARGET)
+    # Reviewed evidence can change even when every network job is still cached.
+    before_review = json.dumps(feed, sort_keys=True)
+    finalize(feed)
+    if json.dumps(feed, sort_keys=True) != before_review:
+        feed['generatedAt'] = feed['updated'] = NOW().isoformat()
+        feed['publication'] = {'commit':os.getenv('GITHUB_SHA'),'runId':os.getenv('GITHUB_RUN_ID'),
+                               'note':'Reviewed evidence refreshed; observation dates retained.'}
+        tmp = TARGET.with_suffix('.tmp')
+        tmp.write_text(json.dumps(feed, ensure_ascii=False, indent=2)+'\n',encoding='utf-8')
+        tmp.replace(TARGET)
     return feed
 
 
