@@ -2,6 +2,17 @@ import unittest
 from v7_economy_state import synchronize
 
 class EconomyStateTests(unittest.TestCase):
+    def test_latest_reviewed_decision_for_all_banks(self):
+        keys=['us','eu','uk','jp','au','nz','ca','ch']
+        f={'economies':{k:{'conference':{},'rates':{}} for k in keys}}
+        synchronize(f,'2026-11-08')
+        for k in keys:
+            c=f['economies'][k]['conference']
+            self.assertTrue(c['keyPoints'],k)
+            self.assertNotIn('Pendiente',c['tone'],k)
+            self.assertTrue(c['history'][0]['sourceUrl'].startswith('https://'))
+        self.assertEqual(f['economies']['jp']['rates']['official'],'1.25%')
+        self.assertEqual(f['economies']['au']['rates']['official'],'4.85%')
     def test_reviewed_meetings_replace_stale_prose(self):
         f={'economies':{'us':{'conference':{'watchFactors':['FOMC octubre'],'toneDescription':'Antiguo'},'rates':{}}}}
         synchronize(f,'2026-11-08')
