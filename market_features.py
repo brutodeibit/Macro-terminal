@@ -1110,6 +1110,8 @@ OPTION_CATALOG=[
  {"family":"DAX","code":"EWG","label":"iShares MSCI Germany ETF · proxy Alemania","kind":"etf","yahoo":"EWG","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/EWG/"},
  {"family":"EURO STOXX 50","code":"SX5E","label":"EURO STOXX 50 Index","kind":"index","yahoo":"^STOXX50E","source":"Yahoo Finance · índice de referencia","sourceUrl":"https://finance.yahoo.com/quote/%5ESTOXX50E/"},
  {"family":"EURO STOXX 50","code":"FEZ","label":"SPDR EURO STOXX 50 ETF","kind":"etf","yahoo":"FEZ","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/FEZ/"},
+ {"family":"STOXX Europe 600","code":"SXXP","label":"STOXX Europe 600 Index","kind":"index","yahoo":"^STOXX","source":"Yahoo Finance · índice de referencia","sourceUrl":"https://finance.yahoo.com/quote/%5ESTOXX/"},
+ {"family":"STOXX Europe 600","code":"EXSA","label":"iShares STOXX Europe 600 UCITS ETF (DE)","kind":"etf","yahoo":"EXSA.DE","source":"Yahoo Finance · Xetra","sourceUrl":"https://finance.yahoo.com/quote/EXSA.DE/"},
  {"family":"Gold","code":"GLD","label":"SPDR Gold Shares ETF","kind":"etf","yahoo":"GLD","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/GLD/"},
  {"family":"Gold","code":"IAU","label":"iShares Gold Trust ETF","kind":"etf","yahoo":"IAU","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/IAU/"},
  {"family":"Silver","code":"SLV","label":"iShares Silver Trust ETF","kind":"etf","yahoo":"SLV","source":"Yahoo Finance · NYSE Arca","sourceUrl":"https://finance.yahoo.com/quote/SLV/"},

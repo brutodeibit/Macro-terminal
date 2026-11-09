@@ -26,6 +26,17 @@ def date_from(text):
         return datetime.strptime(match[1],'%y%m%d').replace(tzinfo=timezone.utc)
     return None
 
+def fed_press_conferences():
+    url = 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'
+    soup = BeautifulSoup(api.get(url).text, 'html.parser')
+    result = {}
+    for link in soup.find_all('a', href=True):
+        match = re.fullmatch(r'/monetarypolicy/fomcpresconf(\d{8})\.htm', link['href'])
+        if match and (day := date_from(match[1])) and day <= datetime.now(timezone.utc):
+            result[day.date().isoformat()] = urljoin(url, link['href'])
+    return result
+
+
 def discover(eid):
     if eid not in ARCHIVES:return []
     url,pattern=ARCHIVES[eid]

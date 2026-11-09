@@ -118,7 +118,12 @@ def finalize(feed):
             spread=(vals['10Y']-vals['2Y'])*100 if '10Y' in vals and '2Y' in vals else None
             bonds['shape']=f'10Y − 2Y: {spread:+.1f} pb' if spread is not None else 'Curva por vencimientos'
             bonds['shapeDesc']=bonds.get('methodology') or 'Rendimientos oficiales publicados; las diferencias se expresan en puntos básicos.'
-            bonds['spreads']=[]
+            bonds['spreads'] = [
+                {'label': f'{long} − {short}', 'value': f'{(vals[long]-vals[short])*100:+.1f} pb',
+                 'desc': bonds['history'][-1]['date']}
+                for long, short in [('10Y','2Y'), ('10Y','3M'), ('30Y','10Y')]
+                if vals.get(long) is not None and vals.get(short) is not None
+            ]
     options = feed.get('options',{})
     archive = options.setdefault('dailySnapshots',{})
     for market in options.get('markets',[]):
@@ -148,6 +153,8 @@ def bank_due(eid, checked_at, now=None):
         age = now - datetime.fromisoformat(checked_at)
     except (TypeError, ValueError):
         return True
+    if age < timedelta(0):
+        return True
     nearby = any(e['economyId']==eid and -timedelta(hours=3) <= now-datetime.fromisoformat(e['date'].replace('Z','+00:00')) <= timedelta(days=2) for e in legacy.CENTRAL_BANK_EVENTS)
     return age >= timedelta(hours=2 if nearby else 24)
 
@@ -159,6 +166,7 @@ def meetings(feed, force=False):
         if not force and not bank_due(eid, conference.get('lastOfficialCheck')):
             continue
         archive = list(conference.get('meetingArchive', []))
+        previous_press_links = {row['date']: row['pressConferenceUrl'] for row in archive if row.get('date') and row.get('pressConferenceUrl')}
         for seed in bootstrap['meetings'].get(eid, []):
             archive.append(dict(seed, id=eid+':'+seed['date'], meetingDate=seed['date'],
                 source=cfg['bank'], verified=True, status='observed', publishedAt=seed['date'],
@@ -166,6 +174,7 @@ def meetings(feed, force=False):
                 retrievalMethod='official-document-bootstrap'))
         try:
             items = []
+            press_conferences = {}
             try:
                 tree = ET.fromstring(legacy.get(cfg['feed']).text)
                 for node in tree.iter():
@@ -189,6 +198,13 @@ def meetings(feed, force=False):
                     conference.pop('archiveError',None)
                 except Exception as exc:conference['archiveError']=str(exc)[:180]
             if eid == 'us':
+                from v7_meetings import fed_press_conferences
+                try:
+                    press_conferences = fed_press_conferences()
+                except Exception as exc:
+                    conference['pressConferenceError'] = str(exc)[:180]
+                else:
+                    conference.pop('pressConferenceError', None)
                 url = f'https://www.federalreserve.gov/newsevents/pressreleases/{NOW().year}-press-fomc.htm'
                 soup = legacy.BeautifulSoup(legacy.get(url).text, 'html.parser')
                 for a in soup.find_all('a', href=True):
@@ -197,6 +213,7 @@ def meetings(feed, force=False):
                     if match and 'FOMC statement' in a.get_text():
                         day = datetime.strptime(match[1], '%Y%m%d').replace(tzinfo=timezone.utc)
                         items.append({'title':a.get_text(' ',strip=True),'link':urljoin(url,a['href']), 'published':day.isoformat()})
+            usable_publication = False
             for item in items:
                 import re
                 title = item.get('title','')
@@ -206,6 +223,9 @@ def meetings(feed, force=False):
                     continue
                 if re.search(r'speech|implementation note|report|meeting schedule',title,re.I) or ('minutes' in title.lower() and 'summary' not in title.lower()):
                     continue
+                if not item.get('link'):
+                    continue
+                usable_publication = True
                 day = when.date().isoformat()
                 prior = next((r for r in reversed(archive) if r.get('date')==day), {})
                 record = {'id':eid+':'+day,'meetingDate':day,'date':day,
@@ -219,10 +239,19 @@ def meetings(feed, force=False):
                     if prior.get(key) is not None:record[key]=prior[key]
                 archive.append(record)
             archive = dated_rows(archive)
+            for row in archive:
+                if row['date'] in press_conferences:
+                    row['pressConferenceUrl'] = press_conferences[row['date']]
+                elif row['date'] in previous_press_links:
+                    row['pressConferenceUrl'] = previous_press_links[row['date']]
             conference['meetingArchive'] = archive
             conference['history'] = list(reversed(archive))[:3]
             conference['verificationStatus'] = f'{len(conference["history"])}/3 reuniones con publicación oficial recuperada'
-            conference['lastOfficialCheck'] = NOW().isoformat()
+            conference['lastOfficialAttempt'] = NOW().isoformat()
+            if usable_publication:
+                conference['lastOfficialCheck'] = conference['lastOfficialAttempt']
+            else:
+                conference['verificationStatus'] += ' · consulta sin publicaciones utilizables'
             if conference['history']:
                 conference['date'] = conference['history'][0]['date']
                 conference['summary'] = conference['history'][0].get('summary')

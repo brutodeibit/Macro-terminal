@@ -22,9 +22,13 @@ function v7LabelLayout(annotations,trace,layout,el){
 }
 const v7Catalog=optionsDisplayCatalog;
 optionsDisplayCatalog=function(o){
- const entries=v7Catalog(o).filter(x=>!['SXXP','EXSA'].includes(x.code));
- entries.push({code:'SXXP',family:'EURO STOXX',label:'STOXX Europe 600 · índice · cadena OXXP no conectada',kind:'index'},
-              {code:'EXSA',family:'EURO STOXX',label:'iShares STOXX Europe 600 UCITS ETF · cadena no conectada',kind:'etf'});
+ const entries=v7Catalog(o);
+ for (const entry of [
+  {code:'SXXP',family:'STOXX Europe 600',label:'STOXX Europe 600 · índice',kind:'index'},
+  {code:'EXSA',family:'STOXX Europe 600',label:'iShares STOXX Europe 600 UCITS ETF (DE)',kind:'etf'}
+ ]) {
+  if (!entries.some(existing=>existing.code===entry.code)) entries.push(entry);
+ }
  return entries.map(x=>['SX5E','FEZ','SXXP','EXSA'].includes(x.code)?{...x,family:'EURO STOXX'}:x)
   .filter(x=>!['SX5E','FEZ','SXXP','EXSA'].includes(x.code)||((window.__stoxxSegment||'50')==='600'?['SXXP','EXSA']:['SX5E','FEZ']).includes(x.code));
 };
@@ -57,13 +61,17 @@ const v7Options=renderOptionsSection;
 renderOptionsSection=function(){
  const html=v7Options(),o=macroDatabase.__options||{},m=(o.markets||[]).find(x=>x.ticker===window.__optTicker)||{},p=optionsSelectedProfile(m)||{};
  const roots=(p.gammaFlipRoots||[]).map(x=>fmtNum(x,2)).join(' · '),model=p.gammaFlipModel;
+ const coverage = p.gammaFlipCoveragePct;
+ const flipNote = p.gammaFlipStatus === 'Insufficient data' && Number.isFinite(coverage) && coverage < 90
+  ? `<p class="text-xs text-gray-400">Gamma Flip · ${esc(p.expiration||'')}: ${fmtNum(coverage,1)}% del interés abierto con datos utilizables. Mínimo del modelo: 90%.</p>`
+  : '';
  const history=(o.dailySnapshots?.[(m.ticker||'')+':'+(p.expiration||'')]||[]).slice(-5);
  const details='<details class="metric p-4 mt-4"><summary class="cursor-pointer text-sm font-bold">Datos, modelo y evolución · '+esc(p.expiration||'sin vencimiento')+'</summary><div class="grid md:grid-cols-2 gap-4 mt-4 text-sm"><div><b>Gamma Flip</b><p>'+esc(p.gammaFlipStatus||'No calculable con este snapshot')+'</p><p>Cobertura OI con IV: '+fmtNum(p.gammaFlipCoveragePct,1)+'%. Cruces: '+esc(roots||'ninguno calculable')+'.</p><p>'+esc(model?.method||'Sin modelo revalorado disponible')+'</p><p>Supuestos: r='+fmtNum(model?.rate,3)+'; q='+fmtNum(model?.dividendYield,3)+'. OI fijo, IV por strike constante; exposición estimada.</p><p>Sensibilidad: '+esc(p.gammaFlipSensitivity?JSON.stringify(p.gammaFlipSensitivity):'no disponible')+'</p></div><div><b>Put/Call y Max Pain</b><p>OI: '+fmtNum(p.putCallOi,2)+' · Volumen: '+fmtNum(p.putCallVolume,2)+'. Mismo vencimiento; no son señales automáticas de compra/venta.</p><p>Max Pain minimiza el pago intrínseco agregado del OI observado. Walls OI son concentraciones de contratos; GEX aplica gamma y un supuesto de signo.</p><p>IV ATM es la volatilidad del activo y vencimiento seleccionados, no el VIX. Datos: '+esc(m.asOf||'sin fecha')+' · '+esc(m.source||'sin fuente')+'</p></div></div><div class="mt-4 text-xs">Últimas '+history.length+' fechas de snapshot capturadas · sin reconstrucción retrospectiva</div><div class="overflow-x-auto"><table class="w-full text-xs"><tr><th>Fecha</th><th>Call OI</th><th>Put OI</th><th>GEX</th><th>Flip</th></tr>'+history.map(r=>'<tr><td>'+esc(r.date)+'</td><td>'+fmtNum(r.callOi,0)+'</td><td>'+fmtNum(r.putOi,0)+'</td><td>'+fmtCompactMoney(r.gammaNet)+'</td><td>'+fmtNum(r.gammaFlip,2)+'</td></tr>').join('')+'</table></div></details>';
  const tabs=window.__optFamily==='EURO STOXX'?'<div class="flex gap-3 p-3"><button class="mini-pill" onclick="window.__stoxxSegment=\'50\';window.__optTicker=\'SX5E\';renderContent()">EURO STOXX 50 · SX5E / FEZ</button><button class="mini-pill" onclick="window.__stoxxSegment=\'600\';window.__optTicker=\'SXXP\';renderContent()">STOXX Europe 600 · SXXP / EXSA</button></div>':'';
  const djx=(o.markets||[]).find(x=>x.ticker==='DJX'),rawDow=djx?.referenceIndex?.price;
  const dowValue=rawDow??(Number.isFinite(djx?.spot)?djx.spot*100:null);
  const dow=['DJX','DIA'].includes(window.__optTicker)?'<div class="metric p-4"><div class="flex flex-wrap gap-3 justify-between"><b>Dow Jones · DJIA / DJI</b><span>'+fmtNum(dowValue,2)+' puntos</span></div><p class="text-sm text-gray-400 mt-2">'+(rawDow!=null?'Precio del índice de referencia · '+esc(djx.referenceIndex.source):'Equivalente del índice calculado como DJX × 100')+' · '+esc(djx?.asOf||'sin fecha')+'</p><p class="text-xs text-gray-400 mt-2">DJX / DJXW: opciones sobre 1/100 del DJIA; multiplicador 100 USD por punto. DIA: ETF con precio y cadena propios. Los strikes y el OI se interpretan en la escala del instrumento seleccionado.</p></div>':'';
- return html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+tabs+dow).replace('</div></section>',details+'</div></section>');
+ return html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+tabs+dow).replace('</div></section>',flipNote+details+'</div></section>');
 };
 
 const v7Dark=renderDarkPoolSection;
@@ -79,5 +87,17 @@ const v7Sentiment=renderCryptoBondSection;
 renderCryptoBondSection=function(){
  const html=v7Sentiment(),h=macroDatabase.__cryptoSentiment?.fearGreed?.history||[];
  const history='<div class="metric p-4"><div class="text-xs text-gray-400 mb-3">Últimas 7 observaciones · Fear & Greed</div><div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">'+h.slice(-7).map(r=>'<div class="text-center"><div class="text-xs text-gray-400">'+esc(r.date)+'</div><div class="text-xl font-bold mt-1" style="color:'+fearVisualTone(r.value).color+'">'+fmtNum(r.value,0)+'</div><div class="text-xs text-gray-400">'+esc(r.classification||'')+'</div></div>').join('')+'</div></div>';
- return html.replace('<div id="crypto-etf-flows"',history+'<div id="crypto-etf-flows"');
+ const monday = new Date();
+ monday.setUTCHours(0,0,0,0);
+ monday.setUTCDate(monday.getUTCDate()-(monday.getUTCDay()+6)%7);
+ const dayMs = 86400000;
+ const weekly = Array.from({length:4},(_,i)=>{
+  const end = monday.getTime()-(3-i)*7*dayMs;
+  const start = new Date(end-7*dayMs).toISOString().slice(0,10);
+  const cutoff = new Date(end).toISOString().slice(0,10);
+  const last = h.filter(row=>row.date>=start&&row.date<cutoff&&Number.isFinite(row.value)).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+  return `<div><div class="text-xs text-gray-400">Semana del ${start}</div><b>${last?fmtNum(last.value,0):'—'}</b>${last?` <span class="text-xs text-gray-400">${esc(last.date)}</span>`:''}</div>`;
+ }).join('');
+ const weeks = h.length?`<div class="metric p-4"><div class="text-xs text-gray-400 mb-3">Última observación de cada semana cerrada</div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${weekly}</div></div>`:'';
+ return html.replace('<div id="crypto-etf-flows"',history+weeks+'<div id="crypto-etf-flows"');
 };
