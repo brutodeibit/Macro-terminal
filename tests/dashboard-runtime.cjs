@@ -55,5 +55,11 @@ if(process.argv[2]==='claude-preview.html'){
  assert.equal(vm.runInContext('optionsSelectedProfile(sameDayContracts).contractCode',ctx),'ODAP');
  vm.runInContext("window.__optExpiration='ODAX:2099-11-20'",ctx);
  assert.equal(vm.runInContext('optionsSelectedProfile(sameDayContracts).contractCode',ctx),'ODAX');
+ assert.equal(vm.runInContext("weeklyEventPriority({event:'Core PCE Price Index'})",ctx),3);
+ assert.equal(vm.runInContext("weeklyEventPriority({event:'Jefferson Speaks'})",ctx),0);
+ assert.equal(vm.runInContext("weeklyEventPriority({event:'Import Price Index'})",ctx),0);
+ assert(vm.runInContext('renderWeeklyFxRadar(macroDatabase.us)',ctx).includes('Qué confirma o cambia la hipótesis'));
+ const europe=vm.runInContext("optionsDisplayCatalog(macroDatabase.__options).filter(x=>x.family==='EURO STOXX').map(x=>x.code)",ctx);
+ for(const code of ['SX5E','FEZ','SXXP','EXSA'])assert(europe.includes(code));
  console.log('FX symmetry, meeting links and same-day expiry: OK');
 }
