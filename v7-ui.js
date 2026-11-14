@@ -96,7 +96,7 @@ renderCryptoBondSection=function(){
   const start = new Date(end-7*dayMs).toISOString().slice(0,10);
   const cutoff = new Date(end).toISOString().slice(0,10);
   const last = h.filter(row=>row.date>=start&&row.date<cutoff&&Number.isFinite(row.value)).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
-  return `<div><div class="text-xs text-gray-400">Semana del ${start}</div><b>${last?fmtNum(last.value,0):'—'}</b>${last?` <span class="text-xs text-gray-400">${esc(last.date)}</span>`:''}</div>`;
+  return `<div class="rounded-xl border border-gray-700 p-4"><div class="text-sm font-semibold text-gray-200">Semana del ${start.split("-").reverse().join("/")}</div><div class="text-2xl font-bold text-white mt-2">${last?fmtNum(last.value,0):"—"}</div>${last?`<div class="text-sm text-gray-300 mt-1">Último dato · ${esc(last.date)}</div>`:""}</div>`;
  }).join('');
  const weeks = h.length?`<div class="metric p-4"><div class="text-xs text-gray-400 mb-3">Última observación de cada semana cerrada</div><div class="grid grid-cols-2 lg:grid-cols-4 gap-3">${weekly}</div></div>`:'';
  return html.replace('<div id="crypto-etf-flows"',history+weeks+'<div id="crypto-etf-flows"');
