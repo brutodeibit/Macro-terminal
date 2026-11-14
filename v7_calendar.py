@@ -44,7 +44,7 @@ def update(feed,get):
     calendar=feed.setdefault('economicCalendar',{});old=calendar.get('events',[])
     retained=[x for x in old if not str(x.get('source','')).startswith('Forex Factory')]
     collected=[];errors=[]
-    for period in ('thisweek', 'nextweek'):
+    for period in ('thisweek',):
         url='https://nfs.faireconomy.media/ff_calendar_'+period+'.json'
         try:
             rows=get(url).json()
@@ -62,3 +62,4 @@ def update(feed,get):
     combined={x.get('id') or str((x.get('economyId'),x.get('date'),x.get('event'))):x for x in retained+collected}
     calendar.update(events=sorted(combined.values(),key=lambda x:x.get('date','')),
         releaseCalendarStatus='partial' if errors else 'retrieved',releaseCalendarErrors=errors)
+
