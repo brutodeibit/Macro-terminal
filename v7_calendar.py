@@ -44,7 +44,7 @@ def update(feed,get):
     calendar=feed.setdefault('economicCalendar',{});old=calendar.get('events',[])
     retained=[x for x in old if not str(x.get('source','')).startswith('Forex Factory')]
     collected=[];errors=[]
-    for period in ('thisweek',):
+    for period in ('thisweek', 'nextweek'):
         url='https://nfs.faireconomy.media/ff_calendar_'+period+'.json'
         try:
             rows=get(url).json()
