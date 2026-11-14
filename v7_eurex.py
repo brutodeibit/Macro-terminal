@@ -11,9 +11,13 @@ PRODUCTS = {
  'SXXP': ('OXXP', 'https://www.eurex.com/ex-en/markets/idx/stx/stoxx-europe-600/products/STOXX-Europe-600-Index-Options-70284'),
  'EXSA': ('EXSA', 'https://www.eurex.com/ex-en/markets/etf-etc/eqt-idx-etfs/iShares-STOXX-Europe-600-UCITS-DE-Options-70302'),
 }
+DAILY_PRODUCTS = {
+ 'DAX': ('ODAP', 'https://www.eurex.com/ex-en/markets/idx/dax/DAX-End-of-Day-Options-3734540'),
+ 'SX5E': ('OEXP', 'https://www.eurex.com/ex-en/markets/idx/stx/euro-stoxx-50-derivatives/products/EURO-STOXX-50-End-of-Day-Index-Options-3657352'),
+}
 
 def expiration_time(day, code):
-    hour, minute = {'ODAX':(13,0), 'EXSA':(17,30)}.get(code, (12,0))
+    hour, minute = {'ODAX':(13,0), 'EXSA':(17,30), 'ODAP':(17,30), 'OEXP':(17,30)}.get(code, (12,0))
     return datetime.strptime(day,'%Y%m%d').replace(hour=hour,minute=minute,tzinfo=ZoneInfo('Europe/Berlin')).astimezone(timezone.utc)
 
 def chain_rows(data, expiration):
@@ -32,7 +36,7 @@ def update(feed):
     import market_features as mf
     now=datetime.now(timezone.utc)
     markets=feed.setdefault('options',{}).setdefault('markets',[])
-    for ticker,(code,page) in PRODUCTS.items():
+    for ticker,(code,page) in list(PRODUCTS.items()) + list(DAILY_PRODUCTS.items()):
         try:
             soup=BeautifulSoup(mf.get(page).text,'html.parser')
             configs=[json.loads(tag.string or tag.get_text()) for tag in soup.find_all('script',attrs={'data-product':True})]
@@ -68,10 +72,11 @@ def update(feed):
                 profiles.append(p);selected.add(bucket)
             if not profiles:raise ValueError('No unexpired chains')
             prior=next((m for m in markets if m.get('ticker')==ticker),{})
+            profiles = [p for p in prior.get('profiles',[]) if p.get('contractCode') and p['contractCode'] != code] + profiles
             entry={**prior,'ticker':ticker,'name':prior.get('name',ticker),'spot':spot,'referenceOnly':False,
                    'profiles':profiles,'source':'Eurex · '+code,'sourceUrl':page,'asOf':datetime.strptime(date,'%Y%m%d').date().isoformat(),
                    'dataStatus':'REAL / DELAYED · official Eurex chains','method':'Observed OI and volume; Max Pain calculated. GEX unavailable without verified IV/Greeks.'}
             markets[:]=[m for m in markets if m.get('ticker')!=ticker]+[entry]
-            feed.setdefault('sourceWarnings',{}).pop('EUREX_'+ticker,None)
+            feed.setdefault('sourceWarnings',{}).pop('EUREX_'+code,None)
         except Exception as exc:
-            feed.setdefault('sourceWarnings',{})['EUREX_'+ticker]=str(exc)[:180]
+            feed.setdefault('sourceWarnings',{})['EUREX_'+code]=str(exc)[:180]
