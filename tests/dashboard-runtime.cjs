@@ -50,5 +50,10 @@ if(process.argv[2]==='claude-preview.html'){
  assert.equal(vm.runInContext('optionsUsableProfiles(expired).length',ctx),0);
  vm.runInContext("window.__optTicker='DJX';window.__optFamily='Dow Jones'",ctx);
  assert(vm.runInContext('renderOptionsSection()',ctx).includes('Dow Jones · DJIA / DJI'));
+ ctx.sameDayContracts={profiles:[{expiration:'2099-11-20',contractCode:'ODAX'},{expiration:'2099-11-20',contractCode:'ODAP'}]};
+ vm.runInContext("window.__optExpiration='ODAP:2099-11-20'",ctx);
+ assert.equal(vm.runInContext('optionsSelectedProfile(sameDayContracts).contractCode',ctx),'ODAP');
+ vm.runInContext("window.__optExpiration='ODAX:2099-11-20'",ctx);
+ assert.equal(vm.runInContext('optionsSelectedProfile(sameDayContracts).contractCode',ctx),'ODAX');
  console.log('FX symmetry, meeting links and same-day expiry: OK');
 }
