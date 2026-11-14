@@ -1,8 +1,69 @@
 """Official curves: observed benchmarks and explicitly identified official estimates."""
 import csv
 import io
+import re
 from datetime import datetime, timezone
 import update_feed as api
+
+
+def parse_japan_csv(text):
+    """MOF files contain a title, blank lines and footnotes around the table."""
+    header = None
+    rows = []
+    for cells in csv.reader(io.StringIO(text.replace('\r\r\n', '\n'))):
+        if not cells:
+            continue
+        if cells[0].strip().lstrip('\ufeff') == 'Date':
+            header = [c.strip() for c in cells]
+            continue
+        if not header or not re.fullmatch(r'\d{4}/\d{1,2}/\d{1,2}', cells[0].strip()):
+            continue
+        day = datetime.strptime(cells[0].strip(), '%Y/%m/%d').date().isoformat()
+        values = {term: api.num(value) for term, value in zip(header, cells)
+                  if term in ('1Y','2Y','5Y','10Y','20Y','30Y')}
+        rows.append({'date': day, 'values': values})
+    return rows
+
+
+def japan(feed):
+    base = 'https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/'
+    rows = list(feed['economies']['jp'].get('bonds', {}).get('history', []))
+    # Bootstrap the history only when missing; daily refresh is a small monthly CSV.
+    if len(rows) < 252 or rows[-1].get('date', '')[:7] != datetime.now(timezone.utc).strftime('%Y-%m'):
+        rows = parse_japan_csv(api.get(base+'historical/jgbcme_all.csv').text)
+    rows += parse_japan_csv(api.get(base+'jgbcme.csv').text)
+    store_curve(feed, 'jp', rows, 'Japan Ministry of Finance', base+'jgbcme.csv',
+                'Official constant-maturity JGB yields based on secondary-market closing prices; semiannual compounding. No synthetic 3M maturity.',
+                status='calculated')
+
+
+def parse_rba_csv(text):
+    mapping = {'FCMYGBAG2D':'2Y','FCMYGBAG5D':'5Y','FCMYGBAG10D':'10Y'}
+    header, publication, rows = None, None, []
+    for cells in csv.reader(io.StringIO(text)):
+        if not cells:
+            continue
+        if cells[0] == 'Publication date':
+            publication = datetime.strptime(cells[1], '%d-%b-%Y').date().isoformat()
+        if cells[0] == 'Series ID':
+            header = cells
+            continue
+        if not header or not re.fullmatch(r'\d{2}-[A-Za-z]{3}-\d{4}', cells[0]):
+            continue
+        day = datetime.strptime(cells[0], '%d-%b-%Y').date().isoformat()
+        rows.append({'date':day, 'values':{mapping[code]:api.num(value)
+                    for code, value in zip(header, cells) if code in mapping}})
+    return rows, publication
+
+
+def australia(feed):
+    url = 'https://www.rba.gov.au/statistics/tables/csv/f2-data.csv'
+    rows, publication = parse_rba_csv(api.get(url).text)
+    store_curve(feed, 'au', rows, 'Reserve Bank of Australia · F2', url,
+                'Official interpolated Australian government nominal yields. Excludes inflation-indexed yields; weekly publication of daily observations.',
+                status='estimated')
+    for tenor in feed['economies']['au']['bonds']['tenors']:
+        tenor['publishedAt'] = publication
 
 
 def store_curve(feed, eid, rows, source, url, methodology, status='observed'):

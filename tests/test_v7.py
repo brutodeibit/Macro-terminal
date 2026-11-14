@@ -5,9 +5,18 @@ from market_features import _max_pain
 from update_preview import dated_rows
 from update_preview import bank_due
 from datetime import datetime, timezone, timedelta
-from v7_curves import store_curve
+from v7_curves import store_curve, parse_japan_csv, parse_rba_csv
 
 class V7Tests(unittest.TestCase):
+    def test_rba_excludes_indexed_bond_and_blank_observations(self):
+        rows, published = parse_rba_csv('Publication date,13-Nov-2026\nSeries ID,FCMYGBAG2D,FCMYGBAG10D,FCMYGBAGID\n12-Nov-2026,4.0,,2.5\n')
+        self.assertEqual(published, '2026-11-13')
+        self.assertEqual(rows[0]['values'], {'2Y':4.0,'10Y':None})
+
+    def test_japan_csv_dates_missing_and_negative_yields(self):
+        rows = parse_japan_csv('Interest Rate,,,,\r\r\nDate,1Y,2Y,20Y,30Y\r\r\n2026/1/2,-0.1,0.2,-,1.5\r\r\nFootnote,,,,')
+        self.assertEqual(rows, [{'date':'2026-01-02','values':{'1Y':-0.1,'2Y':0.2,'20Y':None,'30Y':1.5}}])
+
     def test_known_gamma_root_and_sensitivity(self):
         rows = [{'strike':90,'iv':.2,'openInterest':100,'type':'P'},
                 {'strike':110,'iv':.2,'openInterest':100,'type':'C'}]

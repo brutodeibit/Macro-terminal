@@ -264,9 +264,13 @@ def meetings(feed, force=False):
 
 
 def curves(feed):
-    us = copy.deepcopy(feed['economies']['us'].get('bonds',{}))
+    # The fallback must not replace official dated curves while their jobs are cached.
+    preserved = {eid: copy.deepcopy(eco.get('bonds', {}))
+                 for eid, eco in feed['economies'].items()
+                 if eid == 'us' or eco.get('bonds', {}).get('history')}
     mf.update_bond_curves(feed)
-    feed['economies']['us']['bonds'] = us
+    for eid, bonds in preserved.items():
+        feed['economies'][eid]['bonds'] = bonds
 
 
 def calendar(feed):
@@ -282,6 +286,8 @@ def release_calendar(feed):
 
 JOBS = {
  'TREASURY':(treasury, 6), 'CURVES':(curves, 6), 'CANADA_CURVE':(v7_curves.canada, 24), 'ECB_CURVE':(v7_curves.euro_area, 24),
+ 'JAPAN_CURVE':(v7_curves.japan, 24),
+ 'AUSTRALIA_CURVE':(v7_curves.australia, 24),
  'ETF':(etf_flows, 6), 'MEETINGS':(meetings, 2),
  'CALENDAR':(calendar, 24), 'ECONOMIC_CALENDAR':(legacy.update_te, 6), 'RELEASE_CALENDAR':(release_calendar, 6),
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
