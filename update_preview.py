@@ -11,6 +11,8 @@ from urllib.parse import urljoin
 import market_features as mf
 import update_feed as legacy
 import v7_curves
+import v7_eurex
+import v7_infolib
 
 ROOT = Path(__file__).resolve().parent
 TARGET = ROOT / 'macro-feed-v7.json'
@@ -284,6 +286,28 @@ def release_calendar(feed):
     update(feed, mf.get)
 
 
+def options(feed):
+    preserved = copy.deepcopy([m for m in feed.get('options', {}).get('markets', [])
+                               if m.get('ticker') in v7_eurex.PRODUCTS and str(m.get('source', '')).startswith('Eurex')])
+    mf.update_options(feed)
+    markets = feed.setdefault('options', {}).setdefault('markets', [])
+    tickers = {m['ticker'] for m in preserved}
+    markets[:] = [m for m in markets if m.get('ticker') not in tickers] + preserved
+
+
+def dark_prints(feed):
+    previous = copy.deepcopy(feed.get('darkPoolPrints', {}))
+    mf.update_dark_pool_prints(feed)
+    current = feed.setdefault('darkPoolPrints', {})
+    for symbol, asset in previous.get('assets', {}).items():
+        rows = [p for p in asset.get('prints', []) if p.get('sourceMode') == 'PROVIDER_REPORTED']
+        if rows:
+            target = current.setdefault('assets', {}).setdefault(symbol, {})
+            target['prints'] = [p for p in target.get('prints', []) if p.get('sourceMode') != 'PROVIDER_REPORTED'] + rows
+    if previous.get('infolib'):
+        current['infolib'] = previous['infolib']
+
+
 JOBS = {
  'TREASURY':(treasury, 6), 'CURVES':(curves, 6), 'CANADA_CURVE':(v7_curves.canada, 24), 'ECB_CURVE':(v7_curves.euro_area, 24),
  'JAPAN_CURVE':(v7_curves.japan, 24),
@@ -293,8 +317,10 @@ JOBS = {
  'ETF':(etf_flows, 6), 'MEETINGS':(meetings, 2),
  'CALENDAR':(calendar, 24), 'ECONOMIC_CALENDAR':(legacy.update_te, 6), 'RELEASE_CALENDAR':(release_calendar, 6),
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
- 'OPTIONS':(mf.update_options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
- 'COT':(mf.update_cot, 24), 'DARK_PRINTS':(mf.update_dark_pool_prints, 12),
+ 'OPTIONS':(options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
+ 'EUREX':(v7_eurex.update, 2),
+ 'COT':(mf.update_cot, 24), 'DARK_PRINTS':(dark_prints, 12),
+ 'INFOLIB_PRINTS':(v7_infolib.update, 12),
  'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 6), 'RISK':(legacy.update_risk, 1),
  'BONDS':(mf.update_bond_market, 6), 'SENTIMENT':(mf.update_traditional_sentiment, 24),
  'FEAR':(mf.update_traditional_fear_greed, 6), 'OHLC':(dark_ohlc,12),
