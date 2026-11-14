@@ -5,9 +5,19 @@ from market_features import _max_pain
 from update_preview import dated_rows
 from update_preview import bank_due
 from datetime import datetime, timezone, timedelta
-from v7_curves import store_curve, parse_japan_csv, parse_rba_csv
+from v7_curves import store_curve, parse_japan_csv, parse_rba_csv, parse_snb_csv, parse_bundesbank_csv
 
 class V7Tests(unittest.TestCase):
+    def test_snb_does_not_mix_euro_or_corporate_curves(self):
+        text='"CubeId";"rendeiduebd"\n"Date";"D0";"D1";"Value"\n"2026-10-30";"CHF";"2J";"-0.1"\n"2026-10-30";"EUR";"2J";"3.0"\n"2026-10-30";"KTA";"2J";"1.0"'
+        self.assertEqual(parse_snb_csv(text), [{'date':'2026-10-30','values':{'2Y':-0.1}}])
+
+    def test_bundesbank_excludes_non_trading_days(self):
+        text='last update,2026-11-13\n2026-11-12,3.09,\n2026-11-13,3.13,\n2026-11-14,.,No value available'
+        rows=parse_bundesbank_csv(text,'2Y')
+        self.assertEqual(len(rows),2)
+        self.assertEqual(rows[-1]['values']['2Y'],3.13)
+
     def test_rba_excludes_indexed_bond_and_blank_observations(self):
         rows, published = parse_rba_csv('Publication date,13-Nov-2026\nSeries ID,FCMYGBAG2D,FCMYGBAG10D,FCMYGBAGID\n12-Nov-2026,4.0,,2.5\n')
         self.assertEqual(published, '2026-11-13')

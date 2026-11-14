@@ -26,6 +26,23 @@ if(process.argv[2]==='claude-preview.html'){
   const a=fx.matrix[i].cols[j],b=fx.matrix[j].cols[i];
   if(a===null)assert.equal(b,null);else assert(Math.abs(a+b)<1e-10,'FX matrix must be antisymmetric');
  }
+ // A delayed verified yield remains visible, but must not become a current carry input.
+ vm.runInContext("window.__savedChBonds=macroDatabase.ch.bonds;macroDatabase.ch.bonds={tenors:[{term:'2Y',yield:'0.238%',observedAt:'2020-01-02',source:'SNB'}]}",ctx);
+ assert(vm.runInContext("sovereignCell('CHF','2Y')",ctx).includes('0.238%'));
+ assert(vm.runInContext("sovereignCell('CHF','2Y')",ctx).includes('retrasado'));
+ assert(Number.isNaN(vm.runInContext("buildFxComparator().rows.find(x=>x.code==='CHF').y2",ctx)));
+ vm.runInContext("macroDatabase.ch.bonds=window.__savedChBonds",ctx);
+ const table=vm.runInContext('renderFxComparator()',ctx);
+ assert(table.includes('>1Y</th>')&&table.includes('>5Y</th>'));
+ assert(!table.includes('—%'),'Missing yields must not be formatted as a percentage');
+ // The matrix and the USD row use the same partial comparison, without a fake macro zero.
+ vm.runInContext("window.__savedJp=macroDatabase.jp;window.__savedFx=macroDatabase.__fx;macroDatabase.jp={...macroDatabase.jp,indicators:[],conference:{}};macroDatabase.__fx={...macroDatabase.__fx,currencies:{...macroDatabase.__fx.currencies,JPY:{observedAt:new Date().toISOString(),change5s:1,change21s:2},USD:{observedAt:new Date().toISOString(),change5s:0,change21s:0}}}",ctx);
+ const partial=vm.runInContext('buildFxComparator()',ctx);
+ const jpy=partial.rows.find(x=>x.code==='JPY');
+ assert(Number.isNaN(jpy.pol),'Absent macro evidence is not a neutral observation');
+ assert.equal(partial.matrix.find(x=>x.base==='JPY').cols[7],jpy.score);
+ assert(jpy.label.startsWith('Parcial'));
+ vm.runInContext("macroDatabase.jp=window.__savedJp;macroDatabase.__fx=window.__savedFx",ctx);
  const meetings=vm.runInContext('renderMeetingHistory(macroDatabase.eu)',ctx);
  assert.equal(typeof meetings,'string');assert.equal((meetings.match(/class="card /g)||[]).length,3);
  assert(meetings.includes('ecb.europa.eu'));

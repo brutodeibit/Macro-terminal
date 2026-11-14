@@ -99,8 +99,8 @@ def canada(feed):
     start=f'{datetime.now(timezone.utc).year-1}-12-01'
     rows=[]
     mapping={'BD.CDN.2YR.DQ.YLD':'2Y','BD.CDN.5YR.DQ.YLD':'5Y','BD.CDN.10YR.DQ.YLD':'10Y','BD.CDN.LONG.DQ.YLD':'LT',
-             'V39065':'3M','V39067':'1Y'}
-    for path in ('group/bond_yields_all/json','V39065/json','V39067/json'):
+             'TB.CDN.90D.MID':'3M','TB.CDN.1Y.MID':'1Y'}
+    for path in ('group/bond_yields_all/json','TB.CDN.90D.MID,TB.CDN.1Y.MID/json'):
         try:data=api.get(base+path,{'start_date':start}).json()
         except Exception as exc:
             feed.setdefault('sourceWarnings',{})['CANADA_'+path]=str(exc)[:150]
@@ -110,6 +110,58 @@ def canada(feed):
             rows.append({'date':row['d'],'values':values})
     store_curve(feed,'ca',rows,'Bank of Canada',base+'group/bond_yields_all/json',
         '3M/1Y: secondary-market Treasury bills; 2Y/5Y/10Y: benchmark bonds. LT: designated long-term benchmark, not an exact 30Y maturity.')
+
+
+def parse_snb_csv(text):
+    lines = text.replace('\r\r\n', '\n').lstrip('\ufeff').splitlines()
+    start = next((i for i, line in enumerate(lines) if line.startswith('"Date";')), None)
+    if start is None:
+        raise ValueError('SNB: missing dated table')
+    rows = []
+    for row in csv.DictReader(lines[start:], delimiter=';'):
+        term = row.get('D1', '').replace('J','Y')
+        if row.get('D0') != 'CHF' or term not in ('1Y','2Y','5Y','10Y','20Y','30Y'):
+            continue
+        day = row.get('Date','')
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}',day):
+            rows.append({'date':day,'values':{term:api.num(row.get('Value'))}})
+    return rows
+
+
+def switzerland(feed):
+    url = 'https://data.snb.ch/api/cube/rendeiduebd/data/csv/en'
+    rows = parse_snb_csv(api.get(url, {'fromDate':f'{datetime.now(timezone.utc).year-1}-12-01'}).text)
+    store_curve(feed, 'ch', rows, 'Swiss National Bank · Confederation spot curve', url,
+                'Official estimated zero-coupon Swiss Confederation curve. Daily observations published with delay; EUR and corporate borrower categories excluded.',
+                status='estimated')
+
+
+def parse_bundesbank_csv(text, term):
+    rows = []
+    for cells in csv.reader(io.StringIO(text.lstrip('\ufeff'))):
+        if len(cells)<2 or not re.fullmatch(r'\d{4}-\d{2}-\d{2}',cells[0]):
+            continue
+        value = api.num(cells[1])
+        if value is not None:
+            rows.append({'date':cells[0],'values':{term:value}})
+    return rows
+
+
+def germany(feed):
+    base = 'https://api.statistiken.bundesbank.de/rest/data/BBSIS/'
+    rows = []
+    for years in (1,2,5,10,20,30):
+        term = f'{years}Y'
+        key = f'D.I.ZST.ZI.EUR.S1311.B.A604.R{years:02d}XX.R.A.A._Z._Z.A'
+        try:
+            response = api.get(base+key, {'format':'csv','lang':'en',
+                                'startPeriod':f'{datetime.now(timezone.utc).year-1}-12-01'})
+            rows.extend(parse_bundesbank_csv(response.text, term))
+        except Exception as exc:
+            feed.setdefault('sourceWarnings', {})['GERMANY_'+term] = str(exc)[:180]
+    store_curve(feed, 'de', rows, 'Deutsche Bundesbank · Svensson spot curve', base,
+                'Official fitted zero-coupon yields on German Federal securities; no app interpolation or euro-area substitution.',
+                status='estimated')
 
 
 def euro_area(feed):
