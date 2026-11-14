@@ -19,7 +19,9 @@ Seguimiento existente, sin duplicar: DAV-21 (actualización, calendario, curvas 
 
 ## Bloque Eurex e InfoLib implementado el 14-11
 - Cadenas oficiales por strike de ODAX, OESX y OXXP recuperadas desde estadísticas públicas de Eurex: OI, volumen, paredes OI y Max Pain. Selección del primer vencimiento disponible en cada ventana; no representa todos los vencimientos de la ventana.
-- No hay IV/griegas en esta fuente: no calcular GEX ni Gamma Flip con ceros. Pendientes clases EOD ODAP/OEXP y cadena efectiva del ETF EXSA.
+- No hay IV/griegas en esta fuente: no calcular GEX ni Gamma Flip con ceros. Pendientes clases EOD ODAP/OEXP.
 - InfoLib: filas de precio/tamaño/importe contrastadas aritméticamente; observadas para QQQ, SLV, AAPL y NVDA en la consulta. Proveedor secundario, no cinta de mercado verificada independientemente. Sin identificación de institución o lado. Sin zona horaria publicada: marcas solo por fecha en gráfico diario.
 - Actualización Eurex cada 2 horas e InfoLib cada 12 horas dentro del workflow existente; los refrescos de otros proveedores conservan estos datos si su consulta está en caché.
 - Pruebas de normalización, Max Pain y conservación entre proveedores aprobadas; validación estructural del feed y pruebas JavaScript del panel/gráficos aprobadas. Publicación se verifica por separado.
+- Commit 9cc7851: Pages y workflow completados; HTTP público confirma tres cadenas y 499 filas InfoLib obtenidas (solo una parte corresponde a los activos del panel).
+- EXSA también recuperado oficialmente: 34 strikes para noviembre y diciembre, OI call/put y Max Pain. Corte ODAX 13:00, OESX/OXXP 12:00 y EXSA 17:30 en Europe/Berlin, con prueba de horario de verano. EXSA pendiente de esta segunda publicación.

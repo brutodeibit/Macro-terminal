@@ -9,7 +9,12 @@ PRODUCTS = {
  'DAX': ('ODAX', 'https://www.eurex.com/ex-en/markets/idx/dax/DAX-Options-70044'),
  'SX5E': ('OESX', 'https://www.eurex.com/ex-en/markets/idx/stx/euro-stoxx-50-derivatives/products/EURO-STOXX-50-Index-Options-69660'),
  'SXXP': ('OXXP', 'https://www.eurex.com/ex-en/markets/idx/stx/stoxx-europe-600/products/STOXX-Europe-600-Index-Options-70284'),
+ 'EXSA': ('EXSA', 'https://www.eurex.com/ex-en/markets/etf-etc/eqt-idx-etfs/iShares-STOXX-Europe-600-UCITS-DE-Options-70302'),
 }
+
+def expiration_time(day, code):
+    hour, minute = {'ODAX':(13,0), 'EXSA':(17,30)}.get(code, (12,0))
+    return datetime.strptime(day,'%Y%m%d').replace(hour=hour,minute=minute,tzinfo=ZoneInfo('Europe/Berlin')).astimezone(timezone.utc)
 
 def chain_rows(data, expiration):
     rows=[]
@@ -38,7 +43,7 @@ def update(feed):
             if overview.get('meta',{}).get('productCode')!=code:raise ValueError('Wrong Eurex product')
             spot=overview['header']['underlyingClosingPrice'];profiles=[];selected=set()
             for expiry in sorted(overview.get('dataRows',[]),key=lambda x:x['date']):
-                exp=datetime.strptime(expiry['date'],'%Y%m%d').replace(hour=12,tzinfo=ZoneInfo('Europe/Berlin')).astimezone(timezone.utc)
+                exp=expiration_time(expiry['date'],code)
                 days=(exp.date()-now.date()).days
                 if exp<=now or days>90:continue
                 bucket='0DTE' if days==0 else 'NEXT' if days<=7 else '7-30D' if days<=30 else '30-90D'
