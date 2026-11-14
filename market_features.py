@@ -2247,12 +2247,22 @@ def update_bond_curves(feed):
   eco=feed.get("economies",{}).get(eid)
   if not eco:continue
   tenors=eco.setdefault("bonds",{}).setdefault("tenors",[])
+  for term,te_type in term_map.items():
+   if (eid,te_type) in buckets and not any(t.get('term')==term for t in tenors):
+    tenors.append({'term':term})
   for t in tenors:
    te_typ=term_map.get(t.get("term"))
    row=buckets.get((eid,te_typ)) if te_typ else None
    if not row:continue
-   last=row.get("Last"); 
-   if last not in (None,""): t["yield"]=f"{float(last):.3f}%"
+   last=num(row.get('Last'))
+   raw_date=str(row.get('Date') or row.get('LastUpdate') or '')
+   try:
+    observed=datetime.fromisoformat(raw_date.replace('Z','+00:00')).date().isoformat()
+   except (ValueError,TypeError):continue
+   if last is None or not math.isfinite(last) or observed>datetime.now(timezone.utc).date().isoformat():continue
+   t['yield']=f'{last:.3f}%'
+   t.update(observedAt=observed,fetchedAt=datetime.now(timezone.utc).isoformat(),
+            sourceUrl='https://api.tradingeconomics.com/markets/bond',status='delayed',unit='percent')
    t["change1d"]=row.get("DailyPercentualChange")
    t["change1w"]=row.get("WeeklyPercentualChange")
    t["change1m"]=row.get("MonthlyPercentualChange")
