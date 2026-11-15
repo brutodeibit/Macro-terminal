@@ -1,6 +1,6 @@
 {
   "version": 7,
-  "updated": "2026-11-15T07:09:55.145501+00:00",
+  "updated": "2026-11-15T07:23:32.764387+00:00",
   "description": "Feed automático de MacroTerminal. Los datos se conservan cuando una fuente falla; el campo source indica el origen del último valor recibido.",
   "economies": {
     "us": {
@@ -24059,6 +24059,40 @@
             "change5sBp": 5.0,
             "change21sBp": -13.0,
             "changeYtdBp": 24.0
+          },
+          {
+            "term": "20Y",
+            "observedAt": "2026-10-28",
+            "publishedAt": null,
+            "fetchedAt": "2026-11-15T07:23:32.648476+00:00",
+            "source": "Bank of Canada · zero-coupon curve",
+            "sourceUrl": "https://www.bankofcanada.ca/stats/results/csv?lookupPage=lookup_yield_curve.php&startRange=1986-01-01&searchRange=&dFrom=2025-12-01&dTo=2026-11-15",
+            "status": "estimated",
+            "unit": "percent",
+            "methodology": "Official model-derived zero-coupon yield at exact maturity. Typically published with a two-week lag.",
+            "isKey": false,
+            "yield": "4.109%",
+            "change1dBp": 2.91,
+            "change5sBp": -2.05,
+            "change21sBp": -7.29,
+            "changeYtdBp": 30.33
+          },
+          {
+            "term": "30Y",
+            "observedAt": "2026-10-28",
+            "publishedAt": null,
+            "fetchedAt": "2026-11-15T07:23:32.648476+00:00",
+            "source": "Bank of Canada · zero-coupon curve",
+            "sourceUrl": "https://www.bankofcanada.ca/stats/results/csv?lookupPage=lookup_yield_curve.php&startRange=1986-01-01&searchRange=&dFrom=2025-12-01&dTo=2026-11-15",
+            "status": "estimated",
+            "unit": "percent",
+            "methodology": "Official model-derived zero-coupon yield at exact maturity. Typically published with a two-week lag.",
+            "isKey": false,
+            "yield": "4.185%",
+            "change1dBp": 2.23,
+            "change5sBp": -4.7,
+            "change21sBp": -9.51,
+            "changeYtdBp": 26.62
           }
         ],
         "history": [
@@ -407889,13 +407923,19 @@
       "intervalHours": 12,
       "status": "processed",
       "changed": true
+    },
+    "CANADA_LONG_CURVE": {
+      "checkedAt": "2026-11-15T07:23:32.760848+00:00",
+      "intervalHours": 24,
+      "status": "processed",
+      "changed": true
     }
   },
-  "generatedAt": "2026-11-15T07:09:55.145501+00:00",
+  "generatedAt": "2026-11-15T07:23:32.764387+00:00",
   "publication": {
-    "commit": "a05d722a6298a70577d0701771db327fcc2dddcb",
-    "runId": "43688668612",
-    "note": "Reviewed evidence refreshed; observation dates retained."
+    "commit": "5a553466a577f38c46e6f9c84a484514494b5399",
+    "runId": "43689712121",
+    "note": "Generated snapshot; observation dates remain on each source. Publication requires successful push."
   },
   "weeklyFxSchema": {
     "version": 1,
