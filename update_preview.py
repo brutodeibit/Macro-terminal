@@ -139,9 +139,9 @@ def finalize(feed):
                 profile['gammaFlipStatus'] = 'VIX requires a forward model; equity spot model not used'
                 for key in ('gammaFlipModel','gammaFlipSensitivity','gammaFlipRoots','gammaFlipCoveragePct'):
                     profile.pop(key, None)
-            key = ticker+':'+str(profile.get('expiration'))
-            stamp = str(market.get('asOf') or '')[:10]
-            row = {'date':stamp, 'expiration':profile.get('expiration'), 'source':market.get('source'),
+            key = ticker+':'+str(profile.get('expiration'))+((':'+profile['contractCode']) if profile.get('contractCode') else '')
+            stamp = str(profile.get('observedAt') or market.get('asOf') or '')[:10]
+            row = {'date':stamp, 'expiration':profile.get('expiration'), 'source':profile.get('source') or market.get('source'),
                    **{k:profile.get(k) for k in ('callOi','putOi','callVolume','putVolume','gammaNet','gammaFlip','callWallOi','putWallOi','maxPain')}}
             archive[key] = dated_rows(archive.get(key,[])+[row])[-90:]
     feed['weeklyFxSchema'] = {'version':1,'status':'awaiting_user_examples','fields':[
