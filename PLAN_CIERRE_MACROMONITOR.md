@@ -12,3 +12,17 @@ Base: claude-preview.html y feed V7 publicados. Conservar index.html, gráficos 
 8. Entrega: pruebas específicas, visual escritorio/móvil cuando sea posible, publicación autorizada y verificación pública. Actualizar tareas existentes de Linear sin duplicados ni cierres sin evidencia. COT queda conservado; nuevas ampliaciones requieren concretar utilidad.
 
 Estado 14/11: navegación de cuatro instrumentos corregida localmente; pruebas de renderizado y gráficos ejecutadas. Resto pendiente de implementación/verificación según cada bloque, no cerrado.
+
+## Ampliación 15/11: requisitos y dudas separados
+- Rendimientos: GBP/NZD todos; AUD 1Y y vencimientos largos; CAD 20Y/30Y; JPY 3M. Verificar instrumentos, fechas y disponibilidad; no confundir letras soberanas con depósitos o bank bills ni LT con 30Y exactos.
+- Tablas: título de rendimientos arriba y matriz relativa abajo; leyenda dentro de cada cuadro sobre los cinco factores, cobertura parcial, fechas y colores. Implementación local realizada.
+- Indicadores: corregir ventas minoristas a consumo/actividad, no empleo. Catálogo prioritario específico por economía; estrellas como ayuda, no criterio único. Histórico desplegable de últimas tres observaciones con revisiones y periodo de referencia, sin duplicar gráficos.
+- Explicación de sesgo: separar actividad/inflación/empleo, política monetaria, diferenciales externos y confirmación FX/riesgo. Evidencias a favor/en contra y ausentes; evitar narrativa genérica o primas refugio fijas.
+- Opciones: GEX e IV ATM ausentes siguen pendientes; distinguir actualización diaria OI de cambios intradía del modelo. Prints: ampliar fuentes sin inferir lado ni instituciones.
+- COT: evaluar posición neta/OI, cambio semanal y percentil histórico; evitar añadir muchas métricas equivalentes. Contexto swing, no señal de entrada intradía.
+- Commodities: SOLO propuesta futura, sin programación. Ficha por activo con oferta/demanda, inventarios, producción, comercio, clima/geografía, curva de futuros y calendarios oficiales; definir estrategias y validar fuera de muestra en proyecto especializado.
+- Diseño: conservar azul noche y preparar variante arena/grafito dorado con contraste y relieve; revisar carbón/turquesa. No alterar información por motivos estéticos.
+- Refresco: explicar que cargar publicación descarga el snapshot, no ejecuta proveedores; mostrar fecha de cada fuente.
+
+- Estrategias futuras: valorar commodities junto a swing de divisas en el proyecto especializado; pendiente decidir ubicación en Notion. No se ha modificado Notion.
+- Actualización manual: workflow_dispatch permite force_refresh para consultar todos los recolectores, además del refresco de lectura del panel. No garantiza tiempo real ni acceso a fuentes bloqueadas.
