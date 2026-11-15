@@ -19,7 +19,7 @@ def normalize(row):
 
 def update(feed):
     import market_features as mf
-    rows=mf.get(URL,{'limit':500}).json().get('raw',[])
+    rows=mf.get(URL,{'limit':2000}).json().get('raw',[])
     normalized=[p for row in rows if (p:=normalize(row))]
     if not normalized:raise ValueError('No valid provider rows')
     section=feed.setdefault('darkPoolPrints',{});assets=section.setdefault('assets',{})

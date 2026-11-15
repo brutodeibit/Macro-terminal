@@ -110,6 +110,15 @@ def finalize(feed):
     from v7_economy_state import synchronize
     synchronize(feed,NOW().date().isoformat())
     for economy in feed.get('economies',{}).values():
+        indicator_history = economy.setdefault('indicatorHistory', {})
+        for indicator in economy.get('indicators', []):
+            name = indicator.get('name')
+            if not name or not indicator.get('source') or mf.num(indicator.get('actual')) is None:
+                continue
+            record = {k: indicator.get(k) for k in ('date', 'actual', 'est', 'source', 'sourceUrl')}
+            history = dated_rows(indicator_history.get(name, []) + [record])
+            if history:
+                indicator_history[name] = history[-3:]
         latest=(economy.get('conference',{}).get('history') or [{}])[0]
         if latest.get('manuallyVerifiedAt') and latest.get('newRate') is not None:
             economy.setdefault('rates',{}).update(official=latest.get('officialRateLabel') or f"{latest['newRate']:.2f}%",

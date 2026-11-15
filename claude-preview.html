@@ -10,7 +10,7 @@
         #options-data-details > .metric { background:transparent; box-shadow:none; border:0; border-radius:0; padding:1rem 0; }
         #options-data-details > .metric + .metric { border-top:1px solid var(--line); }
         :root{--ink:#e7edf6;--muted:#8d9bb0;--panel:#101722;--panel-2:#0b111a;--line:#243247;--accent:#72a7ff;--cyan:#49d6d4}
-        body.theme-warm{--ink:#f2e8d8;--muted:#b7a78f;--accent:#d8a64a;--cyan:#d7b36a;background:radial-gradient(900px 460px at 82% -8%,rgba(170,112,36,.24),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(119,83,36,.13),transparent 68%),#15110d}
+        body.theme-warm{--ink:#f2e8d8;--muted:#b7a78f;--accent:#d8a64a;--cyan:#d7b36a;background:radial-gradient(900px 460px at 82% -8%,rgba(170,112,36,.24),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(119,83,36,.13),transparent 68%),#211a13}
         body.theme-carbon{--ink:#e3ebe8;--muted:#96a8a5;--accent:#58c7b4;--cyan:#76d6ca;background:radial-gradient(900px 460px at 82% -8%,rgba(32,118,103,.22),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(41,70,75,.18),transparent 68%),#08100f}
         body { background:radial-gradient(900px 460px at 82% -8%,rgba(49,92,158,.22),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(17,119,132,.11),transparent 68%),#070b12; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing:.005em; }
         h1,h2,h3,.font-black { letter-spacing:-.025em; }
@@ -62,7 +62,7 @@
         .sentiment-gauge{height:150px;border-radius:150px 150px 0 0;background:conic-gradient(from 270deg,#ef4444 0 18%,#f59e0b 18% 36%,#94a3b8 36% 64%,#84cc16 64% 82%,#22c55e 82% 100%);position:relative;overflow:hidden}
         .sentiment-gauge:after{content:'';position:absolute;inset:14px 14px 0;background:#0b1018;border-radius:140px 140px 0 0}
         .sentiment-needle{position:absolute;bottom:7px;left:50%;width:3px;height:62px;background:rgba(248,250,252,.42);transform-origin:50% 100%;z-index:3;border-radius:4px;box-shadow:0 0 5px rgba(255,255,255,.16)} .sentiment-value{position:absolute;z-index:5;left:50%;bottom:20px;transform:translateX(-50%);font-size:30px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none}
-        body.theme-warm{--panel:#201b15;--line:#514332}body.theme-carbon{--panel:#101d1b;--line:#29433d}
+        body.theme-warm{--panel:#2b241a;--line:#665237}body.theme-carbon{--panel:#122422;--line:#30514a}
         body.theme-warm .glass,body.theme-warm .card,body.theme-warm .metric,body.theme-warm .sidebar,body.theme-warm .risk-cell,body.theme-carbon .glass,body.theme-carbon .card,body.theme-carbon .metric,body.theme-carbon .sidebar,body.theme-carbon .risk-cell{background:var(--panel);border-color:var(--line)}
         body.theme-warm select,body.theme-warm button,body.theme-carbon select,body.theme-carbon button{border-color:var(--line);color:var(--ink)}
         .js-plotly-plot{min-width:0}.curve-wrap{max-width:100%}
@@ -993,7 +993,7 @@
             return all.find(i => {
                 const n=(i.name||'').toLowerCase();
                 if(q==='nfp') return /nóminas|nfp|nonfarm/.test(n);
-                if(q==='pce') return /pce/.test(n) && !/subyacente|core/.test(q);
+                if(q==='pce') return /pce/.test(n) && !/subyacente|core/.test(n);
                 if(q==='pce subyacente') return /pce/.test(n) && /subyacente|core/.test(n);
                 if(q==='cpi subyacente') return /cpi|ipc/.test(n) && /subyacente|core/.test(n);
                 if(q==='cpi (ipc) general') return /cpi|ipc/.test(n) && !/subyacente|core/.test(n);
@@ -1012,11 +1012,13 @@
                 const chips=items.map(([name,src,role])=>{
                     const match=findCatalogMatch(data,name);
                     if(match){
+                        const history=(data.indicatorHistory?.[match.name]||[]).slice().reverse();
+                        const historyHtml=history.length>1?`<details class="mt-2 text-xs text-gray-300"><summary>Últimas observaciones</summary><ul>${history.map(row=>`<li>${esc(row.date)} · ${esc(row.actual)}</li>`).join('')}</ul></details>`:'';
                         return `<div class="card rounded-xl p-3">
                             <div class="flex items-start justify-between gap-2"><div class="text-xs font-semibold text-white">${esc(name)}</div><span class="score-chip">${esc(src)}</span></div>
                             <div class="mt-2 text-[11px] text-gray-500">${esc(role)}</div>
-                            <div class="mt-2 flex items-baseline justify-between gap-2"><span class="text-sm font-black text-white">${esc(match.actual)}</span><span class="text-[10px] text-gray-500">Prev. ${esc(match.est)}</span></div>
-                            <div class="mt-1 text-[11px]">${effectForIndicator(match)}</div>
+                            <div class="mt-2 flex items-baseline justify-between gap-2"><span class="text-sm font-black text-white">${esc(match.actual)}</span><span class="text-[10px] text-gray-500">Consenso ${esc(match.est||'—')}</span></div>
+                            <div class="mt-1 text-[11px]">${effectForIndicator(match)}</div><div class="text-xs text-gray-400 mt-1">${esc(match.date||'—')} · ${esc(match.source||src)}</div>${historyHtml}
                         </div>`;
                     }
                     return `<div class="card rounded-xl p-3 opacity-70">
@@ -1682,7 +1684,8 @@ function renderWeeklyFxRadar(data){
  const baselineDate=baseline?.capturedAt?new Date(baseline.capturedAt).toLocaleString('es-ES',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'primera lectura disponible';
  const revisionNote=biasChanged?'El sesgo cambió desde la lectura inicial de '+baselineLabel+' a '+label+'.':scoreMoved?'La presión monetaria se ha movido de forma material; comprobar si los bonos y la reacción del precio lo confirman.':'No hay cambio material confirmado respecto a la lectura inicial.';
  const weeklySummary='<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Plan de la semana · hipótesis y revisión</div><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2"><div><div class="text-[9px] text-gray-500">LECTURA INICIAL GUARDADA</div><b class="text-xs text-white">'+esc(baselineLabel)+'</b><div class="text-[10px] text-gray-500 mt-1">'+esc(baselineDate)+'</div></div><div><div class="text-[9px] text-gray-500">SESGO ACTUAL</div><b class="text-xs '+cls+'">'+esc(label)+'</b><div class="text-[10px] text-gray-500 mt-1">'+(baselineScore!==null?'Índice del sesgo: '+baselineScore.toFixed(2)+' → '+Number(score).toFixed(2):'Sin puntuación inicial comparable')+'</div></div><div><div class="text-[9px] text-gray-500">REVISIÓN</div><div class="text-xs text-gray-200">'+esc(revisionNote)+'</div></div></div><p class="text-[10px] text-gray-500 mt-3">La lectura inicial se guarda en este navegador al abrir el radar por primera vez esa semana. Para que represente la preparación del domingo, conviene abrirlo ese día; no se reconstruye retrospectivamente si se abre por primera vez más tarde.</p></div>';
- const marketRead=!trendOk?'La reacción de la divisa no está verificada.':Math.abs(score)<0.35?'La lectura fundamental es mixta; el movimiento de precio no confirma una dirección macro clara.':Math.sign(trend)===Math.sign(score)?'La divisa acompaña la lectura actual en las últimas cinco sesiones.':'La divisa contradice la lectura actual en las últimas cinco sesiones; puede haber descuento previo u otros factores, no una invalidación automática.';
+ const macroDirection=Number(macro.score)||0;
+ const marketRead=!trendOk?'La reacción de la divisa no está verificada.':Math.abs(macroDirection)<0.35?'La lectura fundamental es mixta; el movimiento de precio no confirma una dirección macro clara.':Math.sign(trend)===Math.sign(macroDirection)?'La divisa acompaña la lectura actual en las últimas cinco sesiones.':'La divisa contradice la lectura actual en las últimas cinco sesiones; puede haber descuento previo u otros factores, no una invalidación automática.';
  const scenarioSummary='<div class="metric rounded-xl p-4 text-sm text-gray-300 space-y-3"><h3 class="font-bold text-white">Qué confirma o cambia la hipótesis</h3><p>'+esc(marketRead)+'</p><p><b>Confirmación:</b> sorpresa relevante frente al consenso, revisión coherente de expectativas de tipos y reacción de la divisa en la misma dirección. Un dato bueno para la economía puede estar ya descontado.</p><p><b>Revisión:</b> datos que contradigan la trayectoria de inflación o empleo, cambio explícito del banco central o divergencia persistente entre rendimientos y divisa. Un rebote aislado no prueba un cambio de tendencia.</p><p><b>Horizonte:</b> hasta el próximo evento clave verificado; volver a evaluar tras la publicación y su reacción de mercado.</p></div>';
  const recentRows=recent.map(e=>{
   const d=indicatorDirection({name:e.event,actual:e.actual,est:e.forecast,cat:/cpi|inflation|pce|ppi|precios/i.test(e.event)?'INFLACIÓN':/unemployment|jobless|claims|desempleo|paro/i.test(e.event)?'EMPLEO':/gdp|pmi|retail|ventas|industrial|pib|ifo|tankan/i.test(e.event)?'CRECIMIENTO':'MACRO',imp:'★★★'});
@@ -1989,6 +1992,7 @@ function renderContent() {
                         if(v.rates) macroDatabase[k].rates={...macroDatabase[k].rates,...v.rates};
                         if(v.conference) macroDatabase[k].conference={...macroDatabase[k].conference,...v.conference};
                         if(v.bonds) macroDatabase[k].bonds={...macroDatabase[k].bonds,...v.bonds};
+                        if(v.indicatorHistory) macroDatabase[k].indicatorHistory=v.indicatorHistory;
                         if(Array.isArray(v.indicators) && v.indicators.length) macroDatabase[k].indicators=v.indicators;
                     });
                     const map={marketBreadth:'__marketBreadth',economicCalendar:'__economicCalendar',riskOnOff:'__riskOnOff',cot:'__cot',options:'__options',fx:'__fx',darkPools:'__darkPools',darkPoolPrints:'__darkPoolPrints',darkFlowRadar:'__darkFlowRadar',squawkFlow:'__squawkFlow',traditionalSentiment:'__traditionalSentiment',traditionalFearGreed:'__traditionalFearGreed',optionsStats:'__optionsStats',globalMarkets:'__globalMarkets',rotation:'__rotation',cryptoSentiment:'__cryptoSentiment',bondMarket:'__bondMarket'};
