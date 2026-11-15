@@ -319,7 +319,7 @@ def dark_prints(feed):
 
 JOBS = {
  'TREASURY':(treasury, 6), 'CURVES':(curves, 6), 'CANADA_CURVE':(v7_curves.canada, 24), 'ECB_CURVE':(v7_curves.euro_area, 24),
- 'JAPAN_CURVE':(v7_curves.japan, 24),
+ 'CANADA_LONG_CURVE':(v7_curves.canada_long, 24), 'JAPAN_CURVE':(v7_curves.japan, 24),
  'AUSTRALIA_CURVE':(v7_curves.australia, 24),
  'SWISS_CURVE':(v7_curves.switzerland, 24),
  'GERMANY_CURVE':(v7_curves.germany, 24),

@@ -108,8 +108,41 @@ def canada(feed):
         for row in data.get('observations',[]):
             values={term:api.num(row.get(code,{}).get('v')) for code,term in mapping.items()}
             rows.append({'date':row['d'],'values':values})
+    prior = feed['economies']['ca'].get('bonds', {})
     store_curve(feed,'ca',rows,'Bank of Canada',base+'group/bond_yields_all/json',
         '3M/1Y: secondary-market Treasury bills; 2Y/5Y/10Y: benchmark bonds. LT: designated long-term benchmark, not an exact 30Y maturity.')
+    feed['economies']['ca']['bonds']['tenors'].extend(
+        row for row in prior.get('tenors', []) if row['term'] in ('20Y', '30Y'))
+
+
+def canada_long(feed):
+    url = 'https://www.bankofcanada.ca/stats/results/csv'
+    today = datetime.now(timezone.utc).date()
+    response = api.get(url, {'lookupPage': 'lookup_yield_curve.php', 'startRange': '1986-01-01',
+                            'searchRange': '', 'dFrom': f'{today.year-1}-12-01', 'dTo': today.isoformat()})
+    rows = []
+    for record in csv.DictReader(io.StringIO(response.text.lstrip('\ufeff')), skipinitialspace=True):
+        day = (record.get('Date') or '').strip()
+        if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', day):
+            continue
+        values = {}
+        for term, column in [('20Y', 'ZC2000YR'), ('30Y', 'ZC3000YR')]:
+            value = api.num(record.get(column))
+            if value is not None:
+                values[term] = value * 100
+        rows.append({'date': day, 'values': values})
+    result = {'economies': {'ca': {}}}
+    store_curve(result, 'ca', rows, 'Bank of Canada · zero-coupon curve', response.url,
+                'Official model-derived zero-coupon yield at exact maturity. Typically published with a two-week lag.',
+                status='estimated')
+    long_curve = result['economies']['ca']['bonds']
+    bonds = feed['economies']['ca']['bonds']
+    existing = {row['term']: row for row in bonds.get('tenors', [])}
+    for row in long_curve['tenors']:
+        previous = existing.get(row['term'], {})
+        if row['observedAt'] >= (previous.get('observedAt') or ''):
+            existing[row['term']] = row
+    bonds['tenors'] = list(existing.values())
 
 
 def parse_snb_csv(text):
