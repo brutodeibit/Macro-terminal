@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es" data-theme="institutional" data-mode="advanced">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Laboratorio visual independiente de Macro Monitor con datos de demostración.">
+  <title>Macro Monitor · Laboratorio visual V2</title>
+  <link rel="stylesheet" href="design-lab-v2.css">
+  <script defer src="design-lab-v2.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Saltar al contenido</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <a class="brand" href="#mercado/resumen" aria-label="Macro Monitor, resumen"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>MACRO<span class="brand-accent">MONITOR</span><small>LABORATORIO VISUAL V2</small></span></a>
+      <div class="nav-caption">PANEL GLOBAL</div>
+      <nav id="modules" aria-label="Módulos"></nav>
+      <div class="sidebar-foot"><span class="status-dot" aria-hidden="true"></span><div>Entorno de demostración<small>Sesión de muestra · 13 nov 2026</small></div></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="context"><span>Macro Monitor</span><span aria-hidden="true">/</span><strong>Panel global</strong></div>
+        <div class="preferences">
+          <label>Tema <select id="theme" aria-label="Tema visual">
+            <option value="graphite">Graphite Pro</option><option value="carbon">Carbon Turquoise</option>
+            <option value="institutional" selected>Institutional Blue</option><option value="gold">Obsidian Gold</option><option value="mystic">Mystic Carbon</option>
+          </select></label>
+          <fieldset id="modes" class="segmented"><legend class="sr-only">Modo de presentación</legend>
+            <label><input type="radio" name="mode" value="essential"><span>Esencial</span></label>
+            <label><input type="radio" name="mode" value="advanced" checked><span>Avanzado</span></label>
+            <label><input type="radio" name="mode" value="ultra"><span>Ultra</span></label>
+          </fieldset>
+        </div>
+      </header>
+      <main id="main" tabindex="-1">
+        <div class="demo-banner"><strong>DEMOSTRACIÓN</strong><span>Datos simulados · sesión de muestra del 13 nov 2026</span></div>
+        <header class="page-heading"><div><p class="eyebrow" id="section-label"></p><h1 id="section-title">Panel de mercado</h1><p id="section-description"></p></div></header>
+        <div id="subtabs" class="subtabs" role="tablist" aria-label="Apartados del módulo"></div>
+        <div id="panels"></div>
+        <noscript>Activa JavaScript para abrir el laboratorio interactivo.</noscript>
+      </main>
+      <footer class="footer"><span>Macro Monitor · Laboratorio visual V2</span><span>Fuente de las series · demostración sintética local</span></footer>
+    </div>
+  </div>
+  <div class="sr-only" id="announcement" role="status"></div>
+</body>
+</html>
