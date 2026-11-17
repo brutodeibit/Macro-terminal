@@ -66,6 +66,34 @@
         body.theme-warm .glass,body.theme-warm .card,body.theme-warm .metric,body.theme-warm .sidebar,body.theme-warm .risk-cell,body.theme-carbon .glass,body.theme-carbon .card,body.theme-carbon .metric,body.theme-carbon .sidebar,body.theme-carbon .risk-cell{background:var(--panel);border-color:var(--line)}
         body.theme-warm select,body.theme-warm button,body.theme-carbon select,body.theme-carbon button{border-color:var(--line);color:var(--ink)}
         .js-plotly-plot{min-width:0}.curve-wrap{max-width:100%}
+            /* Five-theme design system. Visual-only: data rendering and feed logic remain unchanged. */
+        body{--ui-bg:#080d15;--ui-panel:#111b2a;--ui-panel-alt:#0c1420;--ui-border:#2c4058;--ui-accent:#83b4ff;--ui-glow:rgba(75,130,210,.14);--ui-radius:17px;--ui-shadow:0 14px 34px rgba(0,0,0,.22);--ui-text:#e9f1fb;--ui-muted:#acbbcd;transition:background-color .25s ease,color .25s ease}
+        body.theme-graphite{--ui-bg:#0d1015;--ui-panel:#1a2029;--ui-panel-alt:#121820;--ui-border:#414b59;--ui-accent:#b4c7e0;--ui-glow:rgba(150,169,194,.10);--ui-radius:12px;--ui-text:#f1f3f6;--ui-muted:#bdc5d0}
+        body.theme-turquoise{--ui-bg:#071311;--ui-panel:#102421;--ui-panel-alt:#091b19;--ui-border:#28625c;--ui-accent:#5ce2d0;--ui-glow:rgba(29,206,179,.16);--ui-radius:18px;--ui-text:#e5f7f3;--ui-muted:#a8cec8}
+        body.theme-blue{--ui-bg:#081324;--ui-panel:#14243e;--ui-panel-alt:#0b1b32;--ui-border:#34547e;--ui-accent:#92c5ff;--ui-glow:rgba(85,149,244,.22);--ui-radius:20px;--ui-text:#edf5ff;--ui-muted:#b1c8e6}
+        body.theme-gold{--ui-bg:#17120d;--ui-panel:#282015;--ui-panel-alt:#1b160f;--ui-border:#79603c;--ui-accent:#e3bf78;--ui-glow:rgba(218,158,71,.14);--ui-radius:11px;--ui-text:#f8efdd;--ui-muted:#d3c1a1}
+        body.theme-mystic{--ui-bg:#080f1a;--ui-panel:#13212d;--ui-panel-alt:#0c1824;--ui-border:#306d80;--ui-accent:#63cde6;--ui-glow:rgba(58,177,218,.20);--ui-radius:22px;--ui-text:#e5f4fc;--ui-muted:#a5c6d5}
+        body[class*="theme-"]{background:radial-gradient(ellipse 70% 44% at 84% 0%,var(--ui-glow),transparent 72%),radial-gradient(ellipse 50% 55% at 0% 90%,var(--ui-glow),transparent 75%),var(--ui-bg);color:var(--ui-text)}
+        body[class*="theme-"] .card,body[class*="theme-"] .glass,body[class*="theme-"] .metric,body[class*="theme-"] .risk-cell,body[class*="theme-"] .sidebar{background:linear-gradient(145deg,var(--ui-panel),var(--ui-panel-alt));border-color:var(--ui-border);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
+        body[class*="theme-"] .sidebar{border-radius:0}
+        body[class*="theme-"] .nav-item.active{border-left-color:var(--ui-accent);background:var(--ui-glow)}
+        body[class*="theme-"] .tab-btn.active{border-bottom-color:var(--ui-accent)}
+        body[class*="theme-"] .tab-btn.active:after{background:var(--ui-accent)}
+        body[class*="theme-"] #topTabs{background:var(--ui-bg);border-color:var(--ui-border)}
+        body[class*="theme-"] .source-link{color:var(--ui-accent)}
+        body[class*="theme-"] .mini-pill{color:var(--ui-muted);border-color:var(--ui-border)}
+        body[class*="theme-"] .text-gray-400,body[class*="theme-"] .text-gray-500{color:var(--ui-muted)}
+        body[class*="theme-"] .text-white{color:var(--ui-text)}
+        .theme-switcher{display:flex;align-items:center;gap:.5rem;padding:.3rem .55rem;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-panel-alt)}
+        .theme-switcher label{font-size:12px;font-weight:650;color:var(--ui-muted);white-space:nowrap}
+        .theme-switcher select{font-size:13px;min-width:148px;max-width:185px;padding:.35rem .45rem;border-radius:8px;color:var(--ui-text);background:var(--ui-panel);border:1px solid var(--ui-border);cursor:pointer}
+        body[class*="theme-"] h1{font-weight:800;letter-spacing:-.035em}
+        body[class*="theme-"] h2{letter-spacing:-.025em}
+        body[class*="theme-"] .card,body[class*="theme-"] .glass,body[class*="theme-"] .metric{transition:border-color .22s ease,box-shadow .22s ease,transform .22s ease}
+        @media(hover:hover){body[class*="theme-"] .card:hover,body[class*="theme-"] .glass:hover{border-color:var(--ui-accent);box-shadow:0 16px 42px var(--ui-glow)}}
+        @media(max-width:640px){.theme-switcher{width:100%;justify-content:space-between}.theme-switcher select{flex:1;max-width:none}}
+        @media(prefers-reduced-motion:reduce){body[class*="theme-"],body[class*="theme-"] .card,body[class*="theme-"] .glass,body[class*="theme-"] .metric{transition:none!important}}
+
     </style>
 </head>
 <body class="flex min-h-screen overflow-hidden">
@@ -104,10 +132,15 @@
                 <a href="statistical-monitor.html" class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
                     <i class="fa-solid fa-chart-column mr-1"></i> Monitor estadístico
                 </a>
-                <div class="flex items-center gap-1 text-[10px] bg-gray-900 border border-gray-800 px-1.5 py-1 rounded-full" aria-label="Apariencia">
-                    <button onclick="setTheme('midnight')" class="px-2 py-1 rounded-full hover:bg-slate-700">Azul noche</button>
-                    <button onclick="setTheme('warm')" class="px-2 py-1 rounded-full hover:bg-amber-900/40">Grafito dorado</button>
-                    <button onclick="setTheme('carbon')" class="px-2 py-1 rounded-full hover:bg-emerald-900/40">Carbón</button>
+                <div class="theme-switcher" role="group" aria-label="Tema visual">
+                    <label for="macroThemeSelect"><i class="fa-solid fa-palette" aria-hidden="true"></i> Estilo</label>
+                    <select id="macroThemeSelect" aria-label="Seleccionar estilo visual" onchange="setTheme(this.value)">
+                        <option value="graphite">Graphite Pro</option>
+                        <option value="turquoise">Carbon Turquoise</option>
+                        <option value="blue">Institutional Blue</option>
+                        <option value="gold">Obsidian Gold</option>
+                        <option value="mystic">Mystic Carbon</option>
+                    </select>
                 </div>
                 <div class="flex items-center gap-2 text-xs bg-gray-900 border border-gray-800 text-gray-400 px-3 py-1.5 rounded-full w-fit">
                     <span id="feedDot" class="w-2 h-2 rounded-full bg-yellow-500"></span>
@@ -2017,13 +2050,17 @@ function renderContent() {
         }
 
         function setTheme(theme){
-            const body=document.body;
-            body.classList.remove('theme-warm','theme-carbon');
-            if(theme==='warm')body.classList.add('theme-warm');
-            if(theme==='carbon')body.classList.add('theme-carbon');
+            const aliases={midnight:'blue',warm:'gold',carbon:'turquoise'};
+            const allowed=['graphite','turquoise','blue','gold','mystic'];
+            theme=aliases[theme]||theme;
+            if(!allowed.includes(theme))theme='blue';
+            document.body.classList.remove('theme-warm','theme-carbon','theme-graphite','theme-turquoise','theme-blue','theme-gold','theme-mystic');
+            document.body.classList.add('theme-'+theme);
+            const selector=document.getElementById('macroThemeSelect');
+            if(selector)selector.value=theme;
             try{localStorage.setItem('macroTerminalTheme',theme);}catch(e){}
         }
-        try{setTheme(localStorage.getItem('macroTerminalTheme')||'midnight');}catch(e){}
+        try{setTheme(localStorage.getItem('macroTerminalTheme')||'blue');}catch(e){setTheme('blue');}
         function manualRefresh(){
             setFeedStatus('Buscando feed…', false);
             loadExternalFeed();
