@@ -7,8 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        #options-data-details > .metric { background:transparent; box-shadow:none; border:0; border-radius:0; padding:1rem 0; }
+        #options-data-details > .metric + .metric { border-top:1px solid var(--line); }
         :root{--ink:#e7edf6;--muted:#8d9bb0;--panel:#101722;--panel-2:#0b111a;--line:#243247;--accent:#72a7ff;--cyan:#49d6d4}
-        body.theme-warm{--ink:#f2e8d8;--muted:#b7a78f;--accent:#d8a64a;--cyan:#d7b36a;background:radial-gradient(900px 460px at 82% -8%,rgba(170,112,36,.24),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(119,83,36,.13),transparent 68%),#15110d}
+        body.theme-warm{--ink:#f2e8d8;--muted:#b7a78f;--accent:#d8a64a;--cyan:#d7b36a;background:radial-gradient(900px 460px at 82% -8%,rgba(170,112,36,.24),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(119,83,36,.13),transparent 68%),#211a13}
         body.theme-carbon{--ink:#e3ebe8;--muted:#96a8a5;--accent:#58c7b4;--cyan:#76d6ca;background:radial-gradient(900px 460px at 82% -8%,rgba(32,118,103,.22),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(41,70,75,.18),transparent 68%),#08100f}
         body { background:radial-gradient(900px 460px at 82% -8%,rgba(49,92,158,.22),transparent 64%),radial-gradient(700px 520px at -12% 25%,rgba(17,119,132,.11),transparent 68%),#070b12; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing:.005em; }
         h1,h2,h3,.font-black { letter-spacing:-.025em; }
@@ -37,7 +39,7 @@
         .curve-svg { width:100%; height:300px; display:block; }
         .curve-grid { stroke:#273244; stroke-width:1; stroke-dasharray:3 5; }
         .cot-chart-wrap,.dp-chart-wrap{background:#0b1018;border:1px solid #1f2937;border-radius:14px;overflow:hidden}
-        .cot-grid,.dp-grid{stroke:#475569;stroke-width:1;stroke-dasharray:3 5}.cot-axis,.dp-axis{fill:#b6c2d2;font-size:11px}.dp-chart-wrap svg{background:linear-gradient(180deg,rgba(17,24,39,.9),rgba(9,12,18,.98));border-radius:10px}.dp-chart-wrap .dp-grid{stroke:#475569}.dp-chart-wrap .dp-axis{fill:#c5d0df;font-weight:500}.cot-line{fill:none;stroke:#facc15;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.cot-dot{fill:#facc15;stroke:#111827;stroke-width:2}.dp-chart-wrap svg{background:linear-gradient(180deg,rgba(17,24,39,.7),rgba(9,12,18,.8))}
+        .cot-grid,.dp-grid{stroke:#475569;stroke-width:1;stroke-dasharray:3 5}.cot-axis,.dp-axis{fill:#b6c2d2;font-size:11px}.dp-chart-wrap > svg{background:linear-gradient(180deg,rgba(17,24,39,.9),rgba(9,12,18,.98));border-radius:10px}.dp-chart-wrap .dp-grid{stroke:#475569}.dp-chart-wrap .dp-axis{fill:#c5d0df;font-weight:500}.cot-line{fill:none;stroke:#facc15;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.cot-dot{fill:#facc15;stroke:#111827;stroke-width:2}.dp-chart-wrap > svg{background:linear-gradient(180deg,rgba(17,24,39,.7),rgba(9,12,18,.8))}
         .curve-axis { fill:#6b7280; font-size:10px; }
         .curve-line { fill:none; stroke:#60a5fa; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
         .curve-dot { fill:#93c5fd; stroke:#0f172a; stroke-width:2; }
@@ -47,10 +49,11 @@
         .score-chip { border:1px solid #1f2937; background:rgba(17,24,39,.65); border-radius:999px; padding:4px 8px; font-size:10px; }
 
     
-        .risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+        .risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;}
         .risk-meter{height:12px;border-radius:999px;background:linear-gradient(90deg,rgba(248,113,113,.25),rgba(245,158,11,.18),rgba(52,211,153,.22));border:1px solid rgba(110,135,165,.48);overflow:hidden;box-shadow:inset 0 1px 4px rgba(0,0,0,.5);}
         .risk-meter-fill{height:100%;background:linear-gradient(90deg,#ef6c72 0%,#eab35a 48%,#32d5a0 100%);background-size:100% 100%;transition:width .5s ease;box-shadow:0 0 14px rgba(114,167,255,.35);}
-        .risk-cell{background:linear-gradient(155deg,rgba(18,29,45,.92),rgba(8,14,23,.94));border:1px solid rgba(58,82,112,.65);border-radius:16px;padding:12px;}
+        .risk-cell{min-width:0;background:linear-gradient(155deg,rgba(18,29,45,.92),rgba(8,14,23,.94));border:1px solid rgba(58,82,112,.65);border-radius:16px;padding:16px;}
+        .fx-matrix{min-width:850px;table-layout:fixed;border-collapse:collapse}.fx-matrix th,.fx-matrix td{text-align:center;white-space:normal;overflow-wrap:anywhere}.fx-matrix th:first-child,.fx-matrix td:first-child{text-align:left}
         .risk-up{color:#34d399}.risk-down{color:#f87171}.risk-neutral{color:#fbbf24}
         .risk-badge{font-size:10px;border-radius:999px;padding:4px 8px;border:1px solid rgba(100,132,171,.6);background:rgba(13,25,40,.85);color:#dbeafe;}
         .risk-alert{border-left:3px solid #f59e0b;background:rgba(245,158,11,.06);}
@@ -59,11 +62,11 @@
         .sentiment-gauge{height:150px;border-radius:150px 150px 0 0;background:conic-gradient(from 270deg,#ef4444 0 18%,#f59e0b 18% 36%,#94a3b8 36% 64%,#84cc16 64% 82%,#22c55e 82% 100%);position:relative;overflow:hidden}
         .sentiment-gauge:after{content:'';position:absolute;inset:14px 14px 0;background:#0b1018;border-radius:140px 140px 0 0}
         .sentiment-needle{position:absolute;bottom:7px;left:50%;width:3px;height:62px;background:rgba(248,250,252,.42);transform-origin:50% 100%;z-index:3;border-radius:4px;box-shadow:0 0 5px rgba(255,255,255,.16)} .sentiment-value{position:absolute;z-index:5;left:50%;bottom:20px;transform:translateX(-50%);font-size:30px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none}
-        #sec-darkpool .text-amber-300:empty{display:none}
-        #opt-gex-chart,#opt-oi-chart{min-height:500px} #opt-term-chart{min-height:420px}
-        .js-plotly-plot .ytick text,.js-plotly-plot .y2tick text{font-size:14px!important}
-    
-        /* Five-theme design system. Visual-only: data rendering and feed logic remain unchanged. */
+        body.theme-warm{--panel:#2b241a;--line:#665237}body.theme-carbon{--panel:#122422;--line:#30514a}
+        body.theme-warm .glass,body.theme-warm .card,body.theme-warm .metric,body.theme-warm .sidebar,body.theme-warm .risk-cell,body.theme-carbon .glass,body.theme-carbon .card,body.theme-carbon .metric,body.theme-carbon .sidebar,body.theme-carbon .risk-cell{background:var(--panel);border-color:var(--line)}
+        body.theme-warm select,body.theme-warm button,body.theme-carbon select,body.theme-carbon button{border-color:var(--line);color:var(--ink)}
+        .js-plotly-plot{min-width:0}.curve-wrap{max-width:100%}
+            /* Five-theme design system. Visual-only: data rendering and feed logic remain unchanged. */
         body{--ui-bg:#080d15;--ui-panel:#111b2a;--ui-panel-alt:#0c1420;--ui-border:#2c4058;--ui-accent:#83b4ff;--ui-glow:rgba(75,130,210,.14);--ui-radius:17px;--ui-shadow:0 14px 34px rgba(0,0,0,.22);--ui-text:#e9f1fb;--ui-muted:#acbbcd;transition:background-color .25s ease,color .25s ease}
         body.theme-graphite{--ui-bg:#0d1015;--ui-panel:#1a2029;--ui-panel-alt:#121820;--ui-border:#414b59;--ui-accent:#b4c7e0;--ui-glow:rgba(150,169,194,.10);--ui-radius:12px;--ui-text:#f1f3f6;--ui-muted:#bdc5d0}
         body.theme-turquoise{--ui-bg:#071311;--ui-panel:#102421;--ui-panel-alt:#091b19;--ui-border:#28625c;--ui-accent:#5ce2d0;--ui-glow:rgba(29,206,179,.16);--ui-radius:18px;--ui-text:#e5f7f3;--ui-muted:#a8cec8}
@@ -122,9 +125,10 @@
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="manualRefresh()" class="text-xs bg-gray-900 border border-gray-800 text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
-                    <i class="fa-solid fa-rotate mr-1"></i> Actualizar feed
+                <button onclick="manualRefresh()" title="Descarga la última publicación. No ejecuta los proveedores ni garantiza datos en tiempo real." class="text-xs bg-gray-900 border border-gray-800 text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
+                    <i class="fa-solid fa-rotate mr-1"></i> Cargar última publicación
                 </button>
+                <a href="https://github.com/brutodeibit/Macro-terminal/actions/workflows/update-preview.yml" target="_blank" rel="noopener" title="Abre GitHub: pulsa Run workflow para consultar las fuentes y publicar un nuevo feed. Requiere tu sesión de GitHub. Después carga la última publicación." class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">Actualizar fuentes · GitHub ↗</a>
                 <a href="statistical-monitor.html" class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
                     <i class="fa-solid fa-chart-column mr-1"></i> Monitor estadístico
                 </a>
@@ -140,7 +144,7 @@
                 </div>
                 <div class="flex items-center gap-2 text-xs bg-gray-900 border border-gray-800 text-gray-400 px-3 py-1.5 rounded-full w-fit">
                     <span id="feedDot" class="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    <span id="feedStatus">Feed automático · 15 min</span>
+                    <span id="feedStatus" role="status">Consultando el feed publicado…</span>
                 </div>
             </div>
         </header>
@@ -693,6 +697,11 @@
 
         let currentCountryKey = '__global';
 
+        function economyFlag(id) {
+            const code = id === 'uk' ? 'gb' : String(id || '').toLowerCase();
+            if (!['us','eu','de','gb','jp','au','nz','ca','ch'].includes(code)) return esc(code.toUpperCase());
+            return `<img src="https://flagcdn.com/${code}.svg" alt="${code.toUpperCase()}" width="28" height="20" style="display:inline-block;width:28px;height:20px;object-fit:cover;border-radius:3px;vertical-align:middle" loading="lazy">`;
+        }
         function renderSidebar() {
             const nav = document.getElementById('countryNav');
             const mobileSelect = document.getElementById('mobileCountrySelect');
@@ -721,12 +730,12 @@
                 const btn=document.createElement('button');
                 btn.className=`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition nav-item ${key===currentCountryKey?'active':'text-gray-400 hover:text-white hover:bg-gray-900'}`;
                 btn.onclick=()=>switchCountry(key);
-                btn.innerHTML=`<span class="flex items-center gap-2.5"><span>${c.flag||'🌎'}</span><span>${esc(c.name||key)}</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
+                btn.innerHTML=`<span class="flex items-center gap-2.5"><span>${economyFlag(c.id)}</span><span>${esc(c.name||key)}</span></span><i class="fa-solid fa-chevron-right text-xs opacity-40"></i>`;
                 nav.appendChild(btn);
 
                 const opt=document.createElement('option');
                 opt.value=key;
-                opt.textContent=`${c.flag||'🌎'} ${c.name||key}`;
+                opt.textContent=`${c.id==='uk'?'GB':String(c.id||key).toUpperCase()} ${c.name||key}`;
                 opt.selected=key===currentCountryKey;
                 mobileSelect.appendChild(opt);
             });
@@ -934,12 +943,14 @@
             const staleDaysForIndicator=(ind)=>{
                 const cat=String(ind?.cat||'').toUpperCase();
                 // Quarterly activity can remain informative longer than weekly labour data.
-                if(cat.includes('CREC')) return 125;
-                if(cat.includes('INFL')) return 105;
-                if(cat.includes('EMPLEO')) return 70;
+                if(/claims|solicitudes|subsidio/i.test(ind?.name||'')) return 14;
+                if(/pib|gdp/i.test(ind?.name||'')) return 125;
+                if(cat.includes('CREC')) return 65;
+                if(cat.includes('INFL')) return 75;
+                if(cat.includes('EMPLEO')) return 75;
                 return 90;
             };
-            const dated=(ind)=>{const t=Date.parse(String(ind?.date||'')); return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-staleDaysForIndicator(ind)*86400000;};
+            const dated=(ind)=>{const t=Date.parse(String(ind?.publishedAt||ind?.releaseDate||ind?.date||'')); return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-staleDaysForIndicator(ind)*86400000;};
             const allIndicators=data.indicators||[];
             const inds=allIndicators.filter(dated);
             const groups={inflation:0,employment:0,growth:0};
@@ -954,7 +965,7 @@
                 contributors.push({name:ind.name, score:d.score, label:d.label, cat, abs:Math.abs(d.score)});
             }
             const centralDate=Date.parse(String(data.conference?.date||''));
-            const centralFresh=Number.isFinite(centralDate)&&centralDate<=Date.now()+86400000&&centralDate>=Date.now()-150*86400000;
+            const centralFresh=!/pendiente|sin clasificar|sin clasificación/i.test(data.conference?.tone||'Sin clasificar')&&Number.isFinite(centralDate)&&centralDate<=Date.now()+86400000&&centralDate>=Date.now()-150*86400000;
             const central=centralFresh?toneScore(data.conference?.tone || data.rates?.postureText):0;
 
             // Las expectativas se leen por dirección neta, no por "probabilidad de subida" aislada.
@@ -973,7 +984,7 @@
             // El 2Y es confirmación de mercado, no el conductor principal.
             let bond=0;
             const t2=(data.bonds?.tenors||[]).find(t=>t.term==='2Y');
-            if(t2){ const ch=parseNum(t2.change); if(Number.isFinite(ch)) bond=Math.max(-0.7,Math.min(0.7,ch/4)); }
+            if(t2&&v7Fresh(t2.observedAt||data.bonds?.date,7)){ const ch=parseNum(t2.change1dBp); if(Number.isFinite(ch)) bond=Math.max(-0.7,Math.min(0.7,ch/4)); }
 
             // Política monetaria: pondera inflación > empleo > crecimiento, con el banco central como ancla.
             const policy = central*1.9 + groups.inflation*0.95 + groups.employment*0.65 + groups.growth*0.35 + expSignal*0.75 + bond*0.45;
@@ -1015,7 +1026,7 @@
             return all.find(i => {
                 const n=(i.name||'').toLowerCase();
                 if(q==='nfp') return /nóminas|nfp|nonfarm/.test(n);
-                if(q==='pce') return /pce/.test(n) && !/subyacente|core/.test(q);
+                if(q==='pce') return /pce/.test(n) && !/subyacente|core/.test(n);
                 if(q==='pce subyacente') return /pce/.test(n) && /subyacente|core/.test(n);
                 if(q==='cpi subyacente') return /cpi|ipc/.test(n) && /subyacente|core/.test(n);
                 if(q==='cpi (ipc) general') return /cpi|ipc/.test(n) && !/subyacente|core/.test(n);
@@ -1034,11 +1045,13 @@
                 const chips=items.map(([name,src,role])=>{
                     const match=findCatalogMatch(data,name);
                     if(match){
+                        const history=(data.indicatorHistory?.[match.name]||[]).slice().reverse();
+                        const historyHtml=history.length>1?`<details class="mt-2 text-xs text-gray-300"><summary>Últimas observaciones</summary><ul>${history.map(row=>`<li>${esc(row.date)} · ${esc(row.actual)}</li>`).join('')}</ul></details>`:'';
                         return `<div class="card rounded-xl p-3">
                             <div class="flex items-start justify-between gap-2"><div class="text-xs font-semibold text-white">${esc(name)}</div><span class="score-chip">${esc(src)}</span></div>
                             <div class="mt-2 text-[11px] text-gray-500">${esc(role)}</div>
-                            <div class="mt-2 flex items-baseline justify-between gap-2"><span class="text-sm font-black text-white">${esc(match.actual)}</span><span class="text-[10px] text-gray-500">Prev. ${esc(match.est)}</span></div>
-                            <div class="mt-1 text-[11px]">${effectForIndicator(match)}</div>
+                            <div class="mt-2 flex items-baseline justify-between gap-2"><span class="text-sm font-black text-white">${esc(match.actual)}</span><span class="text-[10px] text-gray-500">Consenso ${esc(match.est||'—')}</span></div>
+                            <div class="mt-1 text-[11px]">${effectForIndicator(match)}</div><div class="text-xs text-gray-400 mt-1">${esc(match.date||'—')} · ${esc(match.source||src)}</div>${historyHtml}
                         </div>`;
                     }
                     return `<div class="card rounded-xl p-3 opacity-70">
@@ -1090,32 +1103,34 @@
         function riskToneClass(sig){ return sig==='risk-on'?'risk-up':sig==='risk-off'?'risk-down':'risk-neutral'; }
         function renderRiskOnOff(){
  const r=macroDatabase.__riskOnOff||{score:null,label:'SIN SINCRONIZAR',confidence:null,assets:[],confirmations:[],tensions:[],updated:'—'};
- const score=Number(r.score),valid=r.score!==null&&r.score!==undefined&&r.score!==''&&Number.isFinite(score),width=valid?Math.max(0,Math.min(100,score)):0;
+ const score=Number(r.score),valid=r.score!==null&&r.score!==undefined&&r.score!==''&&Number.isFinite(score);
+ const confidence = r.confidence == null ? null : Number(r.confidence);
+ const confidenceWidth = Number.isFinite(confidence) ? Math.max(0, Math.min(100, confidence)) : 0;
  const assets=(r.assets||[]).map(a=>`
  <div class="risk-cell">
   <div class="flex items-center justify-between gap-2"><span class="text-[12px] font-black uppercase tracking-wide text-gray-200">${esc(a.name||a.symbol)}</span><span class="risk-badge">${esc(a.marketSignal||'—')}</span></div>
   <div class="text-xl font-black text-white mt-2">${riskFmt(a.value,a.unit||'',a.name||a.symbol)}</div>
-  <div class="grid grid-cols-3 gap-1.5 mt-2">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
    <div class="rounded bg-gray-900/60 px-2 py-1.5 text-center"><div class="text-[8px] text-gray-600">1D</div><b class="text-[12px] ${a.change1d>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1d))?(a.change1d>=0?'+':'')+Number(a.change1d).toFixed(2)+'%':'—'}<small class="block text-[10px] text-gray-500">${Number.isFinite(Number(a.pointChange1d))?(a.pointChange1d>=0?'+':'')+Number(a.pointChange1d).toFixed(2):'—'}</small></b></div>
    <div class="rounded bg-gray-900/60 px-2 py-1.5 text-center"><div class="text-[8px] text-gray-600">5S</div><b class="text-[12px] ${a.change1w>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1w))?(a.change1w>=0?'+':'')+Number(a.change1w).toFixed(2)+'%':'—'}<small class="block text-[10px] text-gray-500">${Number.isFinite(Number(a.pointChange1w))?(a.pointChange1w>=0?'+':'')+Number(a.pointChange1w).toFixed(2):'—'}</small></b></div>
    <div class="rounded bg-gray-900/60 px-2 py-1.5 text-center"><div class="text-[8px] text-gray-600">21S</div><b class="text-[12px] ${a.change1m>=0?'text-emerald-300':'text-red-300'}">${Number.isFinite(Number(a.change1m))?(a.change1m>=0?'+':'')+Number(a.change1m).toFixed(2)+'%':'—'}<small class="block text-[10px] text-gray-500">${Number.isFinite(Number(a.pointChange1m))?(a.pointChange1m>=0?'+':'')+Number(a.pointChange1m).toFixed(2):'—'}</small></b></div>
+   <div class="rounded bg-gray-900/60 px-2 py-1.5 text-center" title="${esc(a.ytdBaseDate?'Base: '+a.ytdBaseDate:'Sin cierre del año anterior')}"><div class="text-[10px] text-gray-400">YTD</div><b class="text-xs ${a.changeYtd>0?'text-emerald-300':a.changeYtd<0?'text-red-300':'text-gray-300'}">${Number.isFinite(a.changeYtd)?fmtPct(a.changeYtd):'—'}</b></div>
   </div>
-  <div class="text-[10px] text-gray-600 mt-1">${esc(a.role||'Confirmación')}</div>
+  <div class="text-[10px] text-gray-400 mt-1">${esc(a.role||'Confirmación')}</div>
  </div>`).join('');
  const conf=(r.confirmations||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-emerald-400">•</span><span>${esc(x)}</span></li>`).join('');
  const tens=(r.tensions||[]).map(x=>`<li class="text-xs text-gray-300 flex gap-2"><span class="text-amber-400">•</span><span>${esc(x)}</span></li>`).join('');
  return `<section id="sec-risk" class="space-y-4">
   <div class="glass rounded-2xl p-5">
    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-    <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-scale-balanced text-blue-400"></i> Econic personalizado · régimen de mercado</div>
+    <div><div class="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-scale-balanced text-blue-400"></i> Régimen de mercado</div>
      <h2 class="text-xl md:text-2xl font-black text-white mt-1">RISK ON / RISK OFF</h2>
-     <p class="text-sm text-gray-400 mt-1 max-w-4xl">Lectura intermercado. Los porcentajes son variaciones de precio del último cierre disponible: 1D, 5 sesiones y 21 sesiones. La etiqueta de cada activo describe su relación con el régimen, no si “sube = alcista”.</p>
     </div>
-    <div class="metric rounded-xl px-5 py-4 min-w-[250px]"><div class="flex items-center justify-between"><div class="text-[10px] uppercase text-gray-500">Régimen actual</div><span class="risk-badge">Confianza ${valid&&r.confidence!==null?esc(String(r.confidence))+'%':'—'}</span></div>
+    <div class="metric rounded-xl px-5 py-4 min-w-[250px]"><div class="flex items-center justify-between gap-4"><div class="text-xs uppercase text-gray-400">Régimen actual</div><span class="text-lg font-bold text-white">Confianza ${valid&&r.confidence!==null?esc(String(r.confidence))+'%':'—'}</span></div>
      <div class="text-2xl font-black ${valid?(score>=65?'risk-up':score<=35?'risk-down':'risk-neutral'):'text-gray-400'} mt-1">${esc(r.label||'SIN SINCRONIZAR')}</div>
      <div class="flex justify-between text-[10px] text-gray-400 mt-3"><span>Índice de régimen</span><b>${valid?score.toFixed(0)+'/100':'—'}</b></div>
-     <div class="risk-meter mt-2" role="meter" aria-label="Índice de régimen" aria-valuemin="0" aria-valuemax="100" ${valid?'aria-valuenow="'+width+'"':''}><div class="risk-meter-fill" style="width:${width}%"></div></div>
-     <div class="flex justify-between text-[9px] text-gray-600 mt-1"><span>RISK OFF</span><span>NEUTRAL</span><span>RISK ON</span></div>
+     <div class="risk-meter mt-2" role="meter" aria-label="Confianza del régimen" aria-valuemin="0" aria-valuemax="100" ${Number.isFinite(confidence)?'aria-valuenow="'+confidenceWidth+'"':''}><div class="risk-meter-fill" style="width:${confidenceWidth}%;background:${valid?(score<=35?'#ef6c72':score>=65?'#32d5a0':'#eab35a'):'#64748b'}"></div></div>
+     <div class="flex justify-between text-[10px] text-gray-400 mt-1"><span>Confianza 0%</span><span>100%</span></div>
     </div>
    </div>
    <div class="mt-4 text-[10px] text-gray-600">Última sincronización: ${esc(r.updated||'—')} · 5S = cinco cierres de mercado; 21S = veintiún cierres. El fin de semana conserva el último cierre disponible.</div>
@@ -1148,7 +1163,7 @@ function renderGlobalSummary(){
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
    ${entries.map(({d,score})=>`
     <button onclick="switchCountry('${d.id}')" class="text-left card rounded-2xl p-4 row-hover transition">
-     <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag}</span><span class="font-bold text-white">${esc(d.name)}</span></div><span class="text-xs font-black ${biasClass(score)}">${label(score)}</span></div>
+     <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${economyFlag(d.id)}</span><span class="font-bold text-white">${esc(d.name)}</span></div><span class="text-xs font-black ${biasClass(score)}">${label(score)}</span></div>
      <div class="mt-3 flex items-center justify-between"><span class="mini-pill">${esc(d.conference?.tone || d.rates?.postureText || 'Sin tono')}</span><span class="text-xs ${biasClass(score)}">${score>0.9?'presión de tipos ↑':score<-0.9?'presión de tipos ↓':'sin dirección clara'}</span></div>
      <div class="mt-3 text-xs text-gray-500">Tipo ${esc(d.rates?.official)} · Próxima ${esc(d.rates?.nextMeeting)}</div>
     </button>`).join('')}
@@ -1157,11 +1172,11 @@ function renderGlobalSummary(){
 }
 
 function renderMeetingHistory(data){
-            const hist=data.conference?.history || [];
+            const hist=(data.conference?.history||[]).filter(x=>x.verified&&x.id).filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
             const items=[
-                {label:'Última', cls:'meeting-current', item:hist[0], fallback:{date:data.conference?.date, title:data.conference?.title, tone:data.conference?.tone, summary:data.conference?.summary}},
-                {label:'Anterior', cls:'meeting-old', item:hist[1]},
-                {label:'Hace 2 reuniones', cls:'meeting-old', item:hist[2]}
+                {label:'Última', cls:'meeting-current', item:hist[0]},
+                {label:'Penúltima', cls:'meeting-old', item:hist[1]},
+                {label:'Antepenúltima', cls:'meeting-old', item:hist[2]}
             ];
             return items.map(x=>{
               const m=x.item||x.fallback;
@@ -1172,9 +1187,10 @@ function renderMeetingHistory(data){
                 <div class="flex items-center justify-between gap-2"><span class="text-[10px] uppercase tracking-wider text-gray-500">${x.label}</span><span class="mini-pill">${esc(m.date||'')}</span></div>
                 <div class="font-bold text-white text-sm mt-2">${esc(m.title||'Reunión')}</div>
                 <div class="text-xs ${tc} mt-2">${esc(m.tone||'Sin clasificar')}</div>
-                <div class="text-xs text-gray-400 mt-2 leading-relaxed">${esc(m.summary||'')}</div>${Array.isArray(m.keyPoints)&&m.keyPoints.length?`<details class="mt-3"><summary class="cursor-pointer text-[10px] text-blue-300">Ver puntos clave</summary><ul class="mt-2 space-y-1.5">${m.keyPoints.map(k=>`<li class="text-[11px] text-gray-400">• ${esc(k)}</li>`).join('')}</ul></details>`:''}<div class="text-[9px] text-gray-600 mt-2">Fuente: comunicación/reunión disponible del banco central</div>
+                ${/^https:\/\/www\.federalreserve\.gov\/monetarypolicy\/fomcpresconf\d{8}\.htm$/.test(m.pressConferenceUrl||'')?`<a href="${esc(m.pressConferenceUrl)}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-300 underline">Rueda de prensa oficial</a>`:''}
+                <div class="text-xs text-gray-400 mt-2 leading-relaxed">${esc(m.summary||'')}</div>${Array.isArray(m.keyPoints)&&m.keyPoints.length?`<details class="mt-3"><summary class="cursor-pointer text-[10px] text-blue-300">Ver puntos clave</summary><ul class="mt-2 space-y-1.5">${m.keyPoints.map(k=>`<li class="text-[11px] text-gray-400">• ${esc(k)}</li>`).join('')}</ul></details>`:''}<div class="text-[9px] text-gray-600 mt-2">${m.decision?esc(m.decision)+' · ':''}${m.newRate!=null?esc(m.rateLabel||'Tipo (%)')+': '+esc(m.previousRate??'—')+' → '+esc(m.newRate):''}${m.vote?' · '+esc(m.vote):''}<br>${/^https:\/\//.test(m.sourceUrl||'')?`<a href="${esc(m.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="underline">${esc(m.source||'Documento oficial')}</a>`:'Fuente oficial pendiente'}</div>
               </div>`;
-            });
+            }).join('');
         }
 
         function renderCotSection(){
@@ -1236,11 +1252,33 @@ const INSTRUMENT_NAMES={
             return INSTRUMENT_NAMES[String(ticker||'').toUpperCase()]||fallback||ticker||'—';
         }
 
-        function renderOptionsSection(){
+        
+function optionsDisplayCatalog(o){
+ const codes=['SPX','SPY','NDX','QQQ','DJX','DIA','RUT','IWM','DAX','EWG','SX5E','FEZ','SXXP','EXSA','GLD','IAU','SLV','USO','BNO','VIX','IBIT','BTC','ETH','AAPL','NVDA','HYG','LQD','TLT','SGOV'];
+ const items=o.catalog||[];
+ const extras={DJX:{code:'DJX',family:'Dow Jones',label:'DJX · opciones del Dow (escala 1/100)',kind:'index_option'},EWG:{code:'EWG',family:'DAX',label:'iShares MSCI Germany ETF · proxy Alemania',kind:'etf'},FEZ:{code:'FEZ',family:'EURO STOXX 50',label:'SPDR EURO STOXX 50 ETF',kind:'etf'},LQD:{code:'LQD',family:'Macro · Crédito',label:'iShares Investment Grade Corporate Bond ETF',kind:'etf'},SGOV:{code:'SGOV',family:'Macro · Duración',label:'iShares 0–3 Month Treasury Bond ETF · sin cadena confirmada',kind:'etf'}};
+ return codes.map(c=>items.find(x=>String(x.code||'').toUpperCase()===c)||extras[c]).filter(Boolean);
+}
+function optionsUsableProfiles(m){
+ const today=new Date().toISOString().slice(0,10);
+ return (m.profiles||[]).filter(q=>/^\d{4}-\d{2}-\d{2}$/.test(q.expiration||'')&&q.expiration>=today&&(!q.expirationAt||Date.parse(q.expirationAt)>Date.now())).sort((a,b)=>a.expiration.localeCompare(b.expiration));
+}
+function optionProfileKey(p){return p.contractCode ? p.contractCode+':'+p.expiration : p.expiration;}
+function optionsSelectedProfile(m){
+ const rows=optionsUsableProfiles(m);if(!rows.length)return null;
+ return rows.find(q=>optionProfileKey(q)===String(window.__optExpiration||''))||rows[0];
+}
+function optionSnapshotNotice(m){
+ const raw=String(m.asOf||'');
+ const at=Date.parse(raw.replace(' ','T')+(raw.includes('T')||/Z|[+-]\d\d:\d\d$/.test(raw)?'':'Z'));
+ const age=Number.isFinite(at)?(Date.now()-at)/86400000:null;
+ const stale=age===null||age>2;
+ return '<div class="metric rounded-xl p-3 mt-3 border '+(stale?'border-amber-600/50':'border-slate-700')+'"><b class="text-xs '+(stale?'text-amber-300':'text-emerald-300')+'">'+(stale?'DATOS HISTÓRICOS / SNAPSHOT ANTIGUO':'SNAPSHOT DISPONIBLE · RETRASADO')+'</b><div class="text-[11px] text-gray-300 mt-1">Activo '+esc(m.ticker||'—')+' · última captura '+esc(m.asOf||'sin fecha')+'. Los muros y el GEX pertenecen al vencimiento indicado, no son niveles en tiempo real.</div></div>';
+}
+function renderOptionsSection(){
  const o=macroDatabase.__options||{updated:'—',markets:[],catalog:[],flow:[]};
- const excluded=new Set(['ES','NQ','YM','RTY','FDAX','ODAX','FESX','OESX','GC','GZ','XAU','CHAU','SI','CL','BZ']);
- const markets=(o.markets||[]).filter(x=>!excluded.has(x.ticker||x.instrumentCode)), catalog=(o.catalog||[]).filter(x=>!excluded.has(x.code)), families=[...new Set(catalog.map(x=>x.family).filter(Boolean))];
- const wanted=(excluded.has(String(window.__optTicker||'').toUpperCase())?'SPX':String(window.__optTicker||'SPX').toUpperCase());
+ const markets=o.markets||[], catalog=optionsDisplayCatalog(o), families=[...new Set(catalog.map(x=>x.family).filter(Boolean))];
+ const wanted=String(window.__optTicker||'SPX').toUpperCase();
  const explicitCrypto=(wanted==='BTC'||wanted==='ETH');
  const current=markets.find(m=>String(m.ticker||m.instrumentCode||'').toUpperCase()===wanted)
   || markets.find(m=>{const k=String(m.ticker||m.instrumentCode||'').toUpperCase();return explicitCrypto&&(k.startsWith(wanted+'-')||k.startsWith(wanted+'/'));})
@@ -1250,7 +1288,7 @@ const INSTRUMENT_NAMES={
  const known=markets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===String(selected).toUpperCase());
  const catalogItem=catalog.find(x=>String(x.code||'').toUpperCase()===String(selected).toUpperCase());
  const m=known||{ticker:selected,instrumentCode:selected,name:catalogItem?.label||selected,family:catalogItem?.family||'Referencia',referenceOnly:true,profiles:[],dataStatus:'REFERENCIA · SIN CADENA COMPLETA',method:'Se conserva el activo seleccionado. Solo se muestran métricas cuando existen datos públicos verificables.'};
- const p=(m.profiles||[])[0]||{};
+ const p=optionsSelectedProfile(m)||{};
  const chainProxy=m.chainProxy||catalogItem?.chainProxy||'';
  const requestedFamily=String(window.__optFamily||'');
  const family=(requestedFamily==='__ALL__'||families.includes(requestedFamily))?requestedFamily:(m.family||catalog.find(x=>x.code===selected)?.family||'S&P 500');
@@ -1263,16 +1301,16 @@ const INSTRUMENT_NAMES={
  const rows=(p.topGexStrikes||[]).slice(0,14),maxG=Math.max(...rows.map(x=>Math.abs(Number(x.gex)||0)),1),maxOI=Math.max(...rows.map(x=>Number(x.oi)||0),1);
  const gexBars=rows.map(x=>{const g=Number(x.gex)||0,w=Math.max(3,Math.round(Math.abs(g)/maxG*100));return '<div class="grid grid-cols-[55px_1fr_80px] gap-2 items-center text-[10px]"><span class="text-right text-gray-400">'+fmtNum(x.strike,0)+'</span><div class="h-3 bg-gray-900 rounded overflow-hidden"><div class="'+(g>=0?'bg-emerald-400':'bg-red-400')+' h-full rounded" style="width:'+w+'%"></div></div><span class="text-right '+(g>=0?'text-emerald-300':'text-red-300')+'">'+fmtCompactMoney(g)+'</span></div>';}).join('');
  const oiBars=rows.map(x=>'<div class="grid grid-cols-[55px_1fr_70px] gap-2 items-center text-[10px]"><span class="text-right text-gray-400">'+fmtNum(x.strike,0)+'</span><div class="h-2 bg-gray-900 rounded overflow-hidden"><div class="bg-blue-400/80 h-full rounded" style="width:'+Math.max(2,Math.round((Number(x.oi)||0)/maxOI*100))+'%"></div></div><span class="text-right text-gray-400">'+fmtNum(x.oi,0)+'</span></div>').join('');
- const hasChain=Array.isArray(m.profiles)&&m.profiles.length>0&&!m.referenceOnly;
+ const hasChain=optionsUsableProfiles(m).length>0&&!m.referenceOnly;
  const stats=m.stats||{};
  const statsHtml=(stats.ivRank!=null||stats.ivPercentile!=null||stats.putCallVol!=null||stats.putCallOi!=null)?'<div class="metric rounded-xl p-4"><b class="text-sm text-white">VOLATILIDAD · BARCHART</b><div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-xs">'+(stats.ivRank!=null?'<div>IV Rank<b class="block">'+fmtNum(stats.ivRank,1)+'</b></div>':'')+(stats.ivPercentile!=null?'<div>IV Percentile<b class="block">'+fmtNum(stats.ivPercentile,1)+'</b></div>':'')+(stats.putCallVol!=null?'<div>Put/Call Vol<b class="block">'+fmtNum(stats.putCallVol,2)+'</b></div>':'')+(stats.putCallOi!=null?'<div>Put/Call OI<b class="block">'+fmtNum(stats.putCallOi,2)+'</b></div>':'')+'</div><div class="text-[9px] text-gray-600 mt-3">Último snapshot público disponible; no se presenta como intradía en tiempo real.</div></div>':'';
- const profilesHtml=hasChain?(m.profiles||[]).map((q,i)=>'<div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[9px] text-gray-500 uppercase">'+esc(q.bucket||('VENCIMIENTO '+(i+1)))+' · '+esc(q.expiration||'—')+'</div><div class="text-[10px] text-gray-600">'+fmtNum(q.daysToExpiry,1)+' días · '+esc(q.source||m.source||'PUBLIC')+'</div></div><span class="mini-pill">'+(q.dataStatus||'DELAYED')+'</span></div><div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-3 text-xs"><div>Max Pain<b class="block">'+lvl(q.maxPain)+'</b></div><div>Gamma Flip<b class="block">'+lvl(validGammaFlip(q.gammaFlip??q.zeroGamma))+'</b></div><div>Call Wall · OI<b class="block">'+lvl(q.callWallOi??q.callWall)+'</b></div><div>Put Wall · OI<b class="block">'+lvl(q.putWallOi??q.putWall)+'</b></div><div>GEX net<b class="block">'+fmtCompactMoney(q.gammaNet)+'</b></div><div>Call / Put OI<b class="block">'+fmtNum(q.callOi,0)+' / '+fmtNum(q.putOi,0)+'</b></div><div>Call / Put Vol<b class="block">'+fmtNum(q.callVolume,0)+' / '+fmtNum(q.putVolume,0)+'</b></div><div>ATM Δ / Γ / Vega<b class="block">'+fmtNum(q.atmDelta,3)+' / '+fmtNum(q.atmGamma,5)+' / '+fmtNum(q.atmVega,2)+'</b></div>'+(q.ivAtm!=null?'<div>ATM IV<b class="block">'+fmtNum(q.ivAtm,2)+'%</b></div>':'')+(q.expectedMove!=null?'<div>Expected Move<b class="block">±'+fmtNum(q.expectedMove,2)+' ('+fmtNum(q.expectedMovePct,1)+'%)</b></div>':'')+(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+(q.oiCoveragePct!=null?'<div>OI disponible<b class="block">'+fmtNum(q.oiCoveragePct,0)+'%</b></div>':'')+(q.ivCoveragePct!=null?'<div>IV disponible<b class="block">'+fmtNum(q.ivCoveragePct,0)+'%</b></div>':'')+(q.gammaCoveragePct!=null?'<div>Gamma calculable<b class="block">'+fmtNum(q.gammaCoveragePct,0)+'%</b></div>':'')+'</div></div>').join(''):'<div class="metric rounded-xl p-4"><b class="text-sm text-white">CADENA DE OPCIONES</b><p class="text-xs text-gray-400 mt-2">'+esc(m.method||'No hay cadena pública completa disponible para este instrumento en este momento.')+'</p><p class="text-[10px] text-gray-600 mt-2">Último dato: '+esc(m.asOf||o.updated||'—')+'</p>'+(chainProxy?'<div class="mt-3 rounded-lg border border-blue-900/70 bg-blue-950/20 p-3"><b class="text-xs text-blue-100">Alternativa verificable: cadena de '+esc(chainProxy)+'</b><p class="text-[10px] text-gray-400 mt-1">Es un ETF/vehículo relacionado, no opciones del futuro. No se mezclan OI, strikes ni GEX entre ambos.</p><button onclick="window.__optTicker=\''+esc(chainProxy)+'\';renderContent()" class="mt-2 text-[10px] rounded bg-blue-500/20 border border-blue-400/40 text-blue-200 px-2 py-1">Abrir cadena '+esc(chainProxy)+'</button></div>':'')+'</div>';
+ const profilesHtml=hasChain?optionsUsableProfiles(m).map((q,i)=>'<div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[9px] text-gray-500 uppercase">'+esc(q.bucket||('VENCIMIENTO '+(i+1)))+' · '+esc(q.expiration||'—')+'</div><div class="text-[10px] text-gray-600">'+fmtNum(q.daysToExpiry,1)+' días · '+esc(q.source||m.source||'PUBLIC')+'</div></div><span class="mini-pill">'+(q.dataStatus||'DELAYED')+'</span></div><div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-3 text-xs"><div>Max Pain<b class="block">'+lvl(q.maxPain)+'</b></div><div>Gamma Flip<b class="block">'+lvl(validGammaFlip(q.gammaFlip??q.zeroGamma))+'</b></div><div>Call Wall · OI<b class="block">'+lvl(q.callWallOi??q.callWall)+'</b></div><div>Put Wall · OI<b class="block">'+lvl(q.putWallOi??q.putWall)+'</b></div><div>GEX net<b class="block">'+fmtCompactMoney(q.gammaNet)+'</b></div><div>Call / Put OI<b class="block">'+fmtNum(q.callOi,0)+' / '+fmtNum(q.putOi,0)+'</b></div><div>Call / Put Vol<b class="block">'+fmtNum(q.callVolume,0)+' / '+fmtNum(q.putVolume,0)+'</b></div><div>ATM Δ / Γ / Vega<b class="block">'+fmtNum(q.atmDelta,3)+' / '+fmtNum(q.atmGamma,5)+' / '+fmtNum(q.atmVega,2)+'</b></div>'+(q.ivAtm!=null?'<div>ATM IV<b class="block">'+fmtNum(q.ivAtm,2)+'%</b></div>':'')+(q.expectedMove!=null?'<div>Expected Move<b class="block">±'+fmtNum(q.expectedMove,2)+' ('+fmtNum(q.expectedMovePct,1)+'%)</b></div>':'')+(q.riskReversal25d!=null?'<div>25Δ Skew<b class="block">'+fmtNum(q.riskReversal25d,2)+' vol pts</b></div>':'')+(q.oiCoveragePct!=null?'<div>OI disponible<b class="block">'+fmtNum(q.oiCoveragePct,0)+'%</b></div>':'')+(q.ivCoveragePct!=null?'<div>IV disponible<b class="block">'+fmtNum(q.ivCoveragePct,0)+'%</b></div>':'')+(q.gammaCoveragePct!=null?'<div>Gamma calculable<b class="block">'+fmtNum(q.gammaCoveragePct,0)+'%</b></div>':'')+'</div></div>').join(''):'<div class="metric rounded-xl p-4"><b class="text-sm text-white">CADENA DE OPCIONES</b><p class="text-xs text-gray-400 mt-2">'+esc(m.method||'No hay cadena pública completa disponible para este instrumento en este momento.')+'</p><p class="text-[10px] text-gray-600 mt-2">Último dato: '+esc(m.asOf||o.updated||'—')+'</p>'+(chainProxy?'<div class="mt-3 rounded-lg border border-blue-900/70 bg-blue-950/20 p-3"><b class="text-xs text-blue-100">Alternativa verificable: cadena de '+esc(chainProxy)+'</b><p class="text-[10px] text-gray-400 mt-1">Es un ETF/vehículo relacionado, no opciones del futuro. No se mezclan OI, strikes ni GEX entre ambos.</p><button onclick="window.__optTicker=\''+esc(chainProxy)+'\';renderContent()" class="mt-2 text-[10px] rounded bg-blue-500/20 border border-blue-400/40 text-blue-200 px-2 py-1">Abrir cadena '+esc(chainProxy)+'</button></div>':'')+'</div>';
  const flow=(o.flow||[]).filter(x=>x&&(!selected||x.symbol===selected)).slice(0,12);
  const flowHtml=flow.length?'<div class="metric rounded-xl p-4"><div class="flex items-center justify-between"><b class="text-sm text-white">OPTIONS FLOW · ACTIVIDAD DESTACADA</b><span class="mini-pill">Cboe delayed</span></div><div class="overflow-x-auto mt-3"><table class="w-full min-w-[720px] text-xs"><thead><tr class="text-[9px] text-gray-500 uppercase border-b border-gray-800"><th class="text-left py-2">Tipo</th><th class="text-right">Strike</th><th class="text-right">Expiry</th><th class="text-right">Premium</th><th class="text-right">Vol</th><th class="text-right">OI</th><th class="text-right">Delta</th><th class="text-left pl-3">Lectura</th></tr></thead><tbody>'+flow.map(x=>'<tr class="border-b border-gray-900/70"><td class="py-2">'+esc((x.type||'').toUpperCase())+' · '+esc(x.side||'—')+'</td><td class="text-right">'+fmtNum(x.strike,2)+'</td><td class="text-right">'+esc(x.expiry||'—')+'</td><td class="text-right">'+fmtCompactMoney(x.premium)+'</td><td class="text-right">'+fmtNum(x.volume,0)+'</td><td class="text-right">'+fmtNum(x.openInterest,0)+'</td><td class="text-right">'+fmtNum(x.delta,3)+'</td><td class="pl-3">'+esc(x.flowType||'activity')+'</td></tr>').join('')+'</tbody></table></div><p class="text-[9px] text-gray-600 mt-2">El sentido buy/sell y el sentimiento son inferidos por la fuente; no equivalen a intención confirmada del operador.</p></div>':'';
  const refs=familyItems.map(x=>'<button onclick="window.__optTicker=\''+esc(x.code)+'\';renderContent()" class="text-left rounded-lg border '+(x.code===selected?'border-blue-400/70 bg-blue-400/10':'border-gray-800 bg-gray-950/40')+' p-3"><b class="text-xs text-white">'+esc(x.code)+'</b><span class="block text-[9px] text-gray-500 mt-1">'+esc(x.kind==='future'?'Futuro':x.kind==='index'?'Índice':x.kind==='etf'?'ETF':x.kind==='option_index'?'Opciones índice':'Referencia')+'</span></button>').join('');
  const quickCrypto=['IBIT','BTC','ETH'].map(code=>{const q=catalog.find(z=>z.code===code);return q?'<button onclick="window.__optTicker=\''+code+'\';window.__optFamily=\''+esc(q.family)+'\';renderContent()" class="rounded-lg border px-3 py-2 text-left '+(selected===code?'border-blue-400 bg-blue-400/15':'border-gray-700 bg-gray-950/40')+'"><b class="text-xs text-white">'+code+'</b><span class="block text-[9px] text-gray-400">'+esc(q.label)+(code==='IBIT'?' · ETF referencia':' · opciones nativas')+'</span></button>':'';}).join('');
  const btcLayers=(selected==='BTC'||selected==='ETH')&&m.cryptoPerspective?'<div class="grid grid-cols-1 lg:grid-cols-3 gap-4"><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase text-gray-500">'+esc(selected)+' · CME</div><b class="text-sm text-white block mt-1">Capa institucional de futuros</b><p class="text-xs text-gray-500 mt-2">'+esc(m.layers?.cme?.status||'Último dato público disponible si CME devuelve cadena.')+'</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase text-gray-500">'+esc(selected)+' · SPOT ETF</div><b class="text-sm text-white block mt-1">Flujo agregado · todos los emisores</b><p class="text-xs text-gray-500 mt-2">'+(m.layers?.spotEtfFlows?('1D '+fmtNum(m.layers.spotEtfFlows.netFlow1d,1)+' M$ · 5D '+fmtNum(m.layers.spotEtfFlows.netFlow5d,1)+' M$ · 21D '+fmtNum(m.layers.spotEtfFlows.netFlow21d,1)+' M$ · fecha '+esc(m.layers.spotEtfFlows.asOf||'—')):'Último flujo disponible no recuperado')+'</p><p class="text-[9px] text-gray-600 mt-2">Fuente: Farside · suma de la columna Total de los emisores publicados.</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase text-gray-500">'+esc(selected)+' · DERIBIT</div><b class="text-sm text-white block mt-1">Cadena cripto nativa</b><p class="text-xs text-gray-500 mt-2">OI, IV y Greeks de opciones nativas. CME y ETF permanecen separados.</p></div></div>':'';
- return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">DERIVATIVES DESK · MULTI-SOURCE / DELAYED</div><h2 class="text-xl font-black text-white mt-1">OPTIONS · STRUCTURE + FLOW</h2><p class="text-sm text-gray-400 mt-1">Familias de activos agrupadas por índice, ETF y futuro. Los cálculos derivados llevan etiqueta; los datos tienen fecha.</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"><select onchange="window.__optFamily=this.value;const x=(macroDatabase.__options.catalog||[]).find(z=>z.family===this.value);if(this.value.indexOf(String.fromCharCode(95))!==0)window.__optTicker=x?.code||window.__optTicker;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+familySelect+'</select><select onchange="window.__optTicker=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+instSelect+'</select></div><div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">'+metric('SPOT / ÚLTIMO',lvl(m.spot),m.asOf||'—')+metric('MAX PAIN',lvl(p.maxPain))+metric('GAMMA FLIP',lvl(validGammaFlip(p.gammaFlip??p.zeroGamma)))+metric('GEX NET · MODELADO',fmtCompactMoney(p.gammaNet))+metric('CALL WALL · OI',lvl(p.callWallOi??p.callWall))+metric('PUT WALL · OI',lvl(p.putWallOi??p.putWall))+'</div></div><div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">'+refs+'</div>'+(['BTC','ETH','IBIT'].includes(selected)?'<div class="metric rounded-xl p-3"><div class="text-[9px] uppercase tracking-wider text-gray-400 mb-2">ACCESO RÁPIDO · ETF Y CRIPTO</div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2">'+quickCrypto+'</div></div>':'')+btcLayers+statsHtml+flowHtml+profilesHtml+(hasChain?'<div class="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-4"><div class="metric rounded-xl p-5"><b class="text-sm text-white">GEX CLUSTERS · STRIKE</b><div class="space-y-2 mt-5">'+(gexBars||'<div class="text-xs text-gray-500">Sin clusters disponibles.</div>')+'</div></div><div class="metric rounded-xl p-5"><b class="text-sm text-white">OI CLUSTERS · STRIKE</b><div class="space-y-2 mt-4">'+(oiBars||'<div class="text-xs text-gray-500">Sin OI disponible.</div>')+'</div></div></div>':'')+'<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b><p class="text-xs text-gray-400 mt-2">Max Pain = cálculo sobre OI disponible. Gamma Flip / GEX / DEX = proxies modelados, no posicionamiento de dealer observado. Delta, Gamma y Vega se muestran cuando la cadena permite calcularlos. Theta/Rho no se elevan a métricas principales.</p><p class="text-[9px] text-gray-600 mt-2">Actualización del feed: '+esc(o.updated||'—')+' · Fuente múltiple · datos retrasados según mercado.</p></div></section>';
+ return '<section id="sec-options" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">DERIVATIVES DESK · MULTI-SOURCE / DELAYED</div><h2 class="text-xl font-black text-white mt-1">OPTIONS · STRUCTURE + FLOW</h2><p class="text-sm text-gray-400 mt-1">Índices y ETF separados; cada cadena conserva sus strikes y multiplicador. Los cálculos derivados llevan etiqueta; los datos tienen fecha.</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"><select onchange="window.__optFamily=this.value;const x=optionsDisplayCatalog(macroDatabase.__options||{}).find(z=>z.family===this.value);if(this.value.indexOf(String.fromCharCode(95))!==0)window.__optTicker=x?.code||window.__optTicker;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+familySelect+'</select><select onchange="window.__optTicker=this.value;renderContent()" class="bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">'+instSelect+'</select></div><div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">'+metric('SPOT / ÚLTIMO',lvl(m.spot),m.asOf||'—')+metric('MAX PAIN',lvl(p.maxPain))+metric('GAMMA FLIP',lvl(validGammaFlip(p.gammaFlip??p.zeroGamma)))+metric('GEX NET · MODELADO',fmtCompactMoney(p.gammaNet))+metric('CALL WALL · OI',lvl(p.callWallOi??p.callWall))+metric('PUT WALL · OI',lvl(p.putWallOi??p.putWall))+'</div></div><div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2">'+refs+'</div>'+(['BTC','ETH','IBIT'].includes(selected)?'<div class="metric rounded-xl p-3"><div class="text-[9px] uppercase tracking-wider text-gray-400 mb-2">ACCESO RÁPIDO · ETF Y CRIPTO</div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2">'+quickCrypto+'</div></div>':'')+btcLayers+statsHtml+flowHtml+profilesHtml+(hasChain?'<div class="grid grid-cols-1 xl:grid-cols-[1.45fr_1fr] gap-4"><div class="metric rounded-xl p-5"><b class="text-sm text-white">GEX CLUSTERS · STRIKE</b><div class="space-y-2 mt-5">'+(gexBars||'<div class="text-xs text-gray-500">Sin clusters disponibles.</div>')+'</div></div><div class="metric rounded-xl p-5"><b class="text-sm text-white">OI CLUSTERS · STRIKE</b><div class="space-y-2 mt-4">'+(oiBars||'<div class="text-xs text-gray-500">Sin OI disponible.</div>')+'</div></div></div>':'')+'<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b><p class="text-xs text-gray-400 mt-2">Max Pain = cálculo sobre OI disponible. Gamma Flip / GEX / DEX = proxies modelados, no posicionamiento de dealer observado. Delta, Gamma y Vega se muestran cuando la cadena permite calcularlos. Theta/Rho no se elevan a métricas principales.</p><p class="text-[9px] text-gray-600 mt-2">Actualización del feed: '+esc(o.updated||'—')+' · Fuente múltiple · datos retrasados según mercado.</p></div></section>';
 }
 /* OPTIONS 2.0 — interactive strike map + term structure, lazy-loaded. */
 const __renderOptionsLegacy = renderOptionsSection;
@@ -1295,8 +1333,10 @@ function __optionsInteractiveHtml(m,p){
  const has=(Array.isArray(p?.strikeMap)&&p.strikeMap.length)||(Array.isArray(p?.topGexStrikes)&&p.topGexStrikes.length);
  const status=String(p?.dataStatus||m?.dataStatus||(m?.referenceOnly?'REFERENCIA / SIN CADENA':'DATOS RETRASADOS'));
  const title=esc(m?.name||m?.ticker||m?.instrumentCode||'Activo seleccionado');
+ const expiries=optionsUsableProfiles(m);const selectedExp=p?optionProfileKey(p):'';
+ const expirySelect=expiries.length?'<label class="text-[11px] text-gray-400">Vencimiento <select aria-label="Vencimiento opciones" onchange="window.__optExpiration=this.value;renderContent()" class="bg-slate-900 text-white border border-slate-700 rounded-lg px-2 py-2 ml-2">'+expiries.map(x=>'<option value="'+esc(optionProfileKey(x))+'" '+(optionProfileKey(x)===selectedExp?'selected':'')+'>'+esc(x.expiration)+' · '+esc(x.contractCode||'')+' · '+esc(x.bucket||'')+'</option>').join('')+'</select></label>':'';
  const noChain='<div class="rounded-lg border border-amber-800/50 bg-amber-950/20 p-3 text-xs text-gray-300"><b class="text-amber-200">Cadena completa no disponible para '+title+'</b><p class="text-[10px] text-gray-400 mt-1">La selección se mantiene en este instrumento. Se muestran únicamente las referencias públicas y métricas que existan; no se sustituye por BTC ni se fabrican niveles por strike.</p></div>';
- return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">POSITIONING MAP · GEX + OPEN INTEREST</b><p class="text-[10px] text-gray-400 mt-1">Activo: '+title+' · '+esc(status)+'</p><p class="text-[10px] text-gray-500 mt-1">GEX modelado; Open Interest por strike. Escalas separadas para evitar que una métrica oculte la otra.</p></div><span class="mini-pill">'+esc(p?.expiration||m?.asOf||m?.sourceDate||'Último snapshot')+'</span></div>'+(has?'':'<div class="mt-3">'+noChain+'</div>')+'<div id="opt-gex-chart" class="w-full h-[390px] mt-3"></div><div id="opt-oi-chart" class="w-full h-[360px] mt-3"></div><div class="metric rounded-xl p-4 mt-4"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div><b class="text-sm text-white">VOLATILITY TERM STRUCTURE</b><p class="text-[10px] text-gray-400 mt-1">Volatilidad implícita ATM por vencimiento exacto. Cada punto corresponde a una expiración individual, no a una mezcla de vencimientos.</p></div><span class="mini-pill">ATM IV · DTE</span></div><div id="opt-term-chart" class="w-full h-[330px] mt-2"><div class="h-full flex items-center justify-center text-xs text-gray-500">Buscando volatilidad por vencimiento…</div></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"><div class="metric p-4"><b class="text-xs text-white">CÓMO LEERLO</b><p class="text-[10px] text-gray-400 mt-2">GEX: barras por strike bajo un modelo de exposición; verde y rojo representan el signo del modelo, no compras o ventas observadas. OI: contratos abiertos, no volumen negociado hoy. Call y Put Wall: concentraciones de OI, no soportes garantizados. Gamma Flip: nivel modelado donde cambiaría el signo agregado; si no se puede calcular, queda vacío. IV ATM: volatilidad anualizada implícita cercana al precio; cada punto corresponde a un vencimiento distinto, no a un pronóstico de precio.</p></div><div class="metric p-4"><b class="text-xs text-white">DATOS Y LIMITACIONES</b><p class="text-[10px] text-gray-400 mt-2">Cadena completa: OI, volumen, IV y strikes. Referencia: precio/fecha sin cadena. Si no hay varios vencimientos con IV válida, la term structure lo indicará expresamente.</p></div></div></div>';
+ return '<div class="metric rounded-xl p-5"><div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2"><div><b class="text-sm text-white">POSITIONING MAP · GEX + OPEN INTEREST</b><p class="text-[10px] text-gray-400 mt-1">Activo: '+title+' · '+esc(status)+'</p><p class="text-[10px] text-gray-500 mt-1">GEX modelado; Open Interest por strike. Escalas separadas para evitar que una métrica oculte la otra.</p></div><div class="flex flex-col sm:flex-row gap-2 items-center">'+expirySelect+'<span class="mini-pill">'+esc(p?.expiration||m?.asOf||m?.sourceDate||'Último snapshot')+'</span></div></div>'+'<div id="opt-gex-chart" class="w-full h-[475px] mt-3"></div><div id="opt-oi-chart" class="w-full h-[360px] mt-3"></div><div class="metric rounded-xl p-4 mt-4"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div><b class="text-sm text-white">VOLATILITY TERM STRUCTURE</b><p class="text-[10px] text-gray-400 mt-1">Volatilidad implícita ATM por vencimiento exacto. Cada punto corresponde a una expiración individual, no a una mezcla de vencimientos.</p></div><span class="mini-pill">ATM IV · DTE</span></div><div id="opt-term-chart" class="w-full h-[330px] mt-2"><div class="text-right text-xs text-gray-500 p-2" role="status">Cargando IV…</div></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"><div class="metric p-4"><b class="text-xs text-white">CÓMO LEERLO</b><p class="text-[10px] text-gray-400 mt-2">GEX: barras por strike bajo un modelo de exposición; verde y rojo representan el signo del modelo, no compras o ventas observadas. OI: contratos abiertos, no volumen negociado hoy. Call y Put Wall: concentraciones de OI, no soportes garantizados. Gamma Flip: nivel modelado donde cambiaría el signo agregado; si no se puede calcular, queda vacío. IV ATM: volatilidad anualizada implícita cercana al precio; cada punto corresponde a un vencimiento distinto, no a un pronóstico de precio.</p></div><div class="metric p-4"><b class="text-xs text-white">DATOS Y LIMITACIONES</b><p class="text-[10px] text-gray-400 mt-2">Cadena completa: OI, volumen, IV y strikes. Referencia: precio/fecha sin cadena. Si no hay varios vencimientos con IV válida, la term structure lo indicará expresamente.</p></div></div></div>';
 }
 
 function __drawOptionsCharts(m,p){
@@ -1317,7 +1357,7 @@ function __drawOptionsCharts(m,p){
  const empty=(id,msg)=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="h-full min-h-[150px] flex items-center justify-center text-center text-xs text-gray-400 px-4">'+msg+'</div>';};
  // ivAtm/atmIV in the feed are percentage points, including values below 3%.
  const ivPct=v=>{const n=__optNum(v);return n!==null&&n>0?n:null;};
- const term=(m.profiles||[]).map(q=>{
+ const term=optionsUsableProfiles(m).map(q=>{
   const expiry=/^\d{4}-\d{2}-\d{2}$/.test(q.expiration||'')?Date.parse(q.expiration+'T00:00:00Z'):NaN;
   const today=Date.parse(new Date().toISOString().slice(0,10)+'T00:00:00Z');
   const dte=Number.isFinite(expiry)?Math.round((expiry-today)/86400000):null;
@@ -1325,18 +1365,19 @@ function __drawOptionsCharts(m,p){
   return {dte,iv,expiration:q.expiration||'—',bucket:q.bucket||'',source:q.source||m.source||''};
  }).filter(q=>q.dte!==null&&q.dte>=0&&q.iv!==null&&q.iv>0&&q.iv<500&&/^\d{4}-\d{2}-\d{2}$/.test(q.expiration)&&q.expiration>=new Date().toISOString().slice(0,10)).filter((q,i,arr)=>arr.findIndex(x=>x.expiration===q.expiration)===i).sort((a,b)=>a.dte-b.dte);
  __loadPlotly().then(P=>{
-  const cfg={responsive:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
+  const cfg={responsive:true,scrollZoom:true,displaylogo:false,modeBarButtonsToRemove:['lasso2d','select2d']};
   const spot=__optNum(m.spot),flip=__optNum(p?.gammaFlip??p?.zeroGamma),pain=__optNum(p?.maxPain),callWall=__optNum(p?.callWallOi??p?.callWall),putWall=__optNum(p?.putWallOi??p?.putWall);
   if(raw.length){
    const marks=[[spot,'Spot'],[flip,'Gamma Flip'],[pain,'Max Pain'],[callWall,'Call Wall'],[putWall,'Put Wall']].filter(([v])=>v!==null&&v>0);
    const shapes=marks.filter(x=>x[0]!==null).map(([v])=>({type:'line',x0:v,x1:v,y0:0,y1:1,yref:'paper',line:{color:'#94a3b8',width:1,dash:'dot'}}));
    const labelSlots={'Spot':{y:1.035,anchor:'bottom'},'Gamma Flip':{y:1.125,anchor:'bottom'},'Call Wall':{y:1.215,anchor:'bottom'},'Put Wall':{y:1.305,anchor:'bottom'},'Max Pain':{y:-0.23,anchor:'top'}};
    const anns=marks.filter(x=>x[0]!==null).map(([v,label])=>{const slot=labelSlots[label]||{y:1.04,anchor:'bottom'};return {x:v,y:slot.y,yref:'paper',text:label+' · '+fmtNum(v,2),showarrow:false,yanchor:slot.anchor,bgcolor:'rgba(10,18,29,.88)',bordercolor:'rgba(148,163,184,.62)',borderwidth:1,borderpad:3,font:{size:9,color:'#e2e8f0'}};});
-   P.newPlot('opt-gex-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.gex),type:'bar',name:'GEX modelado',marker:{color:raw.map(x=>x.gex>=0?'#22c55e':'#f87171')},hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:65,r:25,t:112,b:92},title:{text:'GEX por strike · exposición modelada',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Strike',gridcolor:'#334155',zerolinecolor:'#64748b'},yaxis:{title:'GEX',gridcolor:'#334155',zerolinecolor:'#64748b',separatethousands:true},shapes,annotations:anns,hovermode:'x unified'},cfg);
+   if(source.some(x=>__optNum(x.gex)!==null)) P.newPlot('opt-gex-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.gex),type:'bar',name:'GEX modelado',marker:{color:raw.map(x=>x.gex>=0?'#22c55e':'#f87171')},hovertemplate:'Strike %{x}<br>GEX %{y:.3s}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:75,r:38,t:126,b:95},title:{text:'GEX por strike · exposición modelada',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Strike',gridcolor:'#334155',zerolinecolor:'#64748b'},yaxis:{title:'GEX',gridcolor:'#334155',zerolinecolor:'#64748b',separatethousands:true},shapes,annotations:anns,hovermode:'x unified'},cfg);
+   else empty('opt-gex-chart','OI y volumen disponibles. GEX no calculable sin IV/griegas verificadas.');
    P.newPlot('opt-oi-chart',[{x:raw.map(x=>x.strike),y:raw.map(x=>x.callOi),type:'scatter',mode:'lines+markers',name:'Call OI',line:{color:'#38bdf8',width:2.5},marker:{size:5},hovertemplate:'Strike %{x}<br>Call OI %{y:,.0f}<extra></extra>'},{x:raw.map(x=>x.strike),y:raw.map(x=>x.putOi),type:'scatter',mode:'lines+markers',name:'Put OI',line:{color:'#fb7185',width:2.5},marker:{size:5},hovertemplate:'Strike %{x}<br>Put OI %{y:,.0f}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:65,r:25,t:45,b:50},title:{text:'Open interest por strike',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Strike',gridcolor:'#334155'},yaxis:{title:'Contratos OI',gridcolor:'#334155',separatethousands:true},hovermode:'x unified'},cfg);
   }else{
-   empty('opt-gex-chart','Este activo no tiene una cadena completa de strikes disponible en el snapshot actual.');
-   empty('opt-oi-chart','El gráfico de OI requiere datos por strike. Se conserva la selección del activo y no se sustituyen sus datos por Bitcoin.');
+   document.getElementById('opt-gex-chart')?.remove();
+   document.getElementById('opt-oi-chart')?.remove();
   }
   if(term.length>=2){
    P.newPlot('opt-term-chart',[{x:term.map(q=>q.dte),y:term.map(q=>q.iv),type:'scatter',mode:'lines+markers',name:'ATM IV',line:{color:'#a78bfa',width:3},marker:{size:7,color:'#c4b5fd',line:{color:'#f8fafc',width:1}},customdata:term.map(q=>[q.expiration,q.bucket,q.source]),hovertemplate:'DTE %{x}<br>Expiración %{customdata[0]}<br>ATM IV %{y:.2f}%<br>%{customdata[1]}<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:55,r:20,t:45,b:55},title:{text:'Volatility term structure · ATM IV',font:{size:13,color:'#f1f5f9'}},xaxis:{title:'Días hasta expiración (DTE)',gridcolor:'#334155',zerolinecolor:'#64748b'},yaxis:{title:'Volatilidad implícita (%)',gridcolor:'#334155',rangemode:'tozero'},hovermode:'x unified'},cfg);
@@ -1363,15 +1404,15 @@ renderOptionsSection=function(){
   })||null;
  }
  if(!m)m={ticker:selected,instrumentCode:selected,name:selected,family:(o.catalog||[]).find(x=>x.code===selected)?.family||'Referencia',referenceOnly:true,profiles:[],dataStatus:'REFERENCIA · SIN CADENA COMPLETA',method:'Se mantiene el activo elegido. No hay cadena completa disponible; se muestran solo los datos públicos que existan.'};
- const p=(m.profiles||[])[0]||{};
+ const p=optionsSelectedProfile(m)||{};
  const chart=__optionsInteractiveHtml(m,p);
  const html=__renderOptionsLegacy();
  if(!chart)return html;
  const ps=o.providerStatus||{};
  const errText=(ps.errors||[]).slice(0,3).join(' · ');
- const diag='<div class="metric rounded-xl p-3 mt-3"><div class="flex flex-wrap items-center justify-between gap-2"><b class="text-xs text-white">ESTADO DE FUENTES · OPTIONS</b><span class="mini-pill">'+(Number(ps.fullChainMarkets)||0)+' cadenas completas / '+(Number(ps.referenceOnlyMarkets)||0)+' referencias</span></div><p class="text-[10px] text-gray-400 mt-2">Una referencia conserva el activo, pero no tiene cadena suficiente para calcular GEX, Max Pain u OI por strike. No equivale a una cadena vacía de mercado.</p>'+(errText?'<p class="text-[10px] text-amber-300 mt-2">Incidencias proveedor: '+esc(errText)+'</p>':'<p class="text-[10px] text-emerald-300 mt-2">Sin incidencias reportadas por el recolector.</p>')+'</div>';
+ const diag='<div class="py-3 mt-3 border-t border-slate-700"><div class="flex flex-wrap items-center justify-between gap-2"><b class="text-xs text-white">ESTADO DE FUENTES · OPTIONS</b><span class="mini-pill">'+(Number(ps.fullChainMarkets)||0)+' cadenas completas / '+(Number(ps.referenceOnlyMarkets)||0)+' referencias</span></div><p class="text-[10px] text-gray-400 mt-2">Una referencia conserva el activo, pero no tiene cadena suficiente para calcular GEX, Max Pain u OI por strike. No equivale a una cadena vacía de mercado.</p>'+(errText?'<p class="text-[10px] text-amber-300 mt-2">Incidencias proveedor: '+esc(errText)+'</p>':'<p class="text-[10px] text-emerald-300 mt-2">Sin incidencias reportadas por el recolector.</p>')+'</div>';
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
- const out=html.replace(marker,chart+diag+marker);
+ const out=html.replace(marker,chart+'<div id="options-data-details" class="metric rounded-xl p-5"><h3 class="text-base font-bold">Opciones · fuente, vigencia y metodología</h3>'+optionSnapshotNotice(m)+diag+marker).replace('</section>','</div></section>');
  setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
 };
@@ -1387,17 +1428,19 @@ renderDarkPoolSection=function(){
   host.dataset.plotlyReady='1';
   __loadPlotly().then(P=>{
    const base=ps.map(x=>({ts:Number(x.ts),price:Number(x.price)})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)).sort((a,b)=>a.ts-b.ts);
-   const prints=(a.prints||[]).filter(p=>p.realPrint===true&&p.price!=null&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:String(p.side||'UNKNOWN').toUpperCase(),size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
-   const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:3.4},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
+   const prints=(a.prints||[]).filter(v7PrintAllowed).filter(p=>(!window.__darkSide||window.__darkSide==='ALL'||String(p.side||'UNKNOWN').toUpperCase()===window.__darkSide)&&Number(p.notional||0)>=Number(window.__darkMinNotional||0)).filter(p=>p.realPrint===true&&p.price!=null&&(/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))||(p.timestampPrecision==='date'&&(window.__darkTimeframe||'1d')==='1d'&&/^\d{4}-\d{2}-\d{2}$/.test(String(p.timestamp||''))))).map(p=>({ts:Date.parse(p.timestamp)/1000,price:Number(p.price),side:String(p.side||'UNKNOWN').toUpperCase(),size:Number(p.size)||0,notional:Number(p.notional)||0,time:p.timestamp+(p.timestampPrecision==='date'?' · solo fecha; zona horaria no indicada':'')})).filter(x=>Number.isFinite(x.ts)&&Number.isFinite(x.price)&&x.price>0);
+   const trace=[{x:base.map(x=>new Date(x.ts*1000)),y:base.map(x=>x.price),type:'scatter',mode:'lines',name:'Precio',line:{color:'#38bdf8',width:4.5},hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<extra></extra>'}];
+   const frame=window.__darkTimeframe||'1d';const candles=(a.ohlcTimeframes?.[frame]?.candles||(frame==='1d'?a.ohlc:[])||[]).filter(c=>['open','high','low','close'].every(k=>Number.isFinite(c[k])));
+   if(candles.length>1)trace[0]={type:'candlestick',name:'OHLC · '+frame,x:candles.map(c=>new Date(c.ts*1000)),open:candles.map(c=>c.open),high:candles.map(c=>c.high),low:candles.map(c=>c.low),close:candles.map(c=>c.close),opacity:1,increasing:{fillcolor:'#2de2b1',line:{color:'#7fffe1',width:1.6}},decreasing:{fillcolor:'#ff5577',line:{color:'#ffb0c0',width:1.6}}};
    let annotations=[];
    if(prints.length){
     const largest=[...prints].sort((a,b)=>b.notional-a.notional).slice(0,12);
-    trace.push({x:prints.map(x=>new Date(x.ts*1000)),y:prints.map(x=>x.price),type:'scatter',mode:'markers',name:'Prints',marker:{size:prints.map(x=>Math.max(8,Math.min(24,Math.sqrt(Math.max(x.size,1))/5))),color:prints.map(x=>x.side==='BUY'?'#34d399':x.side==='SELL'?'#f87171':'#facc15'),opacity:.88,line:{width:1.3,color:'#e5e7eb'}},customdata:prints.map(x=>[x.side,x.size,x.notional,x.time]),hovertemplate:'%{x|%d/%m %H:%M}<br>Precio %{y:.2f}<br>%{customdata[0]} · %{customdata[1]:,.0f} sh<br>Notional %{customdata[2]:,.0f}<br>%{customdata[3]}<extra></extra>'});
+    trace.push({x:prints.map(x=>new Date(x.ts*1000)),y:prints.map(x=>x.price),type:'scatter',mode:'markers',name:'Prints',marker:{size:prints.map(x=>Math.max(8,Math.min(24,Math.sqrt(Math.max(x.size,1))/5))),color:prints.map(x=>x.side==='BUY'?'#34d399':x.side==='SELL'?'#f87171':'#facc15'),opacity:.88,line:{width:1.3,color:'#e5e7eb'}},customdata:prints.map(x=>[x.side,x.size,x.notional,x.time]),hovertemplate:'%{customdata[3]}<br>Precio %{y:.2f}<br>%{customdata[0]} · %{customdata[1]:,.0f} títulos<br>Notional %{customdata[2]:,.0f}<br>%{customdata[3]}<extra></extra>'});
     const offsets=[[50,-55],[-55,55],[65,45],[-65,-45],[85,-20],[-85,20]];
-    annotations=largest.slice(0,6).map((p,i)=>({x:new Date(p.ts*1000),y:p.price,xref:'x',yref:'y',text:'Print '+fmtCompactMoney(p.notional),showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#94a3b8',ax:offsets[i][0],ay:offsets[i][1],bgcolor:'rgba(15,23,42,0.65)',bordercolor:'rgba(148,163,184,0.45)',borderwidth:1,borderpad:3,font:{size:10,color:'#f8fafc'}}));
+    annotations=largest.slice(0,6).map((p,i)=>({x:new Date(p.ts*1000),y:p.price,xref:'x',yref:'y',text:fmtNum(p.price,2)+' · '+fmtCompactMoney(p.notional)+'<br>'+esc(String(p.time).slice(0,10).split('-').reverse().join('/')),showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#94a3b8',ax:offsets[i][0],ay:offsets[i][1],bgcolor:'rgba(15,23,42,0)',bordercolor:'rgba(148,163,184,0.45)',borderwidth:1,borderpad:3,font:{size:10,color:'#f8fafc'}}));
    }
-   host.replaceChildren();host.style.height='390px';host.style.minHeight='390px';
-   P.newPlot(host,trace,{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#9ca3af',size:10},margin:{l:60,r:20,t:15,b:55},xaxis:{title:'Fecha · selecciona 1S / 1M / 3M',gridcolor:'#1f2937',tickfont:{size:11,color:'#cbd5e1'},rangeslider:{visible:true,thickness:.08},rangeselector:{bgcolor:'#111827',activecolor:'#334155',font:{color:'#e5e7eb',size:10},buttons:[{count:7,label:'1S',step:'day',stepmode:'backward'},{count:1,label:'1M',step:'month',stepmode:'backward'},{count:3,label:'3M',step:'month',stepmode:'backward'},{step:'all',label:'Todo'}]}},yaxis:{title:'Precio',gridcolor:'#1f2937',tickfont:{size:11,color:'#e5e7eb'},tickformat:',.2f',automargin:true},annotations:annotations,hovermode:'closest'}, {responsive:true,displaylogo:false,scrollZoom:true});
+   host.replaceChildren();host.style.height='720px';host.style.minHeight='720px';host.style.background='linear-gradient(180deg,#1a2b40,#142235)';
+   P.newPlot(host,trace,{paper_bgcolor:'transparent',plot_bgcolor:'rgba(8,17,28,.92)',font:{color:'#e2e8f0',size:12},margin:{l:78,r:28,t:30,b:85},xaxis:{title:'Fecha',gridcolor:'#334155',tickfont:{size:12,color:'#e2e8f0'},rangeslider:{visible:true,thickness:.08},rangeselector:{bgcolor:'#111827',activecolor:'#334155',font:{color:'#e5e7eb',size:10},buttons:[{count:7,label:'1S',step:'day',stepmode:'backward'},{count:1,label:'1M',step:'month',stepmode:'backward'},{count:3,label:'3M',step:'month',stepmode:'backward'},{step:'all',label:'Todo'}]}},yaxis:{title:'Precio',gridcolor:'#334155',tickfont:{size:12,color:'#e2e8f0'},tickformat:',.2f',automargin:true},shapes:prints.map(p=>({type:'line',xref:'x',x0:new Date(p.ts*1000),x1:new Date(base[base.length-1].ts*1000),yref:'y',y0:p.price,y1:p.price,line:{color:'#a78bfa',width:1,dash:'dash'},opacity:.65})),annotations:annotations,hovermode:'closest'}, {responsive:true,displaylogo:false,scrollZoom:true});
   }).catch(()=>{});
  },40);
  return html;
@@ -1411,45 +1454,57 @@ function fmtCompactMoney(v){ if(v===null||v===undefined||v==='')return '—'; co
         function fxRiskRegime(){const r=macroDatabase.__riskOnOff||{};if(r.score===null||r.score===undefined||r.score==='')return 0;const s=Number(r.score);return Number.isFinite(s)?(s<=35?-1:s>=65?1:0):0;}
         function fxBiasClass(score){ return score>0.35?'bias-up':score<-0.35?'bias-down':'bias-flat'; }
         function parseRate(v){ const s=String(v??'').trim().replace(/,/g,'.').replace(/%/g,'');const m=s.match(/^(-?\d+(?:\.\d+)?)\s*[-–—]\s*(-?\d+(?:\.\d+)?)$/);if(m)return (Number(m[1])+Number(m[2]))/2;return s!==''&&Number.isFinite(Number(s))?Number(s):NaN; }
+        function sovereignCell(code,term){
+            const ids={USD:'us',EUR:'eu',GBP:'uk',JPY:'jp',AUD:'au',NZD:'nz',CAD:'ca',CHF:'ch'};
+            const bonds=macroDatabase[ids[code]]?.bonds||{};
+            const tenor=(bonds.tenors||[]).find(t=>t.term===term);
+            const date=tenor?.observedAt||bonds.date;
+            const value=parseRate(tenor?.yield);
+            const dated=Boolean(date&&Number.isFinite(Date.parse(date)));
+            const fresh=dated&&v7Fresh(date,7);
+            const source=tenor?.source||bonds.source||'Fuente sin verificar';
+            const note=dated?date+(fresh?'':' · retrasado'):'Sin fecha verificada';
+            return `<td class="py-3 px-3 text-sm ${fresh?'text-white':'text-amber-200'}" title="${esc(source+' · '+note+' · '+(tenor?.methodology||bonds.methodology||''))}">${Number.isFinite(value)&&dated?fmtNum(value,3)+'%':'—'}<span class="block text-[10px] mt-1 text-gray-400">${Number.isFinite(value)?esc(note):''}</span></td>`;
+        }
         function buildFxComparator(){
             const fx=macroDatabase.__fx||{currencies:{}};
             const all=Object.values(macroDatabase).filter(d=>d&&d.id&&d.id!=='de');
             const nval=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
             const feedDate=()=>{const s=String(fx.updated||'');const m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?Date.parse(m[3]+'-'+m[2]+'-'+m[1]+'T00:00:00Z'):NaN;};
-            const fxFresh=m=>{let t=Date.parse(String(m?.observedAt||''));if(!Number.isFinite(t))t=feedDate();return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-5*86400000;};
-            const rows=all.map(d=>{ const code=d.id==='us'?'USD':d.id==='eu'?'EUR':d.id==='uk'?'GBP':d.id==='jp'?'JPY':d.id==='au'?'AUD':d.id==='nz'?'NZD':d.id==='ca'?'CAD':'CHF'; const m=fx.currencies?.[code]||{}; const macro=macroInterpretation(d); const fresh=fxFresh(m),tenors=d.bonds?.tenors||[]; const y=term=>parseRate(tenors.find(x=>x.term===term)?.yield); return {id:d.id,code,name:d.name,pol:macro.score,macroCoverage:macro.coverage,rate:parseRate(d.rates?.official),y3m:y('3M'),y2:y('2Y'),y10:y('10Y'),y20:y('20Y'),y30:y('30Y'),real:parseRate(d.rates?.real),tr3:fresh?nval(m.change3s):null,tr5:fresh?nval(m.change5s):null,tr21:fresh?nval(m.change21s):null,tytd:fresh?nval(m.changeYtd):null,fxObservedAt:m.observedAt||fx.updated||null,fxFresh:fresh}; });
+            const fxFresh=m=>{const t=Date.parse(String(m?.observedAt||''));return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-5*86400000;};
+            const rows=all.map(d=>{ const code=d.id==='us'?'USD':d.id==='eu'?'EUR':d.id==='uk'?'GBP':d.id==='jp'?'JPY':d.id==='au'?'AUD':d.id==='nz'?'NZD':d.id==='ca'?'CAD':'CHF'; const m=fx.currencies?.[code]||{}; const macro=macroInterpretation(d); const fresh=fxFresh(m),tenors=d.bonds?.tenors||[]; const y=term=>parseRate(tenors.find(x=>x.term===term)?.yield); const y2Date=tenors.find(x=>x.term==='2Y')?.observedAt||d.bonds?.date; return {id:d.id,code,name:d.name,pol:(macro.coverage.freshIndicators>0||macro.coverage.centralFresh)?macro.score:NaN,macroCoverage:macro.coverage,rate:parseRate(d.rates?.official),y3m:y('3M'),y2:v7Fresh(y2Date,7)?y('2Y'):NaN,y10:y('10Y'),y20:y('20Y'),y30:y('30Y'),real:v7Fresh(d.rates?.realObservedAt,75)?parseRate(d.rates?.real):NaN,tr1:fresh?nval(m.change1d):null,tr3:fresh?nval(m.change3s):null,tr5:fresh?nval(m.change5s):null,tr21:fresh?nval(m.change21s):null,tytd:fresh?nval(m.changeYtd):null,fxObservedAt:m.observedAt||fx.updated||null,fxFresh:fresh}; });
             const by=Object.fromEntries(rows.map(x=>[x.code,x]));
             const diff=(x,y)=>x===null||x===undefined||y===null||y===undefined?0:x-y;
             function score(a,b){ const A=by[a],B=by[b]; if(!A||!B) return 0; const finite=(x,y)=>Number.isFinite(x)&&Number.isFinite(y)?x-y:0; return 0.95*finite(A.pol,B.pol)+0.75*finite(A.y2,B.y2)+0.45*finite(A.real,B.real)+0.32*diff(A.tr5,B.tr5)+0.14*diff(A.tr21,B.tr21); }
-            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); const coverage=[x?.fxFresh,x?.macroCoverage?.freshIndicators>0,by.USD?.fxFresh,by.USD?.macroCoverage?.freshIndicators>0].filter(Boolean).length; return {...x,score:sc,coverage,label:coverage>=2?fxBiasLabel(sc):'Cobertura insuficiente'};});
-            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD']; const matrix=codes.map(base=>({base,cols:codes.map(q=>base===q?null:score(base,q))}));
-            // USD is the base/reference row: it has no directional "vs USD"
-            // claim, but its official rate and sovereign curve remain useful.
-            const usdReference=by.USD?{...by.USD,score:0,coverage:4,label:'Referencia USD'}:null;
-            return {updated:fx.updated||'—',rows:[...vsUsd,...(usdReference?[usdReference]:[])],matrix};
+            const pairCoverage=(a,b)=>[Number.isFinite(by[a]?.pol)&&Number.isFinite(by[b]?.pol),Number.isFinite(by[a]?.y2)&&Number.isFinite(by[b]?.y2),Number.isFinite(by[a]?.real)&&Number.isFinite(by[b]?.real),Number.isFinite(by[a]?.tr5)&&Number.isFinite(by[b]?.tr5),Number.isFinite(by[a]?.tr21)&&Number.isFinite(by[b]?.tr21)].filter(Boolean).length;
+            const vsUsd=['EUR','GBP','JPY','AUD','NZD','CAD','CHF'].map(c=>{const x=by[c]; const sc=score(c,'USD'); const coverage=pairCoverage(c,'USD'); return {...x,factors:[['Política macro',x?.pol,by.USD?.pol,0.95],['Diferencial 2Y',x?.y2,by.USD?.y2,0.75],['Tipo real',x?.real,by.USD?.real,0.45],['Tendencia FX · 5 sesiones',x?.tr5,by.USD?.tr5,0.32],['Tendencia FX · 21 sesiones',x?.tr21,by.USD?.tr21,0.14]].map(([name,a,b,w])=>({name,value:Number.isFinite(a)&&Number.isFinite(b)?w*(a-b):null})),score:sc,coverage,label:coverage>=5?fxBiasLabel(sc):(x?.fxFresh&&by.USD?.fxFresh?(coverage>0?'Parcial · '+fxBiasLabel(sc):'Sin factores vigentes'):'Sin cotización vigente')};});
+            const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD'];
+
+            const matrix=codes.map(base=>({base,coverage:codes.map(q=>pairCoverage(base,q)),cols:codes.map(q=>base===q?null:((by[base]?.fxFresh&&by[q]?.fxFresh&&pairCoverage(base,q)>0)?score(base,q):null))}));
+            return {updated:fx.updated||'—',rows:[...vsUsd,...(by.USD?[{...by.USD,score:0,coverage:5,label:'Referencia USD'}]:[])],matrix};
         }
 
 function renderFxComparator(){
             const fx=buildFxComparator();
-            const rows=fx.rows.map(x=>`<tr class="border-b border-gray-900/70"><td class="py-3 px-3 text-sm font-bold text-white">${x.code}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(x.name||'')}</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.rate,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y3m,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y2,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y10,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y20,2)}%</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.y30,2)}%</td><td class="py-3 px-3 text-sm font-black ${x.coverage>=2?fxBiasClass(x.score):'text-amber-300'}">${x.label}<span class="block mt-1 text-[9px] font-normal text-gray-500">FX ${x.fxFresh?'vigente':'vencido'} · macro ${x.macroCoverage?.freshIndicators||0}/${x.macroCoverage?.totalIndicators||0} · ${esc(x.fxObservedAt||'sin fecha')}</span></td></tr>`).join('');
+            const rows=fx.rows.map(x=>`<tr class="border-b border-gray-900/70"><td class="py-3 px-3 text-sm font-bold text-white">${x.code}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(x.name||'')}</td><td class="py-3 px-3 text-sm text-white">${fmtNum(x.rate,2)}%</td>${['3M','1Y','2Y','5Y','10Y','20Y','30Y'].map(term=>sovereignCell(x.code,term)).join('')}<td class="py-3 px-3 text-sm font-black ${x.coverage>=5?fxBiasClass(x.score):'text-amber-300'}">${x.label}<div class="mt-2 text-xs font-normal text-gray-300">FX · 1S ${fmtPct(x.tr1)} · 3S ${fmtPct(x.tr3)} · 5S ${fmtPct(x.tr5)} · 21S ${fmtPct(x.tr21)}</div>${x.factors?`<details class="mt-2 text-xs font-normal"><summary>Factores · ${x.coverage}/5</summary>${x.factors.map(f=>`<div class="mt-1">${f.name}: ${f.value===null?"sin dato vigente compartido":f.value>0?"favorece frente a USD":f.value<0?"resta frente a USD":"neutral"}</div>`).join("")}</details>`:""}<span class="block mt-1 text-[9px] font-normal text-gray-500">FX ${x.fxFresh?'vigente':'vencido'} · macro ${x.macroCoverage?.freshIndicators||0}/${x.macroCoverage?.totalIndicators||0} · ${esc(x.fxObservedAt||'sin fecha')}</span></td></tr>`).join('');
             const codes=['EUR','GBP','JPY','AUD','NZD','CAD','CHF','USD'];
             const heads=codes.map(c=>`<th class="py-2 px-2 text-[10px] text-gray-500">${c}</th>`).join('');
-            const matrix=fx.matrix.map(r=>`<tr><td class="py-2 px-2 text-xs font-bold text-white">${r.base}</td>${r.cols.map(v=>`<td class="py-2 px-2 text-xs ${v===null?'text-gray-700':fxBiasClass(v)}">${v===null?'—':fxBiasLabel(v).replace('Levemente ','L. ')}</td>`).join('')}</tr>`).join('');
-            return `<section id="sec-fx" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Algoritmo personalizado</div><h2 class="text-xl font-black text-white mt-1">DIVISAS · CARRY + TIPOS + TENDENCIA</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">El sesgo combina política, diferencial de tipos, curva soberana y confirmación de mercado. La tabla prioriza la curva —más útil para macro— frente a retornos de sesiones.</p><p class="text-[10px] text-gray-500 mt-2">Un retorno FX con más de 5 días y un indicador macro fuera de su ventana se excluyen del cálculo; cobertura insuficiente no se traduce en una dirección.</p></div><span class="mini-pill">${esc(fx.updated)}</span></div></div><div class="card rounded-2xl p-4 overflow-x-auto"><table class="w-full min-w-[1000px]"><thead><tr class="border-b border-gray-800"><th class="py-2 px-3 text-left text-[10px] text-gray-500">Moneda</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Nombre</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Tipo</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">3M</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">2Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">10Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">20Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">30Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Sesgo vs USD · cobertura</th></tr></thead><tbody>${rows}</tbody></table></div><div class="metric rounded-xl p-4 overflow-x-auto"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">Matriz de sesgo relativo</div><table class="w-full"><thead><tr><th class="py-2 px-2 text-left text-[10px] text-gray-600">Base \\ Cta.</th>${heads}</tr></thead><tbody>${matrix}</tbody></table></div></section>`;
+            const matrix=fx.matrix.map(r=>`<tr><td class="py-2 px-2 text-xs font-bold text-white">${r.base}</td>${r.cols.map((v,i)=>`<td title="${v===null?'Sin comparación vigente':(r.coverage[i]+' de 5 factores compartidos vigentes')}" class="py-2 px-2 text-xs ${v===null?'text-gray-500':fxBiasClass(v)}">${v===null?'—':fxBiasLabel(v).replace('Levemente ','L. ')}${v!==null&&r.coverage[i]<5?'<span class="block text-[10px] text-gray-400">Parcial · '+r.coverage[i]+'/5</span>':''}</td>`).join('')}</tr>`).join('');
+            return `<section id="sec-fx" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex items-center justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Algoritmo personalizado</div><h2 class="text-xl font-black text-white mt-1">CURVAS DE RENDIMIENTOS SOBERANOS Y MATRIZ DE SESGO RELATIVO</h2><p class="text-sm text-gray-400 mt-1 max-w-4xl">El sesgo combina política, diferencial de tipos, curva soberana y confirmación de mercado. La tabla prioriza la curva —más útil para macro— frente a retornos de sesiones.</p></div><span class="mini-pill">${esc(fx.updated)}</span></div></div><div class="card rounded-2xl p-4 overflow-x-auto"><table class="w-full min-w-[1000px]"><thead><tr class="border-b border-gray-800"><th class="py-2 px-3 text-left text-[10px] text-gray-500">Moneda</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Nombre</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Tipo</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">3M</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">1Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">2Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">5Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">10Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">20Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">30Y</th><th class="py-2 px-3 text-left text-[10px] text-gray-500">Sesgo vs USD · cobertura</th></tr></thead><tbody>${rows}</tbody></table><p class="text-xs text-gray-300 mt-4">Cobertura del sesgo: 5 factores — política y datos macro, diferencial soberano 2Y, tipo real, tendencia FX de 5 sesiones y de 21 sesiones. Parcial 4/5 significa que falta un factor vigente y comparable con USD; no significa 80% de confianza. Ámbar indica una observación retrasada o cobertura parcial. — indica dato no disponible.</p></div><div class="metric rounded-xl p-4 overflow-x-auto"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">Matriz de sesgo relativo · ${esc(fx.updated)}</div><table class="w-full fx-matrix"><thead><tr><th class="py-2 px-2 text-left text-[10px] text-gray-600">Base \\ Cta.</th>${heads}</tr></thead><tbody>${matrix}</tbody></table><p class="text-xs text-gray-300 mt-4">Cada celda compara la moneda de la fila frente a la columna. Parcial indica cuántos de los cinco factores tienen datos vigentes en ambas monedas. Los factores ausentes no se interpretan como neutrales; la lectura queda incompleta. La diagonal no representa una comparación.</p></div></section>`;
         }
         function renderDarkPoolSection(){
  const t=macroDatabase.__darkPoolPrints||{assets:{}},assets=t.assets||{},keys=Object.keys(assets),selected=(window.__darkPoolTicker&&assets[window.__darkPoolTicker])?window.__darkPoolTicker:(keys[0]||'SPY');window.__darkPoolTicker=selected;
  const a=assets[selected]||{ticker:selected,lastPrice:null,priceSeries:[],prints:[],venueClusters:[],dailyOffExchange:{}},ps=a.priceSeries||[],dpx=a.dailyOffExchange||{};
  // The source/methodology is shown in the data-status cards; do not repeat a
  // yellow technical warning below the venue concentration table.
- a.note=' ';
+ a.note='';
  const W=980,H=390,L=60,R=80,T=28,B=58,lo=ps.length?Math.min(...ps.map(x=>+x.price)):0,hi=ps.length?Math.max(...ps.map(x=>+x.price)):1,pad=(hi-lo||1)*.12,y0=lo-pad,y1=hi+pad,minTs=ps.length?Math.min(...ps.map(p=>+p.ts)):0,maxTs=ps.length?Math.max(...ps.map(p=>+p.ts)):1,span=Math.max(maxTs-minTs,1);
  const x=ts=>L+(+ts-minTs)*(W-L-R)/span,y=price=>H-B-(+price-y0)/(y1-y0)*(H-T-B);
  const pts=ps.map(p=>x(p.ts).toFixed(1)+','+y(p.price).toFixed(1)).join(' ');
  const area=pts?L+','+(H-B)+' '+pts+' '+(W-R)+','+(H-B):'';
  const ticks=[0,1,2,3,4].map(n=>{const yy=T+n*(H-T-B)/4,val=y1-n*(y1-y0)/4;return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'" class="dp-grid"/><text x="'+(L-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" class="dp-axis">'+fmtNum(val,2)+'</text>';}).join('');
  const dates=ps.filter((_,i)=>i===0||i===ps.length-1||i%Math.max(1,Math.floor(ps.length/5))===0).map(p=>'<text x="'+x(p.ts).toFixed(1)+'" y="'+(H-18)+'" text-anchor="middle" class="dp-axis">'+esc(new Date(+p.ts*1000).toISOString().slice(11,16))+'</text>').join('');
- const validPrints=(a.prints||[]).filter(p=>p.realPrint===true&&p.price!=null&&Number.isFinite(Number(p.price))&&Number(p.price)>0&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))&&Number.isFinite(Date.parse(p.timestamp)));
+ const validPrints=(a.prints||[]).filter(v7PrintAllowed).filter(p=>p.realPrint===true&&p.price!=null&&Number.isFinite(Number(p.price))&&Number(p.price)>0&&(/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))||(p.timestampPrecision==='date'&&(window.__darkTimeframe||'1d')==='1d'&&/^\d{4}-\d{2}-\d{2}$/.test(String(p.timestamp||''))))&&Number.isFinite(Date.parse(p.timestamp)));
  const sideFilter=window.__darkSide||'ALL', minNotional=Math.max(0,Number(window.__darkMinNotional)||0);
  const filteredPrints=validPrints.filter(p=>(sideFilter==='ALL'||String(p.side||'UNKNOWN')===sideFilter)&&Number(p.notional||0)>=minNotional);
  const sideColor=p=>String(p.side||'UNKNOWN')==='BUY'?'#34d399':String(p.side||'UNKNOWN')==='SELL'?'#fb7185':'#facc15';
@@ -1498,6 +1553,23 @@ function renderRotationSection(){
 }
 
 
+
+function resolveSpotEtfFlow(ticker){
+ const t=String(ticker||'').toUpperCase(), c=macroDatabase.__cryptoSentiment||{},o=macroDatabase.__options||{};
+ const names=t==='BTC'?['BTC','BTC-USD','BTC/USD','BITCOIN']:['ETH','ETH-USD','ETH/USD','ETHEREUM'];
+ const m=(o.markets||[]).find(x=>names.includes(String(x.ticker||x.instrumentCode||'').toUpperCase()));
+ const sources=[c.spotEtfFlows?.[t],m?.layers?.spotEtfFlows,m?.spotEtfFlows,c.spotEtfFlows?.[t],c.etfFlows?.[t],c.etfFlows?.[t.toLowerCase()],macroDatabase.__etfFlows?.[t],macroDatabase.__etfFlows?.[t.toLowerCase()]];
+ return sources.find(x=>x&&typeof x==='object'&&((Array.isArray(x.history)&&x.history.length)||x.netFlow1d!=null||x.netFlow5d!=null))||null;
+}
+function fearVisualTone(v){
+ if(v===null||v===undefined||v==='')return {color:'#94a3b8',bg:'rgba(100,116,139,.12)',label:'SIN DATO'};
+ const n=Number(v);if(!Number.isFinite(n)||n<0||n>100)return {color:'#94a3b8',bg:'rgba(100,116,139,.12)',label:'SIN DATO'};
+ if(n<25)return {color:'#ef4444',bg:'rgba(239,68,68,.15)',label:'EXTREME FEAR'};
+ if(n<45)return {color:'#f59e0b',bg:'rgba(245,158,11,.15)',label:'FEAR'};
+ if(n<=55)return {color:'#94a3b8',bg:'rgba(148,163,184,.14)',label:'NEUTRAL'};
+ if(n<75)return {color:'#84cc16',bg:'rgba(132,204,22,.15)',label:'GREED'};
+ return {color:'#22c55e',bg:'rgba(34,197,94,.15)',label:'EXTREME GREED'};
+}
 function renderCryptoBondSection(){
  const fg=macroDatabase.__traditionalFearGreed||{}, aaii=macroDatabase.__traditionalSentiment||{}, c=macroDatabase.__cryptoSentiment||{}, b=macroDatabase.__bondMarket||{markets:[]}, crypto=c.fearGreed||{};
  const scoreRaw=fg.score,score=scoreRaw!==null&&scoreRaw!==undefined&&scoreRaw!==''&&Number.isFinite(Number(scoreRaw))&&Number(scoreRaw)>=0&&Number(scoreRaw)<=100?Number(scoreRaw):NaN,angle=Number.isFinite(score)?-90+score*1.8:-90,hist=(fg.history||[]).filter(x=>x&&x.value!==null&&x.value!==undefined&&x.value!==''&&Number.isFinite(Number(x.value))&&Number(x.value)>=0&&Number(x.value)<=100).slice(-60);
@@ -1512,7 +1584,7 @@ function renderCryptoBondSection(){
  const countCell=(label,value,sub='')=>'<div class="rounded-lg bg-slate-950/70 border border-gray-800 p-2"><div class="text-[9px] text-gray-500">'+label+'</div><b class="text-xs text-white">'+value+'</b>'+(sub?'<div class="text-[9px] text-gray-500 mt-1">'+sub+'</div>':'')+'</div>';
  const pctVal=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v).toFixed(1)+'%':'—';
  const relCell=(label,x)=>'<div class="rounded-lg bg-slate-950/70 border border-gray-800 p-2"><div class="text-[9px] text-gray-500">'+label+'</div><b class="text-xs '+(x!==undefined&&x!==null&&Number(x)>=0?'risk-up':'risk-down')+'">'+fmtPct(x,2)+'</b></div>';
- const breadthMini='<div class="space-y-2"><div class="text-[10px] uppercase tracking-wider text-gray-400">Amplitud y dispersión · contexto adicional</div><div class="grid grid-cols-2 gap-2">'+breadthCell('CNN · AMPLITUD',compVal('stock_price_breadth'))+breadthCell('CNN · FUERZA DE PRECIO',compVal('stock_price_strength'))+countCell('S&P 500 · suben / bajan',fmtNum(marketBreadth.advances,0)+' / '+fmtNum(marketBreadth.declines,0),marketBreadth.date||'Último cierre')+countCell('S&P · sobre MA 50D / 100D / 200D',pctVal(marketBreadth.above50d?.percentage)+' / '+pctVal(marketBreadth.above100d?.percentage)+' / '+pctVal(marketBreadth.above200d?.percentage),fmtNum(marketBreadth.above50d?.count,0)+' / '+fmtNum(marketBreadth.above100d?.count,0)+' / '+fmtNum(marketBreadth.above200d?.count,0)+' valores')+countCell('S&P · cerca máx. / mín. 52S',fmtNum(marketBreadth.near52wHigh,0)+' / '+fmtNum(marketBreadth.near52wLow,0),'Dentro del 1% del extremo anual')+countCell('Nasdaq-100 · suben / bajan',fmtNum(ndxBreadth.advances,0)+' / '+fmtNum(ndxBreadth.declines,0),(ndxBreadth.date||'Sin snapshot')+' · '+(ndxBreadth.coveragePct!=null?fmtNum(ndxBreadth.coveragePct,0)+'% cobertura':'cobertura N/D'))+countCell('Nasdaq · sobre MA 50D / 100D / 200D',pctVal(ndxBreadth.above50d?.percentage)+' / '+pctVal(ndxBreadth.above100d?.percentage)+' / '+pctVal(ndxBreadth.above200d?.percentage),fmtNum(ndxBreadth.above50d?.count,0)+' / '+fmtNum(ndxBreadth.above100d?.count,0)+' / '+fmtNum(ndxBreadth.above200d?.count,0)+' valores')+countCell('Nasdaq · cerca máx. / mín. 52S',fmtNum(ndxBreadth.near52wHigh,0)+' / '+fmtNum(ndxBreadth.near52wLow,0),'Solo componentes con histórico suficiente')+relCell('S&P · RSP vs SPY · 5S',breadthProxy.sp500EqualWeightVsCap?.fiveSessionRelativePct)+relCell('Nasdaq · QQEW vs QQQ · 5S',breadthProxy.nasdaqEqualWeightVsCap?.fiveSessionRelativePct)+'</div><div class="text-[9px] text-gray-500">S&P 500: snapshot público de terceros calculado con Yahoo Finance/yfinance. Nasdaq-100: recuento propio desde cierres diarios ajustados y una lista pública de componentes. Ambos son datos de cierre, no intradía. RSP/SPY y QQEW/QQQ son proxies de concentración, no recuentos.</div><div class="text-[9px] text-gray-500">Fuentes: <a class="source-link" href="'+esc(marketBreadth.sourceUrl||'#')+'" target="_blank" rel="noopener">amplitud S&P 500</a> · <a class="source-link" href="'+esc(ndxBreadth.constituentsUrl||ndxBreadth.sourceUrl||'#')+'" target="_blank" rel="noopener">componentes/datos Nasdaq-100</a>. Estado Nasdaq: '+esc(ndxBreadth.dataStatus||'sin dato')+'.</div></div>';
+ const breadthMini='<div class="space-y-2"><div class="text-[10px] uppercase tracking-wider text-gray-400">Amplitud y dispersión · contexto adicional</div><div class="grid grid-cols-2 gap-2">'+breadthCell('CNN · AMPLITUD',compVal('stock_price_breadth'))+breadthCell('CNN · FUERZA DE PRECIO',compVal('stock_price_strength'))+countCell('S&P 500 · suben / bajan',fmtNum(marketBreadth.advances,0)+' / '+fmtNum(marketBreadth.declines,0),marketBreadth.date||'Último cierre')+countCell('S&P · sobre SMA 20D / 50D / 100D / 200D',pctVal(marketBreadth.above20d?.percentage)+' / '+pctVal(marketBreadth.above50d?.percentage)+' / '+pctVal(marketBreadth.above100d?.percentage)+' / '+pctVal(marketBreadth.above200d?.percentage),fmtNum(marketBreadth.above20d?.count,0)+' / '+fmtNum(marketBreadth.above50d?.count,0)+' / '+fmtNum(marketBreadth.above100d?.count,0)+' / '+fmtNum(marketBreadth.above200d?.count,0)+' valores')+countCell('S&P · cerca máx. / mín. 52S',fmtNum(marketBreadth.near52wHigh,0)+' / '+fmtNum(marketBreadth.near52wLow,0),'Dentro del 1% del extremo anual')+countCell('Nasdaq-100 · suben / bajan',fmtNum(ndxBreadth.advances,0)+' / '+fmtNum(ndxBreadth.declines,0),(ndxBreadth.date||'Sin snapshot')+' · '+(ndxBreadth.coveragePct!=null?fmtNum(ndxBreadth.coveragePct,0)+'% cobertura':'cobertura N/D'))+countCell('Nasdaq · sobre SMA 20D / 50D / 100D / 200D',pctVal(ndxBreadth.above20d?.percentage)+' / '+pctVal(ndxBreadth.above50d?.percentage)+' / '+pctVal(ndxBreadth.above100d?.percentage)+' / '+pctVal(ndxBreadth.above200d?.percentage),fmtNum(ndxBreadth.above20d?.count,0)+' / '+fmtNum(ndxBreadth.above50d?.count,0)+' / '+fmtNum(ndxBreadth.above100d?.count,0)+' / '+fmtNum(ndxBreadth.above200d?.count,0)+' valores')+countCell('Nasdaq · nuevos máximos / mínimos de cierre',fmtNum(ndxBreadth.newClosingHigh252,0)+' / '+fmtNum(ndxBreadth.newClosingLow252,0),'Frente a 252 cierres previos · '+fmtNum(ndxBreadth.newClosingEligible,0)+' elegibles')+countCell('Nasdaq · cerca máx. / mín. 52S',fmtNum(ndxBreadth.near52wHigh,0)+' / '+fmtNum(ndxBreadth.near52wLow,0),'Solo componentes con histórico suficiente')+relCell('S&P · RSP vs SPY · 5S',breadthProxy.sp500EqualWeightVsCap?.fiveSessionRelativePct)+relCell('Nasdaq · QQEW vs QQQ · 5S',breadthProxy.nasdaqEqualWeightVsCap?.fiveSessionRelativePct)+'</div><div class="text-[9px] text-gray-500">S&P 500: snapshot público de terceros calculado con Yahoo Finance/yfinance. Nasdaq-100: recuento propio desde cierres diarios ajustados y una lista pública de componentes. Ambos son datos de cierre, no intradía. RSP/SPY y QQEW/QQQ son proxies de concentración, no recuentos.</div><div class="text-[9px] text-gray-500">Fuentes: <a class="source-link" href="'+esc(marketBreadth.sourceUrl||'#')+'" target="_blank" rel="noopener">amplitud S&P 500</a> · <a class="source-link" href="'+esc(ndxBreadth.constituentsUrl||ndxBreadth.sourceUrl||'#')+'" target="_blank" rel="noopener">componentes/datos Nasdaq-100</a>. Estado Nasdaq: '+esc(ndxBreadth.dataStatus||'sin dato')+'.</div></div>';
 
  const aaiiHistoryRows=(aaii.history||[]).slice(0,4).map(q=>'<tr class="border-b border-gray-800/80"><td class="py-1.5 pr-3 text-gray-400">'+esc(String(q.date||'—').replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$3/$2/$1'))+'</td><td class="py-1.5 text-right text-emerald-300">'+levelPct(q.bullishPct)+'</td><td class="py-1.5 text-right text-amber-300">'+levelPct(q.neutralPct)+'</td><td class="py-1.5 text-right text-red-300">'+levelPct(q.bearishPct)+'</td></tr>').join('');
  const aaiiWeek=String(aaii.week||'—').split('-').reverse().join('/');
@@ -1534,7 +1606,7 @@ function renderCryptoBondSection(){
  const bonds=(b.markets||[]).map(q=>'<div class="metric rounded-xl p-3"><b class="text-xs text-white">'+esc(q.name)+'</b><div class="text-[10px] mt-2">1D '+fmtPct(q.change1d)+' · 5S '+fmtPct(q.change1w)+' · 21S '+fmtPct(q.change1m)+'</div></div>').join('');
  const optMarkets=macroDatabase.__options?.markets||[];
  const flowFor=ticker=>optMarkets.find(x=>String(x.ticker||x.instrumentCode||'').toUpperCase()===ticker)?.layers?.spotEtfFlows||null;
- const btcEtfFlow=flowFor('BTC'),ethEtfFlow=flowFor('ETH');
+ const btcEtfFlow=resolveSpotEtfFlow('BTC'),ethEtfFlow=resolveSpotEtfFlow('ETH');
  const flowMoney=v=>v===null||v===undefined||!Number.isFinite(Number(v))?'—':(Number(v)>0?'+':Number(v)<0?'−':'')+'$'+fmtNum(Math.abs(Number(v)),1)+'M';
  const flowDate=v=>{let d=new Date(String(v||'')+' UTC');if(!Number.isFinite(d.getTime()))d=new Date(String(v||''));return Number.isFinite(d.getTime())?d:null;};
  const flowRows=(f,view)=>{
@@ -1546,8 +1618,8 @@ function renderCryptoBondSection(){
  };
  const flowBar=(f,ticker,view)=>{
   const rows=flowRows(f,view),max=Math.max(1,...rows.map(x=>Math.abs(x.value)));
-  if(rows.length)setTimeout(()=>{const host=document.getElementById('etf-flow-'+ticker);if(!host)return;__loadPlotly().then(P=>{if(!host.isConnected)return;P.newPlot(host,[{type:'bar',x:rows.map(x=>x.date),y:rows.map(x=>x.value),marker:{color:rows.map(x=>x.value>=0?'#34d399':'#fb7185')},hovertemplate:'%{x|%d %b %Y}<br>Flujo neto: %{y:,.1f} M USD<extra></extra>'}],{height:250,margin:{l:55,r:15,t:10,b:50},paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#aab8c6',size:10},xaxis:{type:'date',gridcolor:'#1f2937',rangeslider:{visible:true,thickness:.08}},yaxis:{title:{text:'M USD'},zeroline:true,zerolinecolor:'#64748b',gridcolor:'#1f2937'},hovermode:'closest',bargap:.25},{responsive:true,displaylogo:false,scrollZoom:true});}).catch(()=>{});},80);
-  const bars=rows.map(x=>{const height=Math.max(3,Math.round(Math.abs(x.value)/max*25)),positive=x.value>=0;return '<div class="relative flex-1 min-w-0 h-[58px]" title="'+esc(x.rawDate)+' · '+flowMoney(x.value)+'"><div class="absolute left-0 right-0 top-1/2 border-t border-gray-700"></div><div class="absolute left-[18%] right-[18%] '+(positive?'bg-emerald-400':'bg-rose-400')+' rounded-sm" style="'+(positive?'bottom:50%;':'top:50%;')+'height:'+height+'px;opacity:.9"></div><div class="absolute bottom-0 left-0 right-0 text-center text-[8px] text-gray-500">'+esc(x.label)+'</div></div>';}).join('');
+  // Unified ETF plot is rendered by drawETF; summary cards below contain no second histogram.
+  const bars='<div class="space-y-1">'+rows.slice(-5).map(x=>'<div class="flex justify-between text-xs"><span>'+esc(x.rawDate||x.label)+'</span><span class="'+(x.value>=0?'text-emerald-300':'text-rose-300')+'">'+flowMoney(x.value)+'</span></div>').join('')+'</div>';
   const net=view==='weekly'?(rows.length?rows[rows.length-1].value:null):(f?.netFlow1d);
   const total=view==='weekly'?rows.reduce((a,x)=>a+x.value,0):(f?.netFlow5d);
   return '<div class="rounded-lg bg-slate-950/70 border border-gray-800 p-3"><div class="flex items-center justify-between gap-2"><b class="text-xs text-white">'+ticker+' · '+(view==='weekly'?'semanal':'diario')+'</b><span class="text-[10px] '+(Number(net)>=0?'text-emerald-300':'text-rose-300')+'">'+(view==='weekly'?'últ. semana ':'último día ')+flowMoney(net)+'</span></div><div id="etf-flow-'+ticker+'" class="mt-2">'+(bars||'<span class="text-[9px] text-gray-500">Sin histórico de flujos verificado.</span>')+'</div><div class="text-[9px] text-gray-500 mt-1">'+(view==='weekly'?'Neto de las semanas mostradas: ':'Neto últimos 5 días: ')+flowMoney(total)+'</div></div>';
@@ -1555,45 +1627,14 @@ function renderCryptoBondSection(){
  const etfView=window.__etfFlowView==='weekly'?'weekly':'daily';
  const etfFlowPanel='<div id="crypto-etf-flows" class="metric rounded-xl p-3 min-w-0"><div class="flex items-center justify-between gap-2"><div><div class="text-[9px] text-gray-500 uppercase">ETF SPOT · FARSIDE</div><b class="text-xs text-white">Flujos netos BTC / ETH</b></div><div class="flex gap-1"><button onclick="window.__etfFlowView=\'daily\';renderContent()" class="rounded px-2 py-1 text-[9px] '+(etfView==='daily'?'bg-blue-500/30 text-blue-200':'bg-gray-900 text-gray-400')+'">Diario</button><button onclick="window.__etfFlowView=\'weekly\';renderContent()" class="rounded px-2 py-1 text-[9px] '+(etfView==='weekly'?'bg-blue-500/30 text-blue-200':'bg-gray-900 text-gray-400')+'">Semanal</button></div></div><div id="crypto-etf-flow-chart" class="w-full h-[205px] mt-2"></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">'+flowBar(btcEtfFlow,'BTC',etfView)+flowBar(ethEtfFlow,'ETH',etfView)+'</div><div class="text-[9px] text-gray-500 mt-2">USD millones · verde = entradas, rojo = salidas. Flujos agregados de todos los emisores publicados; no es volumen de negociación ni creación/redención intradía.</div><div class="text-[9px] text-gray-500 mt-1">Fuente: <a class="source-link" href="https://farside.co.uk/bitcoin-etf-flow-all-data/" target="_blank" rel="noopener">Bitcoin ETF</a> · <a class="source-link" href="https://farside.co.uk/ethereum-etf-flow-all-data/" target="_blank" rel="noopener">Ethereum ETF</a>. Última fecha BTC '+esc(btcEtfFlow?.asOf||'N/D')+' · ETH '+esc(ethEtfFlow?.asOf||'N/D')+'.</div></div>';
  const etfPlotRows=(flow,asset)=>{const raw=flow?.history||[];if(etfView==='weekly'){const b={};raw.forEach(q=>{const d=new Date(q.date+'T00:00:00Z');const monday=new Date(d);monday.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));const key=monday.toISOString().slice(0,10);b[key]=(b[key]||0)+Number(q.netFlowUsdM||0);});return Object.entries(b).map(([date,value])=>({date,value,asset})).slice(-18);}return raw.slice(-18).map(q=>({date:q.date,value:Number(q.netFlowUsdM||0),asset}));};
- setTimeout(()=>{const host=document.getElementById('crypto-etf-flow-chart');if(!host||host.dataset.ready)return;host.dataset.ready='1';__loadPlotly().then(P=>{const rows=[...etfPlotRows(btcEtfFlow,'BTC'),...etfPlotRows(ethEtfFlow,'ETH')];const traces=['BTC','ETH'].map(asset=>{const r=rows.filter(x=>x.asset===asset);return {type:'bar',name:asset,x:r.map(x=>x.date),y:r.map(x=>x.value),marker:{color:r.map(x=>x.value>=0?(asset==='BTC'?'#34d399':'#60a5fa'):'#fb7185')},hovertemplate:asset+' %{x}<br>Flujo neto %{y:.1f} M$<extra></extra>'};});P.newPlot(host,traces,{barmode:'group',paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:10},margin:{l:48,r:12,t:18,b:42},xaxis:{type:'category',tickfont:{size:9},gridcolor:'#263244'},yaxis:{title:'M USD',gridcolor:'#263244',zerolinecolor:'#64748b'},legend:{orientation:'h',y:1.16},hovermode:'x unified',uirevision:'etf-flows'}, {responsive:true,displaylogo:false,scrollZoom:true});}).catch(()=>{});},40);
- return '<section id="sec-sentiment" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">MERCADO TRADICIONAL</div><h2 class="text-xl font-black text-white mt-1">SENTIMIENTO · FEAR & GREED</h2><p class="text-sm text-gray-400 mt-1">CNN Fear & Greed y AAII son dos lecturas complementarias del mismo mercado; no son el mismo indicador.</p></div><span class="mini-pill">'+esc(fg.sourceStatus||fg.updated||'—')+'</span></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5"><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">CNN FEAR & GREED INDEX</div><b class="text-white text-sm">Régimen de sentimiento</b></div><span class="mini-pill">REAL / DAILY</span></div><div class="grid grid-cols-1 gap-3 items-center mt-3"><div class="relative mt-2"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg);opacity:'+(Number.isFinite(score)?'1':'0')+'"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><b class="text-3xl text-white">'+(Number.isFinite(score)?score.toFixed(0):'—')+'</b><div class="text-xs text-gray-400 uppercase">'+esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')+'</div></div></div>'+'</div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]"><div>Ahora<br><b>'+fmtNum(fg.score,0)+'</b></div><div>Ayer<br><b>'+fmtNum(fg.previous_close,0)+'</b></div><div>1 semana<br><b>'+fmtNum(fg.previous_1_week,0)+'</b></div><div>1 mes<br><b>'+fmtNum(fg.previous_1_month,0)+'</b></div></div>'+aaiiInline+'<div class="mt-4 h-16 flex items-end gap-[2px]">'+histBars+'</div><div class="mt-3"><div class="text-[9px] uppercase tracking-wider text-gray-400 mb-1">Histórico semanal · últimos 5 puntos</div>'+weeklyHist+'</div><p class="text-[9px] text-gray-500 mt-1">0–24 Extreme Fear · 25–44 Fear · 45–55 Neutral · 56–74 Greed · 75–100 Extreme Greed.</p></div><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">AAII · HISTÓRICO SEMANAL</div><b class="text-white text-sm">Evolución de porcentajes semanales</b></div><span class="mini-pill">REAL / WEEKLY</span></div><div class="space-y-5 mt-5">'+aaiiHistoryTable+'</div>'+breadthMini+'<div class="grid grid-cols-2 gap-3 mt-5"><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ALCISTAS − BAJISTAS</div><b class="'+(Number(aaii.bullBearSpread)>=0?'text-emerald-300':'text-red-300')+'">'+(aaii.bullBearSpread!=null?fmtNum(aaii.bullBearSpread,1)+' pp':'—')+'</b></div><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ÚLTIMA ENCUESTA</div><b>'+esc(aaii.week||aaii.updated||'—')+'</b></div></div></div></div></div><div class="glass rounded-2xl p-5"><div class="flex flex-wrap justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">CRYPTO · COINMARKETCAP</div><h2 class="text-xl font-black text-white mt-1">CRYPTO FEAR & GREED · BTC</h2><p class="text-sm text-gray-400 mt-1">BTC/USD (eje izquierdo) y Fear & Greed 0–100 (eje derecho), sincronizados por fecha.</p></div><div class="grid grid-cols-1 lg:grid-cols-[auto_minmax(360px,1fr)] gap-3 items-stretch"><div class="metric rounded-xl px-4 py-3 min-w-[132px]"><div class="text-[9px] text-gray-500">ÍNDICE ACTUAL</div><b class="text-2xl text-white">'+(crypto.value??'—')+'</b><span class="ml-2 text-sm">'+esc(crypto.classification||'—')+'</span><div class="text-[9px] text-gray-500">Anterior '+(crypto.previous??'—')+'</div></div></div></div></div><div class="metric rounded-xl p-4 mt-4"><div class="flex justify-between text-[10px] text-gray-500"><span>BTC / USD</span><span>FEAR & GREED · 0–100</span></div><svg viewBox="0 0 980 265" class="block w-full h-[315px] mt-2" role="img" aria-label="BTC USD y CoinMarketCap Fear Greed por fecha"><rect x="56" y="38" width="792" height="48" fill="#22c55e" opacity=".12"/><rect x="56" y="86" width="792" height="49" fill="#84cc16" opacity=".11"/><rect x="56" y="135" width="792" height="48" fill="#f59e0b" opacity=".11"/><rect x="56" y="183" width="792" height="49" fill="#ef4444" opacity=".12"/><path d="M56 38H848M56 86H848M56 135H848M56 183H848M56 232H848" stroke="#475569" stroke-dasharray="3 4"/><path d="M56 38V232M848 38V232" stroke="#64748b"/><text x="2" y="42" fill="#60a5fa" font-size="10">BTC</text><text x="2" y="90" fill="#60a5fa" font-size="10">USD</text><text x="858" y="42" fill="#f59e0b" font-size="10">100</text><text x="858" y="232" fill="#f59e0b" font-size="10">0</text><polyline points="'+btcPts+'" fill="none" stroke="#60a5fa" stroke-width="3.2"/><polyline points="'+fgPts+'" fill="none" stroke="#f59e0b" stroke-width="2.6"/>'+hoverTargets+dots+dates+'</svg><div class="flex flex-wrap gap-x-5 gap-y-1 text-[10px] mt-2"><span class="text-blue-300">● BTC / USD · eje izquierdo</span><span class="text-amber-300">● Fear & Greed · eje derecho</span><span class="text-gray-500">Fondos: Extreme Greed → Extreme Fear</span></div></div><div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">'+cryptoReturns+'</div></div>'+etfFlowPanel+'<div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA FIJA · ETF MARKET RETURN</div><h2 class="text-xl font-black text-white mt-1">BONOS · RETORNO DE MERCADO</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">'+bonds+'</div></div></section>';
+ // drawETF owns the single net-flow chart.
+ return '<section id="sec-sentiment" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">MERCADO TRADICIONAL</div><h2 class="text-xl font-black text-white mt-1">SENTIMIENTO · FEAR & GREED</h2><p class="text-sm text-gray-400 mt-1">CNN Fear & Greed y AAII son dos lecturas complementarias del mismo mercado; no son el mismo indicador.</p></div><span class="mini-pill">'+esc(fg.sourceStatus||fg.updated||'—')+'</span></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5"><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">CNN FEAR & GREED INDEX</div><b class="text-white text-sm">Régimen de sentimiento</b></div><span class="mini-pill">REAL / DAILY</span></div><div class="grid grid-cols-1 gap-3 items-center mt-3"><div class="relative mt-2"><div class="sentiment-gauge"><div class="sentiment-needle" style="transform:rotate('+angle+'deg);opacity:'+(Number.isFinite(score)?'1':'0')+'"></div></div><div class="absolute inset-x-0 bottom-3 z-10 text-center"><b class="text-3xl text-white">'+(Number.isFinite(score)?score.toFixed(0):'—')+'</b><div class="text-xs text-gray-400 uppercase">'+esc(Number.isFinite(score)?(fg.rating||'—'):'SIN DATO VÁLIDO')+'</div></div></div>'+'</div><div class="grid grid-cols-4 gap-2 mt-3 text-center text-[10px]"><div>Ahora<br><b>'+fmtNum(fg.score,0)+'</b></div><div>Ayer<br><b>'+fmtNum(fg.previous_close,0)+'</b></div><div>1 semana<br><b>'+fmtNum(fg.previous_1_week,0)+'</b></div><div>1 mes<br><b>'+fmtNum(fg.previous_1_month,0)+'</b></div></div>'+aaiiInline+'<div class="mt-4 h-16 flex items-end gap-[2px]">'+histBars+'</div><div class="mt-3"><div class="text-[9px] uppercase tracking-wider text-gray-400 mb-1">Histórico semanal · últimos 5 puntos</div>'+weeklyHist+'</div><p class="text-[9px] text-gray-500 mt-1">0–24 Extreme Fear · 25–44 Fear · 45–55 Neutral · 56–74 Greed · 75–100 Extreme Greed.</p></div><div class="metric rounded-xl p-4"><div class="flex justify-between"><div><div class="text-[10px] text-gray-500">AAII · HISTÓRICO SEMANAL</div><b class="text-white text-sm">Evolución de porcentajes semanales</b></div><span class="mini-pill">REAL / WEEKLY</span></div><div class="space-y-5 mt-5">'+aaiiHistoryTable+'</div>'+breadthMini+'<div class="grid grid-cols-2 gap-3 mt-5"><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ALCISTAS − BAJISTAS</div><b class="'+(Number(aaii.bullBearSpread)>=0?'text-emerald-300':'text-red-300')+'">'+(aaii.bullBearSpread!=null?fmtNum(aaii.bullBearSpread,1)+' pp':'—')+'</b></div><div class="p-3 bg-slate-950/70 rounded-lg"><div class="text-[9px] text-gray-500">ÚLTIMA ENCUESTA</div><b>'+esc(aaii.week||aaii.updated||'—')+'</b></div></div></div></div></div><div class="glass rounded-2xl p-5"><div class="flex flex-wrap justify-between gap-3"><div><h2 class="text-xl font-black text-white mt-1">CRYPTO FEAR & GREED</h2></div><div class="grid grid-cols-1 w-full gap-3 items-stretch"><div class="rounded-2xl px-5 py-5 min-w-[215px] text-center" style="border:2px solid '+fearVisualTone(crypto.value).color+';background:linear-gradient(145deg,'+fearVisualTone(crypto.value).bg+',rgba(8,14,23,.96));box-shadow:0 0 24px '+fearVisualTone(crypto.value).bg+'"><div class="text-[10px] font-bold tracking-widest text-gray-300">CRYPTO SENTIMENT</div><div class="text-5xl font-black mt-3 tabular-nums" style="color:'+fearVisualTone(crypto.value).color+'">'+(crypto.value??'—')+'</div><div class="inline-flex rounded-full border px-3 py-1 mt-3 text-sm font-black tracking-wide" style="color:'+fearVisualTone(crypto.value).color+';border-color:'+fearVisualTone(crypto.value).color+'">'+esc(crypto.classification||fearVisualTone(crypto.value).label)+'</div><div class="text-[11px] text-gray-400 mt-3">Anterior '+(crypto.previous??'—')+'</div></div></div></div></div><div class="metric rounded-xl p-4 mt-4"><div class="flex justify-between text-[10px] text-gray-500"><span>BTC / USD</span><span>FEAR & GREED · 0–100</span></div><svg viewBox="0 0 980 265" class="block w-full h-[315px] mt-2" role="img" aria-label="BTC USD y CoinMarketCap Fear Greed por fecha"><rect x="56" y="38" width="792" height="48" fill="#22c55e" opacity=".12"/><rect x="56" y="86" width="792" height="49" fill="#84cc16" opacity=".11"/><rect x="56" y="135" width="792" height="48" fill="#f59e0b" opacity=".11"/><rect x="56" y="183" width="792" height="49" fill="#ef4444" opacity=".12"/><path d="M56 38H848M56 86H848M56 135H848M56 183H848M56 232H848" stroke="#475569" stroke-dasharray="3 4"/><path d="M56 38V232M848 38V232" stroke="#64748b"/><text x="2" y="42" fill="#60a5fa" font-size="10">BTC</text><text x="2" y="90" fill="#60a5fa" font-size="10">USD</text><text x="858" y="42" fill="#f59e0b" font-size="10">100</text><text x="858" y="232" fill="#f59e0b" font-size="10">0</text><polyline points="'+btcPts+'" fill="none" stroke="#60a5fa" stroke-width="3.2"/><polyline points="'+fgPts+'" fill="none" stroke="#f59e0b" stroke-width="2.6"/>'+hoverTargets+dots+dates+'</svg><div class="flex flex-wrap gap-x-5 gap-y-1 text-[10px] mt-2"><span class="text-blue-300">● BTC / USD · eje derecho</span><span class="text-amber-300">● Fear & Greed · eje izquierdo</span><span class="text-gray-500">Fondos: Extreme Greed → Extreme Fear</span></div></div><div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">'+cryptoReturns+'</div></div>'+etfFlowPanel+'<div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA FIJA · ETF MARKET RETURN</div><h2 class="text-xl font-black text-white mt-1">BONOS · RETORNO DE MERCADO</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">'+bonds+'</div></div></section>';
 }
-/* Crypto chart upgrade: preserve the SVG as a no-JS fallback, then replace it
-   with a zoomable two-axis Plotly chart when the library is available. */
-const __renderCryptoBondLegacy=renderCryptoBondSection;
-renderCryptoBondSection=function(){
- const html=__renderCryptoBondLegacy();
- setTimeout(()=>{
-  const svg=document.querySelector('#sec-sentiment svg[aria-label*="BTC USD"]');if(!svg||svg.dataset.plotlyReady)return;
-  const rows=(macroDatabase.__cryptoSentiment?.btcHistory||[]).filter(x=>x&&Number.isFinite(Number(x.price))&&x.date);
-  const fear=rows.filter(x=>Number.isFinite(Number(x.fearGreed))&&Number(x.fearGreed)>=0&&Number(x.fearGreed)<=100);
-  if(rows.length<2)return;
-  svg.dataset.plotlyReady='1';const host=document.createElement('div');host.className='w-full h-[520px] mt-2';host.style.height='520px';svg.replaceWith(host);
-  __loadPlotly().then(P=>P.newPlot(host,[{x:rows.map(x=>x.date),y:rows.map(x=>Number(x.price)),type:'scatter',mode:'lines',name:'BTC / USD',line:{color:'#60a5fa',width:3},hovertemplate:'%{x}<br>BTC $%{y:,.0f}<extra></extra>'},{x:fear.map(x=>x.date),y:fear.map(x=>Number(x.fearGreed)),type:'scatter',mode:'lines+markers',name:'Fear & Greed',yaxis:'y2',line:{color:'#f7b955',width:2.4},marker:{size:5},hovertemplate:'%{x}<br>Fear & Greed %{y:.0f}/100<extra></extra>'}],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:14},margin:{l:85,r:85,t:45,b:75},xaxis:{type:'date',gridcolor:'#263244',rangeslider:{visible:true,thickness:.08,bgcolor:'#0b111a'}},yaxis:{title:'BTC / USD',gridcolor:'#263244',tickprefix:'$'},yaxis2:{title:'Fear & Greed',range:[0,100],overlaying:'y',side:'right',gridcolor:'#263244'},legend:{orientation:'h',y:1.16},hovermode:'x unified',shapes:[[0,25,'#ef4444'],[25,45,'#f59e0b'],[45,55,'#94a3b8'],[55,75,'#84cc16'],[75,100,'#22c55e']].map(([a,b,c])=>({type:'rect',xref:'paper',x0:0,x1:1,yref:'y2',y0:a,y1:b,fillcolor:c,opacity:0.09,line:{width:0},layer:'below'})),uirevision:'crypto-fear-greed'}, {responsive:true,displaylogo:false,scrollZoom:true})).catch(()=>{});
- },60);
- // Keep ETF flows as their own block immediately below Crypto Fear & Greed,
- // rather than cramming a second analytical module into its header.
- setTimeout(()=>{
-  const chart=document.getElementById('crypto-etf-flow-chart');
-  const panel=chart?.closest('.metric');
-  if(document.getElementById('crypto-etf-flows'))return;
-  const cryptoSection=document.querySelectorAll('#sec-sentiment > .glass')[1];
-  if(!panel||!cryptoSection||panel.dataset.detached==='1')return;
-  panel.dataset.detached='1';
-  panel.classList.add('p-4','mt-4');
-  const title=document.createElement('div');
-  title.className='mb-3';
-  title.innerHTML='<div class="text-[10px] uppercase tracking-wider text-gray-500">CRYPTO · ETF SPOT</div><h3 class="text-base font-black text-white mt-1">FLUJOS NETOS BTC / ETH</h3><p class="text-xs text-gray-400 mt-1">Entradas y salidas agregadas, separadas del indicador de sentimiento.</p>';
-  panel.prepend(title);
-  cryptoSection.after(panel);
- },85);
- return html;
-};
-
+/* Crypto F&G rendered in place by drawFG from CHARTS V2; preserve SVG fallback. */
 function renderGlobalMarkets(){
  const g=macroDatabase.__globalMarkets||{regions:{},updated:'—'},regions=g.regions||{};
  const regionBlock=(name)=>{const arr=regions[name]||[];return '<div class="metric rounded-xl p-4"><div class="flex items-center justify-between mb-3"><b class="text-sm text-white">'+name+'</b><span class="mini-pill">1D · 5S · 21S · YTD</span></div><div class="overflow-x-auto"><table class="w-full min-w-[620px] table-fixed"><thead><tr class="text-[9px] text-gray-500 uppercase border-b border-gray-800"><th class="text-left py-2 px-2 w-[40%]">Índice</th><th class="text-right py-2 px-2">Precio</th><th class="text-right py-2 px-2">1D</th><th class="text-right py-2 px-2">5S</th><th class="text-right py-2 px-2">21S</th><th class="text-right py-2 px-2">YTD</th></tr></thead><tbody>'+arr.map(x=>'<tr class="border-b border-gray-900/70"><td class="py-2 px-2 text-xs font-semibold text-white">'+esc(x.name)+'</td><td class="py-2 px-2 text-xs text-right">'+fmtNum(x.last,2)+'</td><td class="py-2 px-2 text-xs text-right '+(x.change1d>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1d)+'</td><td class="py-2 px-2 text-xs text-right '+(x.change1w>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1w)+'</td><td class="py-2 px-2 text-xs text-right '+(x.change1m>=0?'risk-up':'risk-down')+'">'+fmtPct(x.change1m)+'</td><td class="py-2 px-2 text-xs text-right">'+fmtPct(x.changeYtd)+'</td></tr>').join('')+'</tbody></table></div></div>';};
- return '<section id="sec-global-markets" class="space-y-4"><div class="glass rounded-2xl p-5"><div class="text-[10px] uppercase tracking-wider text-gray-500">RENTA VARIABLE GLOBAL</div><h2 class="text-xl font-black text-white mt-1">ASIA + EUROPA · MAPA DE MERCADOS</h2><p class="text-sm text-gray-400 mt-1">Cinco referencias por región con precio y variación 1D / 5 sesiones / 21 sesiones.</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+regionBlock('ASIA')+regionBlock('EUROPA')+'</div><div class="text-[9px] text-gray-600">Fuente: Yahoo Finance pública. Las variaciones se calculan sobre cierres disponibles.</div></section>';
+ return '<section id="sec-global-markets" class="space-y-4"><div class="glass rounded-2xl p-5"><h2 class="text-xl font-black text-white">RENTA VARIABLE GLOBAL</h2><p class="text-sm text-gray-400 mt-1">Visión global · Asia y Europa</p></div><div class="grid grid-cols-1 xl:grid-cols-2 gap-4">'+regionBlock('ASIA')+regionBlock('EUROPA')+'</div><div class="text-[9px] text-gray-600">Fuente: Yahoo Finance pública. Las variaciones se calculan sobre cierres disponibles.</div></section>';
 }
 
 function safeGlobalSection(label,fn){
@@ -1622,11 +1663,18 @@ function renderGlobalView(){
   </div></div>
   <div class="glass rounded-2xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3">MAPA MACRO · ECONOMÍAS</div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
    ${entries.map(({d,bias,expect})=>`<button onclick="switchCountry('${d.id}')" class="text-left card rounded-xl p-3 row-hover transition">
-    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${d.flag||'🌎'}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-[10px] font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
-    <div class="mt-2 text-[10px] text-gray-500">${esc(d.updated||'Fecha no disponible')}</div>
+    <div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-xl">${economyFlag(d.id)}</span><span class="font-bold text-white">${esc(d.name||d.id)}</span></div><span class="text-[10px] font-black ${bias.cls}">${bias.icon} ${bias.label}</span></div>
+    <div class="mt-2 text-[10px] text-gray-500">${esc(d.conference?.date?'Última decisión · '+d.conference.date:'Decisión sin fecha verificada')}</div>
    </button>`).join('')}
   </div></div>
  </section>${sections}`;
+}
+function weeklyEventPriority(e){
+ const name=String(e.event||'');
+ if(/import.*price|export.*price|speech|speaks|discurso/i.test(name))return 0;
+ if(/rate decision|interest rate|monetary policy|press conference|decisión.*tipos|rueda de prensa|cpi|hicp|pce|ipc|inflation|inflación|nonfarm|payroll|unemployment|desempleo|wage|salario/i.test(name))return 3;
+ if(/gdp|pib|ism|pmi|employment|empleo|retail|ventas/i.test(name))return 2;
+ return 1;
 }
 function renderWeeklyFxRadar(data){
  const codeMap={us:'USD',eu:'EUR',de:'EUR',uk:'GBP',jp:'JPY',ca:'CAD',au:'AUD',nz:'NZD',ch:'CHF'};
@@ -1638,7 +1686,7 @@ function renderWeeklyFxRadar(data){
  const today=new Date().toISOString().slice(0,10);
  const weekEnd=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
  const upcoming=matches.filter(e=>e.date&&e.date.slice(0,10)>=today&&e.date.slice(0,10)<=weekEnd)
-  .sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(0,5);
+  .sort((a,b)=>weeklyEventPriority(b)-weeklyEventPriority(a)||String(a.date).localeCompare(String(b.date))).filter(e=>weeklyEventPriority(e)>=2).slice(0,5).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  const recent=matches.filter(e=>e.actual!==''&&e.forecast!==''&&Number.isFinite(parseNum(e.actual))&&Number.isFinite(parseNum(e.forecast))&&e.date&&e.date.slice(0,10)<=today&&e.date.slice(0,10)>=new Date(Date.now()-7*86400000).toISOString().slice(0,10))
   .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,4);
  const freshIndicators=(data.indicators||[]).filter(ind=>{const t=Date.parse(String(ind.date||''));return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-45*86400000;});
@@ -1648,7 +1696,7 @@ function renderWeeklyFxRadar(data){
  const exp=expFresh?(Number(macro.exp)||0):0;
  const tenors=data.bonds?.tenors||[];
  const shortRows=['3M','1Y','2Y'].map(term=>tenors.find(x=>x.term===term)).filter(Boolean);
- const shortVals=shortRows.map(x=>x.change1wBp).filter(v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))).map(Number);
+ const shortVals=shortRows.map(x=>x.change5sBp).filter(v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))).map(Number);
  const shortBp=shortVals.length?shortVals.reduce((a,b)=>a+b,0)/shortVals.length:NaN;
  const shortOk=shortVals.length>0;
  const trendRaw=currency.change1w,trend=Number(trendRaw);
@@ -1669,6 +1717,9 @@ function renderWeeklyFxRadar(data){
  const baselineDate=baseline?.capturedAt?new Date(baseline.capturedAt).toLocaleString('es-ES',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'primera lectura disponible';
  const revisionNote=biasChanged?'El sesgo cambió desde la lectura inicial de '+baselineLabel+' a '+label+'.':scoreMoved?'La presión monetaria se ha movido de forma material; comprobar si los bonos y la reacción del precio lo confirman.':'No hay cambio material confirmado respecto a la lectura inicial.';
  const weeklySummary='<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Plan de la semana · hipótesis y revisión</div><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2"><div><div class="text-[9px] text-gray-500">LECTURA INICIAL GUARDADA</div><b class="text-xs text-white">'+esc(baselineLabel)+'</b><div class="text-[10px] text-gray-500 mt-1">'+esc(baselineDate)+'</div></div><div><div class="text-[9px] text-gray-500">SESGO ACTUAL</div><b class="text-xs '+cls+'">'+esc(label)+'</b><div class="text-[10px] text-gray-500 mt-1">'+(baselineScore!==null?'Índice del sesgo: '+baselineScore.toFixed(2)+' → '+Number(score).toFixed(2):'Sin puntuación inicial comparable')+'</div></div><div><div class="text-[9px] text-gray-500">REVISIÓN</div><div class="text-xs text-gray-200">'+esc(revisionNote)+'</div></div></div><p class="text-[10px] text-gray-500 mt-3">La lectura inicial se guarda en este navegador al abrir el radar por primera vez esa semana. Para que represente la preparación del domingo, conviene abrirlo ese día; no se reconstruye retrospectivamente si se abre por primera vez más tarde.</p></div>';
+ const macroDirection=Number(macro.score)||0;
+ const marketRead=!trendOk?'La reacción de la divisa no está verificada.':Math.abs(macroDirection)<0.35?'La lectura fundamental es mixta; el movimiento de precio no confirma una dirección macro clara.':Math.sign(trend)===Math.sign(macroDirection)?'La divisa acompaña la lectura actual en las últimas cinco sesiones.':'La divisa contradice la lectura actual en las últimas cinco sesiones; puede haber descuento previo u otros factores, no una invalidación automática.';
+ const scenarioSummary='<div class="metric rounded-xl p-4 text-sm text-gray-300 space-y-3"><h3 class="font-bold text-white">Qué confirma o cambia la hipótesis</h3><p>'+esc(marketRead)+'</p><p><b>Confirmación:</b> sorpresa relevante frente al consenso, revisión coherente de expectativas de tipos y reacción de la divisa en la misma dirección. Un dato bueno para la economía puede estar ya descontado.</p><p><b>Revisión:</b> datos que contradigan la trayectoria de inflación o empleo, cambio explícito del banco central o divergencia persistente entre rendimientos y divisa. Un rebote aislado no prueba un cambio de tendencia.</p><p><b>Horizonte:</b> hasta el próximo evento clave verificado; volver a evaluar tras la publicación y su reacción de mercado.</p></div>';
  const recentRows=recent.map(e=>{
   const d=indicatorDirection({name:e.event,actual:e.actual,est:e.forecast,cat:/cpi|inflation|pce|ppi|precios/i.test(e.event)?'INFLACIÓN':/unemployment|jobless|claims|desempleo|paro/i.test(e.event)?'EMPLEO':/gdp|pmi|retail|ventas|industrial|pib|ifo|tankan/i.test(e.event)?'CRECIMIENTO':'MACRO',imp:'★★★'});
   const surprise=d.score>0.15?'SORPRESA HAWKISH ↑':d.score< -0.15?'SORPRESA DOVISH ↓':'EN LÍNEA / MIXTA →';
@@ -1687,10 +1738,10 @@ function renderWeeklyFxRadar(data){
   if(/gdp|pib|pmi|retail|ventas|industrial|ifo|tankan|confidence|confianza/.test(n))return delta>0?'El consenso apunta a actividad más fuerte que en el dato previo; el impacto en tipos dependerá de inflación y de la sorpresa frente al consenso.':'El consenso apunta a actividad más débil que en el dato previo; vigilar si aumenta la expectativa de recortes.';
   return 'Comparar el dato real con el consenso: la sorpresa frente a previsión importa más que el cambio respecto al dato anterior.';
  };
- const eventRows=upcoming.map(e=>'<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 py-2 border-b border-gray-800/70"><div class="min-w-0"><div class="text-xs font-semibold text-gray-200">'+esc(e.event)+'</div><div class="text-[10px] text-gray-500">'+esc(e.date||'')+' · '+esc(e.country||code)+(e.sourceUrl?' · <a class="source-link" target="_blank" rel="noopener" href="'+esc(e.sourceUrl)+'">fuente oficial</a>':'')+'</div></div><div class="text-[10px] text-gray-400 sm:text-right">'+(e.forecast?('Consenso: <b class="text-white">'+esc(e.forecast)+'</b><div>Previo: '+esc(e.previous||'—')+'</div>'):'Decisión programada · sin consenso de mercado')+'<div class="text-[9px] text-gray-500 mt-1">'+esc(expectedMacroRead(e))+'</div></div></div>').join('');
+ const eventRows=upcoming.map(e=>'<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 py-2 border-b border-gray-800/70"><div class="min-w-0"><div class="text-xs font-semibold text-gray-200">'+esc(e.event)+'</div><div class="text-[10px] text-gray-500">'+esc(e.date||'')+' · '+esc(e.country||code)+(e.sourceUrl?' · <a class="source-link" target="_blank" rel="noopener" href="'+esc(e.sourceUrl)+'">fuente</a>':'')+'</div></div><div class="text-[10px] text-gray-400 sm:text-right">'+(e.forecast?('Consenso: <b class="text-white">'+esc(e.forecast)+'</b><div>Previo: '+esc(e.previous||'—')+'</div>'):'Publicación programada · consenso no disponible')+'<div class="text-[9px] text-gray-500 mt-1">'+esc(expectedMacroRead(e))+'</div></div></div>').join('');
  const status=biasChanged?'SESGO REVISADO · cambió respecto a la lectura inicial':scoreMoved?'PRESIÓN MONETARIA CAMBIA · vigilar confirmación':recent.length?'DATOS RECIENTES · revisar reacción de mercado':'SESGO INICIAL / SIN CAMBIO MATERIAL';
  const statusCls=recent.length||biasChanged||scoreMoved?'text-amber-300':'text-blue-300';
- return '<section id="sec-fx-weekly" class="card rounded-2xl p-5 md:p-6 space-y-4"><div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Forex Radar · preparación semanal + seguimiento</div><h2 class="text-lg md:text-xl font-black text-white mt-1">Sesgo semanal de '+esc(code)+' · '+esc(data.name||'')+'</h2><p class="text-xs text-gray-400 mt-1 max-w-3xl">Hipótesis revisable, no señal automática de entrada. Prioriza la trayectoria esperada de tipos frente a lo que el mercado ya descuenta.</p></div><div class="metric rounded-xl p-3 min-w-[190px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo provisional</div><div class="text-lg font-black '+cls+' mt-1">'+(score>=0.35?'↑ ':score<=-0.35?'↓ ':'→ ')+esc(label)+'</div><div class="text-[10px] text-gray-500 mt-1">Confianza: '+confidence+'</div></div></div><div class="flex flex-wrap gap-2 text-[10px]"><span class="mini-pill '+statusCls+'">'+status+'</span><span class="mini-pill">Risk '+(riskOn?'ON ↑':riskOff?'OFF ↓':'mixto / neutral')+'</span><span class="mini-pill">FX 5S '+(trendOk?fmtPct(trend):'N/D')+'</span><span class="mini-pill">Tramo corto 5S '+(shortOk?fmtNum(shortBp,1)+' pb':'N/D')+'</span>'+(expFresh?'<span class="mini-pill">Expectativas de tipos actualizadas</span>':'')+'</div>'+weeklySummary+'<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Por qué este sesgo</div><ul class="space-y-2 mt-3 text-xs text-gray-300"><li>• Política y datos macro: <b>'+esc(macro.label||'lectura mixta')+'</b>.</li>'+(expFresh?'<li>• Expectativas de tipos: <b>'+esc(exp>0.08?'más presión de subidas':exp< -0.08?'más presión de bajadas':'sin dirección clara')+'</b>.</li>':'')+'<li>• Tramo corto 3M/1Y/2Y: '+(shortOk?(shortBp>0?'sube y puede confirmar más presión de tipos':'cae y puede señalar menos endurecimiento'):'variación semanal no disponible')+'.</li><li>• Tendencia de divisa 5S: '+(trendOk?(trend>0?'positiva':trend<0?'negativa':'plana'):'sin referencia verificada')+'; el riesgo global es una confirmación contextual, no una regla fija.</li></ul><p class="text-[10px] text-gray-500 mt-3">Lectura heurística: no se presenta como correlación estable ni como predicción garantizada.</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Catalizadores · próximos 7 días</div>'+(eventRows||'<p class="text-xs text-gray-500 mt-3">No hay calendario futuro verificado disponible en el feed. No se muestran eventos inventados; revisar calendario oficial.</p>')+'</div></div>'+(recentRows?'<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Datos publicados · posibles sorpresas</div>'+recentRows+'</div>':'')+'</section>';
+ return '<section id="sec-fx-weekly" class="card rounded-2xl p-5 md:p-6 space-y-4"><div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3"><div><div class="text-[10px] uppercase tracking-wider text-gray-500">Forex Radar · preparación semanal + seguimiento</div><h2 class="text-lg md:text-xl font-black text-white mt-1">Sesgo semanal de '+esc(code)+' · '+esc(data.name||'')+'</h2><p class="text-xs text-gray-400 mt-1 max-w-3xl">Hipótesis revisable, no señal automática de entrada. Prioriza la trayectoria esperada de tipos frente a lo que el mercado ya descuenta.</p></div><div class="metric rounded-xl p-3 min-w-[190px]"><div class="text-[10px] text-gray-500 uppercase">Sesgo provisional</div><div class="text-lg font-black '+cls+' mt-1">'+(score>=0.35?'↑ ':score<=-0.35?'↓ ':'→ ')+esc(label)+'</div><div class="text-[10px] text-gray-500 mt-1">Confianza: '+confidence+'</div></div></div><div class="flex flex-wrap gap-2 text-[10px]"><span class="mini-pill '+statusCls+'">'+status+'</span><span class="mini-pill">Risk '+(riskOn?'ON ↑':riskOff?'OFF ↓':'mixto / neutral')+'</span><span class="mini-pill">FX 5S '+(trendOk?fmtPct(trend):'N/D')+'</span><span class="mini-pill">Tramo corto 5S '+(shortOk?fmtNum(shortBp,1)+' pb':'N/D')+'</span>'+(expFresh?'<span class="mini-pill">Expectativas de tipos actualizadas</span>':'')+'</div>'+weeklySummary+scenarioSummary+'<div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Por qué este sesgo</div><ul class="space-y-2 mt-3 text-xs text-gray-300"><li>• Política y datos macro: <b>'+esc(macro.label||'lectura mixta')+'</b>.</li>'+(expFresh?'<li>• Expectativas de tipos: <b>'+esc(exp>0.08?'más presión de subidas':exp< -0.08?'más presión de bajadas':'sin dirección clara')+'</b>.</li>':'')+'<li>• Tramo corto 3M/1Y/2Y: '+(shortOk?(shortBp>0?'sube y puede confirmar más presión de tipos':'cae y puede señalar menos endurecimiento'):'variación semanal no disponible')+'.</li><li>• Tendencia de divisa 5S: '+(trendOk?(trend>0?'positiva':trend<0?'negativa':'plana'):'sin referencia verificada')+'; el riesgo global es una confirmación contextual, no una regla fija.</li></ul><p class="text-[10px] text-gray-500 mt-3">Lectura heurística: no se presenta como correlación estable ni como predicción garantizada.</p></div><div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Eventos clave · próximos 7 días</div>'+(eventRows||'<p class="text-xs text-gray-500 mt-3">No hay calendario futuro verificado disponible en el feed. No se muestran eventos inventados; revisar calendario oficial.</p>')+'</div></div>'+(recentRows?'<div class="metric rounded-xl p-4"><div class="text-[10px] uppercase tracking-wider text-gray-500">Datos publicados · posibles sorpresas</div>'+recentRows+'</div>':'')+'</section>';
 }
 function renderContent() {
             renderTopTabs();
@@ -1702,17 +1753,17 @@ function renderContent() {
                 return;
             }
             const data = macroDatabase[currentCountryKey];
-            document.getElementById('countryTitle').innerHTML = `${data.flag||'🌎'} Monitor ${esc(data.name||data.id||'Economía')}`;
+            document.getElementById('countryTitle').innerHTML = `${economyFlag(data.id)} Monitor ${esc(data.name||data.id||'Economía')}`;
             document.getElementById('countrySubtitle').textContent = data.subtitle || 'Política monetaria, curva e indicadores macro.';
 
             const expFresh = expectationsAreFresh(data);
             const expHtml = expFresh ? (data.rates?.expectations||[]).map(e => `\n                <div class="flex items-center justify-between py-1.5 border-b border-gray-900/80">\n                    <span class="text-xs text-gray-400">${esc(e.label)}</span>\n                    <span class="text-xs font-bold text-white">${esc(e.value)}</span>\n                </div>`).join('') : '';
             const keyPointsHtml = (data.conference?.keyPoints||[]).map(x => `<li class="text-xs md:text-sm text-gray-300 flex gap-2"><span class="text-blue-400">•</span><span>${esc(x)}</span></li>`).join('');
             const watchFactorsHtml = (data.conference?.watchFactors||[]).map(x => `<li class="text-xs text-gray-300 flex gap-2"><span class="text-green-400">•</span><span>${esc(x)}</span></li>`).join('');
-            const bondOrder=['3M','1Y','2Y','5Y','10Y','20Y','30Y'];
+            const bondOrder=['3M','1Y','2Y','5Y','10Y','20Y','30Y',...(data.bonds?.tenors?.some(t=>t.term==='LT')?['LT']:[])];
             const bondMap=Object.fromEntries((data.bonds?.tenors||[]).map(x=>[x.term,x]));
             const pctCell=(v)=>Number.isFinite(Number(v))?((Number(v)>=0?'+':'')+Number(v).toFixed(2)+'%'):'—';
-            const tenorsHtml=bondOrder.map(term=>{const y=bondMap[term];const n=parseFloat(String(y?.yield??'').replace('%','').replace(',','.'));const val=Number.isFinite(n)?n.toFixed(2)+'%':'N/D';return `<div class="metric p-3 rounded-xl"><div class="flex justify-between"><div class="text-[10px] text-gray-500">${term}</div><div class="text-sm font-black text-white">${val}</div></div><div class="grid grid-cols-3 gap-1 mt-2 text-[9px]"><span>1D <b>${pctCell(y?.change1d)}</b></span><span>5S <b>${pctCell(y?.change1w)}</b></span><span>21S <b>${pctCell(y?.change1m)}</b></span></div></div>`}).join('');
+            const tenorsHtml=bondOrder.map(term=>{const y=bondMap[term];const value=parseRate(y?.yield);const pb=v=>v==null?'—':fmtNum(v,1)+' pb';return `<div class="metric p-3 rounded-xl"><div class="flex justify-between"><div class="text-xs text-gray-400">${term}</div><div class="text-sm font-black text-white">${Number.isFinite(value)?fmtNum(value,3)+'%':'—'}</div></div><div class="grid grid-cols-2 gap-2 mt-3 text-xs"><span>1D ${pb(y?.change1dBp)}</span><span>5S ${pb(y?.change5sBp)}</span><span>21S ${pb(y?.change21sBp)}</span><span>YTD ${pb(y?.changeYtdBp)}</span></div><div class="text-xs text-gray-500 mt-2">${esc(y?.observedAt||data.bonds?.date||'Sin fecha verificable')} · ${esc(y?.status||'histórico sin verificar')}</div></div>`}).join('');
             const spreadsHtml = (data.bonds?.spreads||[]).map(s => `<div class="metric p-4 rounded-xl"><div class="text-xs font-semibold text-gray-400">${esc(s.label)}</div><div class="text-xl font-black text-white mt-1">${esc(s.value)}</div><div class="text-[10px] text-gray-600 mt-1">${esc(s.desc||'')}</div></div>`).join('');
             const indicatorsHtml = (data.indicators||[]).map(ind => `<tr class="border-b border-gray-900/70 row-hover"><td class="py-3 px-3 text-xs text-gray-500">${esc(ind.cat||'')}</td><td class="py-3 px-3 text-xs font-semibold text-gray-200">${esc(ind.name||'')}</td><td class="py-3 px-3 text-xs text-white">${esc(ind.actual||'')}</td><td class="py-3 px-3 text-xs text-gray-400">${esc(ind.est||'')}</td><td class="py-3 px-3 text-xs ${parseNum(ind.surprise)<0?'effect-dovish':parseNum(ind.surprise)>0?'effect-hawkish':'effect-neutral'}">${esc(ind.surprise||'—')}</td><td class="py-3 px-3 text-xs">${effectForIndicator(ind)}</td><td class="py-3 px-3 text-xs text-gray-500">${esc(ind.date||'')}</td><td class="py-3 px-3 text-xs text-amber-300">${esc(ind.imp||'')}</td></tr>`).join('');
 
@@ -1955,16 +2006,17 @@ function renderContent() {
                 setFeedStatus('Modo local · usando datos integrados', false);
                 return false;
             }
-            const bucket=Math.floor(Date.now()/(5*60*1000));
             const urls=[
-                './macro-feed.json?v='+bucket,
-                'https://raw.githubusercontent.com/brutodeibit/Macro-terminal/main/macro-feed.json?v='+bucket
+                './macro-feed-v7.json',
+                'https://raw.githubusercontent.com/brutodeibit/Macro-terminal/main/macro-feed-v7.json'
             ];
             let lastError='feed no disponible';
             for(const url of urls){
                 try{
-                    const res=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+                    const res=await fetch(url,{cache:'no-cache',headers:{Accept:'application/json'}});
                     if(!res.ok) throw new Error('HTTP '+res.status);
+                    const revision=res.headers.get('etag')||res.headers.get('last-modified');
+                    if(revision&&window.__feedRevision===url+revision){setFeedStatus('Feed sin cambios · '+(macroDatabase.__feedMeta?.updated||'—'),true);return true;}
                     const feed=await res.json();
                     if(!feed || !feed.economies) throw new Error('JSON válido pero sin economies');
                     Object.entries(feed.economies).forEach(([k,v])=>{
@@ -1973,11 +2025,13 @@ function renderContent() {
                         if(v.rates) macroDatabase[k].rates={...macroDatabase[k].rates,...v.rates};
                         if(v.conference) macroDatabase[k].conference={...macroDatabase[k].conference,...v.conference};
                         if(v.bonds) macroDatabase[k].bonds={...macroDatabase[k].bonds,...v.bonds};
+                        if(v.indicatorHistory) macroDatabase[k].indicatorHistory=v.indicatorHistory;
                         if(Array.isArray(v.indicators) && v.indicators.length) macroDatabase[k].indicators=v.indicators;
                     });
                     const map={marketBreadth:'__marketBreadth',economicCalendar:'__economicCalendar',riskOnOff:'__riskOnOff',cot:'__cot',options:'__options',fx:'__fx',darkPools:'__darkPools',darkPoolPrints:'__darkPoolPrints',darkFlowRadar:'__darkFlowRadar',squawkFlow:'__squawkFlow',traditionalSentiment:'__traditionalSentiment',traditionalFearGreed:'__traditionalFearGreed',optionsStats:'__optionsStats',globalMarkets:'__globalMarkets',rotation:'__rotation',cryptoSentiment:'__cryptoSentiment',bondMarket:'__bondMarket'};
                     Object.entries(map).forEach(([src,dst])=>{if(feed[src]!==undefined) macroDatabase[dst]=feed[src];});
                     macroDatabase.__feedMeta={updated:feed.updated||'—',source:url.includes('raw.githubusercontent')?'GitHub raw fallback':'GitHub Pages',loadedAt:new Date().toISOString()};
+                    if(revision)window.__feedRevision=url+revision;
                     setFeedStatus('Feed sincronizado · '+macroDatabase.__feedMeta.source+' · '+(feed.updated||'—'),true);
                     renderSidebar();
                     renderContent();
@@ -2038,9 +2092,89 @@ function renderContent() {
                 if(c) c.innerHTML='<section class="metric rounded-2xl p-6"><div class="text-sm font-bold text-amber-300">Panel temporalmente limitado</div><div class="text-xs text-gray-400 mt-2">Los datos integrados no se han podido pintar en esta carga. Recargando el feed no se perderá la información disponible.</div></section>';
             }
             setTimeout(async()=>{ try { await loadExternalFeed(); } catch(e) { console.error('MacroTerminal feed init',e); } }, 200);
-            setInterval(async()=>{ try { await loadExternalFeed(); } catch(e) { console.error('MacroTerminal feed refresh',e); } }, 15*60*1000);
+            setInterval(async()=>{ if(document.visibilityState==='hidden')return;try { await loadExternalFeed(); } catch(e) { console.error('MacroTerminal feed refresh',e); } }, 30*60*1000);
+/* CHARTS V2 — interacción, COT, Fear&Greed, flujos ETF, dark pools (añadido sobre el commit bad11c5) */
+(function(){
+const _lp=__loadPlotly;
+const reset=(el,P)=>{if(!el||el.__rb||!el.parentNode)return;el.__rb=1;const b=document.createElement('button');b.type='button';b.className='mini-pill text-[10px] mb-1';b.textContent='Restablecer vista';b.onclick=()=>{try{P.relayout(el,{'xaxis.autorange':true,'yaxis.autorange':true,'yaxis2.autorange':true,...(el.id==='fg-v2-chart'?{'yaxis.range':[0,100],'yaxis.autorange':false}:{})})}catch(e){}};el.insertAdjacentElement('beforebegin',b);};
+const fmtD=d=>d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+function v2(el,l,d){
+ if(!el)return [l,d];
+ l.height=el.classList?.contains('dp-chart-wrap')?720:el.id==='fg-v2-chart'?550:el.id==='crypto-etf-flow-chart'?400:Math.max(l.height||0,460);el.style.height=l.height+'px';
+ l.font=Object.assign({},l.font,{size:13,color:getComputedStyle(document.body).getPropertyValue('--ink').trim()||'#cbd5e1'});
+ for(const axis of ['yaxis','yaxis2'])if(l[axis])l[axis]=Object.assign({},l[axis],{automargin:true,tickfont:{size:13}});
+ if(el.id==='cot-interactive-chart'&&d[0]&&d[0].x){
+  const few=d[0].x.length<=6; // Recuperar la vista original de variaciones semanales en ventanas cortas
+  d=d.map(t=>{const o=Object.assign({},t),net=t.name==='Neto';
+   if(few){o.x=t.x.slice(1);o.y=t.y.slice(1).map((v,i)=>v-t.y[i]);o.type='bar';delete o.mode;delete o.fill;delete o.line;o.marker={color:net?o.y.map(v=>v>=0?'#34d399':'#f87171'):t.name==='Largos'?'#38bdf8':'#f59e0b'};o.hovertemplate='%{x}<br>'+t.name+' (var. semanal) %{y:,.0f}<extra></extra>';}
+   o.yaxis=net?'y':'y2';return o;});
+  l.barmode='group';
+  l.yaxis=Object.assign({},l.yaxis,{domain:[.56,1],anchor:'x',autorange:true});l.yaxis.title={text:few?'Neto · var. semanal':'Neto · contratos',font:{size:12,color:'#facc15'}};
+  l.yaxis2={title:{text:few?'Largos / cortos · var. semanal':'Largos / cortos · contratos',font:{size:12}},domain:[0,.44],anchor:'x',side:'right',autorange:true,gridcolor:'#263244',zerolinecolor:'#475569',separatethousands:true,tickfont:{size:11}};
+  l.xaxis=Object.assign({},l.xaxis,{anchor:'y2'});l.margin=Object.assign({},l.margin,{l:85,r:85});
+ }
+ if(el.classList&&el.classList.contains('dp-chart-wrap')&&l.annotations&&d[0]&&d[0].x){
+  l.annotations=window.__darkHideLabels?[]:v7LabelLayout(l.annotations,d[0],l,el);
+ }
+ return [l,d];
+}
+__loadPlotly=function(){return _lp().then(P=>{if(P.__v2)return P;P.__v2=1;const n=P.newPlot;
+ P.newPlot=function(h,d,l,c){l=l||{};c=c||{};const el=typeof h==='string'?document.getElementById(h):h;
+  l.dragmode='pan';l.hovermode=l.hovermode||'x unified';
+  const palette=v7Palette();l.plot_bgcolor='transparent';l.paper_bgcolor='transparent';
+  for(const axis of ['xaxis','yaxis','yaxis2'])if(l[axis])l[axis]={...l[axis],gridcolor:palette.grid,tickfont:{color:palette.ink,size:13}};
+  if(l.xaxis?.rangeselector)l.xaxis.rangeselector={...l.xaxis.rangeselector,bgcolor:palette.panel,activecolor:palette.grid,font:{color:palette.ink,size:12}};
+  if(el?.id==='fg-v2-chart')l.margin={l:70,r:75,t:90,b:65};
+  l.hoverlabel={bgcolor:palette.panel,bordercolor:palette.grid,font:{color:palette.ink,size:12}};
+  l.xaxis=Object.assign({showspikes:true,spikemode:'across',spikethickness:1,spikecolor:'#64748b'},l.xaxis);
+  c=Object.assign({},c,{displaylogo:false,displayModeBar:true,responsive:true,scrollZoom:true,doubleClick:'reset+autosize',modeBarButtonsToRemove:['select2d','lasso2d']});
+  [l,d]=v2(el,l,d);const r=n.call(P,h,d,l,c);reset(el,P);return r;};
+ return P;});};
+const base={paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1',size:11},margin:{l:56,r:56,t:40,b:40},legend:{orientation:'h',y:1.15,x:0}};
+const empty=(el,t)=>{el.innerHTML='<div class="text-[11px] text-gray-500 p-4">'+t+'</div>';};
+function drawFG(){
+ const sec=document.getElementById('sec-sentiment');if(!sec||document.getElementById('fg-v2'))return;
+ const original=sec.querySelector('svg[aria-label*="BTC USD"]');if(!original)return;
+ const cs=macroDatabase.__cryptoSentiment||{},h=(cs.fearGreed&&cs.fearGreed.history)||[],bh=cs.btcHistory||[];
+ const box=document.createElement('div');box.id='fg-v2';box.className='w-full min-w-0 mt-3';
+ const last=h.length?h[h.length-1]:null;
+ box.innerHTML='<div class="text-sm text-white font-bold">Fear &amp; Greed (0–100) + precio BTC/USD</div><div class="text-[10px] text-gray-400 mb-2">Bandas de sentimiento · histórico diario · último dato '+(last?esc(last.date):'N/D')+'</div><div id="fg-v2-chart" class="w-full h-[550px]"></div>';
+ const legend = original.nextElementSibling;
+ if (legend) {
+  legend.innerHTML = '<span style="color:#f59e0b">● BTC / USD · eje derecho</span><span style="color:#e2e8f0">● Fear &amp; Greed · eje izquierdo</span><span class="text-gray-400">Bandas: de miedo extremo a codicia extrema</span>';
+ }
+ original.replaceWith(box);const el=box.querySelector('#fg-v2-chart');
+ if(h.length<2){empty(el,'Sin histórico del índice en el feed actual.');return;}
+ const z=[[0,25,'#ef4444'],[25,45,'#f59e0b'],[45,55,'#94a3b8'],[55,75,'#84cc16'],[75,100,'#22c55e']].map(a=>({type:'rect',xref:'paper',x0:0,x1:1,yref:'y',y0:a[0],y1:a[1],fillcolor:a[2],opacity:.16,line:{width:0},layer:'below'}));
+ __loadPlotly().then(P=>P.newPlot(el,[
+  {x:h.map(x=>x.date),y:h.map(x=>x.value),type:'scatter',mode:'lines',name:'Fear & Greed',line:{color:'#e2e8f0',width:3.1},hovertemplate:'Índice %{y:.0f}<extra></extra>'},
+  {x:[last.date],y:[last.value],type:'scatter',mode:'markers',text:[String(last.value)+' · '+(last.classification||'')],textposition:'middle right',showlegend:false,marker:{size:9,color:'#facc15'},hoverinfo:'skip'},
+  {x:bh.map(x=>x.date),y:bh.map(x=>x.price),type:'scatter',mode:'lines',name:'BTC (USD)',yaxis:'y2',line:{color:'#f59e0b',width:2},hovertemplate:'BTC $%{y:,.0f}<extra></extra>'}],
+  Object.assign({},base,{height:550,shapes:z,annotations:[{xref:'paper',x:1,yref:'paper',y:1.08,text:esc(String(last.value)+' · '+(last.classification||'')),showarrow:false,xanchor:'right',font:{size:14,color:'#facc15'}}],yaxis:{title:{text:'Índice 0–100',font:{size:11}},range:[0,100],fixedrange:true,gridcolor:'#1f2937'},yaxis2:{title:{text:'BTC · USD',font:{size:11,color:'#f59e0b'}},overlaying:'y',side:'right',fixedrange:true,showgrid:false,tickformat:',.0f'},
+  xaxis:{gridcolor:'#1f2937',rangeselector:{bgcolor:'#111827',activecolor:'#334155',font:{color:'#e5e7eb',size:10},buttons:[{count:1,label:'1M',step:'month',stepmode:'backward'},{count:3,label:'3M',step:'month',stepmode:'backward'},{step:'all',label:'Todo'}]}}})));
+}
+function drawETF(){
+ const el=document.getElementById('crypto-etf-flow-chart');if(!el||el.dataset.v2)return;el.dataset.v2=1;
+ setTimeout(()=>{
+  const mk=(macroDatabase.__options&&macroDatabase.__options.markets)||[];
+  const fl=t=>(resolveSpotEtfFlow(t)?.history||[]);
+  const rows=t=>fl(t).filter(x=>x.netFlowUsdM!=null&&x.netFlowUsdM!==''&&isFinite(Number(x.netFlowUsdM))).map(x=>({d:String(x.date).slice(0,10),v:Number(x.netFlowUsdM)})).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x.d)).sort((a,b)=>a.d<b.d?-1:1);
+  const wk=r=>{const m={};r.forEach(x=>{const dt=new Date(x.d+'T00:00:00Z'),k=new Date(+dt-((dt.getUTCDay()+6)%7)*864e5).toISOString().slice(0,10);m[k]=(m[k]||0)+x.v;});return Object.entries(m).sort().map(e=>({d:e[0],v:e[1]}));};
+  const weekly=window.__etfFlowView==='weekly',B=rows('BTC'),E=rows('ETH');
+  if(!B.length&&!E.length)return empty(el,'Sin datos de flujos ETF spot en el feed actual (Farside). No se muestran cifras estimadas.');
+  el.replaceChildren();el.style.height='400px';
+  const f=r=>weekly?wk(r):r,b=f(B),e=f(E);
+  const tr=(r,n,c)=>({x:r.map(x=>x.d),y:r.map(x=>x.v),type:'bar',name:n,marker:{color:r.map(x=>x.v>=0?'#22c55e':'#ef4444'),line:{color:c,width:1.2}},hovertemplate:'%{x|%d/%m/%Y}<br>'+n+' %{y:+,.1f} M USD<extra></extra>'});
+  __loadPlotly().then(P=>P.newPlot(el,[tr(b,'BTC','#f59e0b'),tr(e,'ETH','#a78bfa')],Object.assign({},base,{barmode:'group',yaxis:{title:{text:weekly?'Neto semanal · M USD':'Neto diario · M USD',font:{size:11}},gridcolor:'#1f2937',zerolinecolor:'#64748b'},xaxis:{type:'date',rangeslider:{visible:true,thickness:.10},rangeselector:{buttons:[{count:1,label:'1M',step:'month',stepmode:'backward'},{count:3,label:'3M',step:'month',stepmode:'backward'},{step:'all',label:'Todo'}]},tickformat:weekly?'Sem. %d/%m':'%d/%m',gridcolor:'#1f2937',rangebreaks:weekly?[]:[{bounds:['sat','mon']}]}})));
+ },350);
+}
+new MutationObserver(()=>{drawFG();drawETF();}).observe(document.body,{childList:true,subtree:true});
+})();
+
+
         });
     </script>
 
+    <script src="./v7-ui.js?v=20261114.1"></script>
 </body>
 </html>
