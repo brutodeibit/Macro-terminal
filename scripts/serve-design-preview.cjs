@@ -18,7 +18,7 @@ http.createServer((req,res) => {
     res.writeHead(403).end(); return;
   }
   if (!['GET','HEAD'].includes(req.method)) { res.writeHead(405).end(); return; }
-  const name = new URL(req.url,'http://127.0.0.1').pathname.slice(1) || 'design-preview-v2.html';
+  const name = new URL(req.url,'http://127.0.0.1').pathname.slice(1) || 'index.html';
   if (!files.has(name)) { res.writeHead(404).end(); return; }
   const file = path.join(root,name);
   fs.stat(file,(error,stat) => {
@@ -32,4 +32,4 @@ http.createServer((req,res) => {
     if (req.method==='HEAD') res.end();
     else fs.createReadStream(file).on('error',()=>res.destroy()).pipe(res);
   });
-}).listen(port,'127.0.0.1',() => console.log('Macro Monitor V2 · http://127.0.0.1:'+port+'/design-preview-v2.html'));
+}).listen(port,'127.0.0.1',() => console.log('Macro Monitor · http://127.0.0.1:'+port+'/'));

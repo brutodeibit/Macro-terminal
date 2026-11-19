@@ -1,4 +1,9 @@
-# Macro Monitor · vista de integración V2
+# Macro Monitor · integración V2 aprobada
+
+El usuario aprobó el 19/11/2026 convertir la V2 en la portada oficial.
+La implementación está en `index.html`; los accesos Claude y de prueba
+redirigen a ella. El listado vigente de módulos y el respaldo están en
+`docs/ACTIVE_PREVIEW.md`. Las siguientes notas describen la fase de prueba.
 
 Desde la raíz del repositorio, ejecuta `node scripts/serve-design-preview.cjs` y abre ambas vistas en Chrome o Edge.
 

@@ -31,6 +31,7 @@
 .macro-v2 [hidden] { display:none !important; }
 .macro-v2 body {
   --ink:var(--v2-ink); --panel:var(--v2-panel); --line:var(--v2-line);
+  --accent:var(--v2-accent); --muted:var(--v2-muted); --panel-2:var(--v2-rail);
   margin:0; min-width:320px; background:var(--v2-bg); color:var(--v2-ink);
   font-family:Inter,"Segoe UI",system-ui,sans-serif;
   scrollbar-color:var(--v2-line) var(--v2-bg);
@@ -95,6 +96,15 @@
 .macro-v2[data-theme=mystic] :is(.card,.glass) { border-top-color:color-mix(in srgb,var(--v2-accent) 32%,var(--v2-line)); }
 .macro-v2[data-theme=gold] :is(.card,.glass) { box-shadow:inset 0 1px #f0cd8819,var(--v2-shadow); }
 .macro-v2 .metric { background:color-mix(in srgb,var(--v2-bg) 69%,var(--v2-panel)); border-color:var(--v2-line); min-width:0; }
+.macro-v2 :is(.mini-pill,.risk-badge,.score-chip) {
+  border-color:var(--v2-line); background:var(--v2-rail); color:var(--v2-muted);
+}
+.macro-v2 #mainDashboard :is([class*="bg-slate-950"],[class*="bg-gray-950"],[class*="bg-gray-900"]) {
+  background-color:var(--v2-rail);
+}
+.macro-v2 #mainDashboard :is([class*="border-gray-"],[class*="border-slate-"]) { border-color:var(--v2-line); }
+.macro-v2 #mainDashboard .dp-chart-wrap { background:var(--v2-panel) !important; }
+.macro-v2 .sentiment-gauge:after { background:var(--v2-panel); }
 .macro-v2 :is(.text-gray-400,.text-gray-500,.text-gray-600) { color:var(--v2-muted); }
 .macro-v2 :is(.text-white,h1,h2,h3) { color:var(--v2-ink); }
 .macro-v2 :is(.source-link,.text-blue-400) { color:var(--v2-accent); }

@@ -31,10 +31,13 @@ async function chart(page,selector) {
     const errors = [], requests = [];
     page.on('pageerror',error=>errors.push(error.message));
     page.on('request',req=>requests.push(req.url()));
-    await Promise.all([page.goto(url+'/design-preview-v2.html'),old.goto(url+'/claude-preview.html')]);
+    await Promise.all([page.goto(url+'/index.html'),old.goto(url+'/index.html?layout=classic')]);
     await Promise.all([ready(page),ready(old)]);
     assert.equal(await page.evaluate(()=>macroDatabase.__feedMeta.updated),feed.updated);
     assert.equal(await old.locator('html').evaluate(el=>el.classList.contains('macro-v2')),false);
+    assert.deepEqual(await page.getByRole('navigation',{name:'Módulos globales'}).getByRole('button').allTextContents(),
+      ['Panel de mercado','Sentimiento','Posicionamiento','Opciones','Dark Pools']);
+    assert(!await page.locator('body').textContent().then(t=>t.includes('VISTA DE PRUEBA')));
     const capture = () => Object.entries(macroDatabase).filter(([key])=>key!=='__feedMeta');
     const digest = entries => Object.fromEntries(entries.map(([key,value])=>[
       key,createHash('sha256').update(JSON.stringify(value)).digest('hex')
@@ -49,8 +52,8 @@ async function chart(page,selector) {
       ['global/mercado/regiones','#sec-global-markets'],['global/mercado/rotacion','#sec-rotation'],
       ['global/sentimiento/bolsa','[data-sentiment-view=bolsa]'],['global/sentimiento/cripto','[data-sentiment-view=cripto]'],
       ['global/sentimiento/etf','#crypto-etf-flows'],['global/posicionamiento/cot','#sec-cot'],
-      ['global/opciones/cadena','#sec-options'],['global/liquidez/dark','#sec-darkpool'],
-      ['global/liquidez/bonos','[data-sentiment-view=bonos]']
+      ['global/opciones/cadena','#sec-options'],['global/darkpools/dark','#sec-darkpool'],
+      ['global/mercado/bonos','[data-sentiment-view=bonos]']
     ];
     for (const [hash,selector] of sections) {
       await route(page,hash);
@@ -63,7 +66,7 @@ async function chart(page,selector) {
     await chart(page,'#crypto-etf-flow-chart');
     await route(page,'global/posicionamiento/cot');
     await chart(page,'#cot-interactive-chart');
-    await route(page,'global/liquidez/dark');
+    await route(page,'global/darkpools/dark');
     await chart(page,'.dp-chart-wrap');
     assert.equal(await page.locator('#v2-active-view .dp-chart-wrap').evaluate(el=>el.data[0].type),'candlestick');
     const dark = page.locator('#v2-active-view #sec-darkpool');
@@ -79,7 +82,7 @@ async function chart(page,selector) {
     }
     await route(page,'economia/us/curva');
     await chart(page,'#v7-curve-us');
-    await route(page,'global/liquidez/dark');
+    await route(page,'global/darkpools/dark');
     assert.equal(await dark.locator('.dp-chart-wrap').evaluate(el=>el._fullLayout.dragmode),'zoom');
 
     await route(page,'global/opciones/cadena');
@@ -114,7 +117,7 @@ async function chart(page,selector) {
 
     const mobile = await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
     const phone = await mobile.newPage();
-    await phone.goto(url+'/design-preview-v2.html');
+    await phone.goto(url+'/index.html');
     await ready(phone);
     await phone.locator('#mobileCountrySelect').selectOption('jp');
     await phone.locator('#v2-active-view #sec-fx-weekly').waitFor();

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  if (new URLSearchParams(location.search).get('design') !== 'v2') return;
+  if (new URLSearchParams(location.search).get('layout') === 'classic') return;
 
   const themes = [
     ['institutional','Institutional Blue'], ['graphite','Graphite Pro'],
@@ -11,7 +11,7 @@
     ['mercado','Panel de mercado',[
       ['resumen','Resumen','sec-resumen'],['regimen','Régimen','sec-risk'],
       ['divisas','Divisas y carry','sec-fx'],['regiones','Mercados regionales','sec-global-markets'],
-      ['rotacion','Rotación','sec-rotation']
+      ['bonos','Bonos y crédito','sec-sentiment'],['rotacion','Rotación','sec-rotation']
     ]],
     ['sentimiento','Sentimiento',[
       ['bolsa','Bolsa y amplitud','sec-sentiment'],['cripto','Crypto Fear & Greed','sec-sentiment'],
@@ -19,9 +19,7 @@
     ]],
     ['posicionamiento','Posicionamiento',[['cot','COT','sec-cot']]],
     ['opciones','Opciones',[['cadena','Cadena y niveles','sec-options']]],
-    ['liquidez','Liquidez y crédito',[
-      ['dark','Dark pools / OTC','sec-darkpool'],['bonos','Bonos y crédito','sec-sentiment']
-    ]]
+    ['darkpools','Dark Pools',[['dark','Operaciones y OTC','sec-darkpool']]]
   ];
   const economyTabs = [
     ['semana','Sesgo semanal','sec-fx-weekly'],['tipos','Tipos y expectativas','sec-tipos'],
@@ -68,8 +66,10 @@
   savePreference('theme',readPreference('theme',themes,'institutional'));
   savePreference('mode',readPreference('mode',modes,'advanced'));
   root.classList.add('macro-v2');
-  document.body.classList.remove('theme-warm','theme-carbon');
-  document.title = 'Macro Monitor · Vista de prueba V2';
+  for (const name of [...document.body.classList]) {
+    if (name.startsWith('theme-')) document.body.classList.remove(name);
+  }
+  document.title = 'Macro Monitor';
   document.head.append(make('link',{rel:'stylesheet',href:'design-preview-v2.css'}));
 
   const classicPalette = v7Palette;
@@ -349,7 +349,12 @@
     }
   }
   function renderRoute() {
-    const [scope,id,tab] = location.hash.slice(1).split('/');
+    let [scope,id,tab] = location.hash.slice(1).split('/');
+    if (scope === 'global' && id === 'liquidez') {
+      id = tab === 'bonos' ? 'mercado' : 'darkpools';
+      tab = tab === 'bonos' ? 'bonos' : 'dark';
+      history.replaceState(null,'','#global/'+id+'/'+tab);
+    }
     if (scope === 'economia' && Object.hasOwn(macroDatabase,id) && macroDatabase[id]?.id) {
       currentCountryKey = id;
       tabKey = economyTabs.some(([key]) => tab === key) ? tab : lastEconomyTab.get(id) || 'semana';
@@ -370,6 +375,7 @@
     const originalHeader = $('countryTitle').closest('header');
     originalHeader.classList.add('v2-header');
     originalHeader.querySelector('[aria-label="Apariencia"]')?.setAttribute('hidden','');
+    originalHeader.querySelector('.theme-switcher')?.remove();
     const context = make('span',{class:'v2-context'},'Panel global');
     const select = make('select',{'aria-label':'Tema visual'},themes.map(([key,name])=>make('option',{value:key},name)));
     select.value = root.dataset.theme;
@@ -384,7 +390,7 @@
     const toolbar = make('div',{class:'v2-topbar'},context,
       make('div',{class:'v2-preferences'},make('label',null,'Tema ',select),segmented));
     originalHeader.before(toolbar);
-    $('countryTitle').before(make('div',{class:'v2-kicker'},'MACRO MONITOR ',make('span',null,'VISTA DE PRUEBA V2')));
+    $('countryTitle').before(make('div',{class:'v2-kicker'},'MACRO MONITOR'));
     const groups = make('nav',{class:'v2-groups','aria-label':'Módulos globales'},globalGroups.map(([id,name]) =>
       button(name,()=>navigate('global/'+id+'/'+(lastGlobalTab.get(id)||'')),{'data-group':id})));
     $('topTabs').before(groups);

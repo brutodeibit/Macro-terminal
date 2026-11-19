@@ -5,11 +5,21 @@ on:
     paths:
       - "index.html"
       - "validate_dashboard.py"
+      - "design-preview-v2.js"
+      - "design-preview-v2.css"
+      - "v7-ui.js"
+      - "tests/dashboard-runtime.cjs"
+      - "tests/chart-config.cjs"
   pull_request:
     branches: [main]
     paths:
       - "index.html"
       - "validate_dashboard.py"
+      - "design-preview-v2.js"
+      - "design-preview-v2.css"
+      - "v7-ui.js"
+      - "tests/dashboard-runtime.cjs"
+      - "tests/chart-config.cjs"
 permissions:
   contents: read
 jobs:
@@ -21,3 +31,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: python validate_dashboard.py
+      - run: node --check design-preview-v2.js
+      - run: node tests/dashboard-runtime.cjs
+      - run: node tests/chart-config.cjs

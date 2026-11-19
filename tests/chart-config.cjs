@@ -1,8 +1,8 @@
 // Chart contracts with real feed data; this is not a browser screenshot test.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const html=fs.readFileSync('claude-preview.html','utf8'),plots=[],timers=[],nodes=new Map();
+const html=fs.readFileSync('index.html','utf8'),plots=[],timers=[],nodes=new Map();
 let observer;
-const elem=id=>({id,style:{},dataset:{},clientWidth:980,parentNode:null,classList:{contains:()=>false},querySelector:s=>nodes.get(s.slice(1)),remove(){nodes.delete(id);},replaceChildren(){},insertAdjacentElement(){},set innerHTML(v){this.markup=v;if(v.includes('id="fg-v2-chart"'))nodes.set('fg-v2-chart',elem('fg-v2-chart'));},get innerHTML(){return this.markup||'';}});
+const elem=id=>({id,style:{},dataset:{},clientWidth:980,parentNode:null,classList:{contains:()=>false,add(){},remove(){}},querySelector:s=>nodes.get(s.slice(1)),remove(){nodes.delete(id);},replaceChildren(){},insertAdjacentElement(){},set innerHTML(v){this.markup=v;if(v.includes('id="fg-v2-chart"'))nodes.set('fg-v2-chart',elem('fg-v2-chart'));},get innerHTML(){return this.markup||'';}});
 const svg={replaceWith(box){nodes.set('fg-v2',box);}};
 nodes.set('sec-sentiment',{querySelector:()=>svg});nodes.set('crypto-etf-flow-chart',elem('crypto-etf-flow-chart'));
 const P={newPlot(h,data,layout,config){plots.push({id:typeof h==='string'?h:h.id,data,layout,config});return Promise.resolve();},relayout(){}};

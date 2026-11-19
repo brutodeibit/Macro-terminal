@@ -12,7 +12,7 @@ if missing:
     print("Missing required dashboard helpers:")
     print("\n".join(missing))
     sys.exit(1)
-if "macro-feed.json" not in h:
-    print("macro-feed.json loader missing")
+if "macro-feed-v7.json" not in h:
+    print("macro-feed-v7.json loader missing")
     sys.exit(1)
 print("Dashboard dependency check: OK")

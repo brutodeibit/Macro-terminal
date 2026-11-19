@@ -1,4 +1,15 @@
-# MacroTerminal V5
+# Macro Monitor
+
+Interfaz oficial: [Macro Monitor](https://brutodeibit.github.io/Macro-terminal/).
+La portada `index.html` reúne la versión Claude V7 y la navegación V2.
+Los módulos incluyen Panel de mercado (con bonos y crédito), Sentimiento,
+Posicionamiento, Opciones y Dark Pools. Todas las economías siguen accesibles
+desde la navegación lateral o el selector móvil.
+
+La interfaz carga `macro-feed-v7.json` mediante el conector existente y su
+workflow `update-preview.yml`. Cada serie conserva su fecha, fuente y estado.
+Los cinco temas y los modos Esencial, Avanzado y Ultra cambian la presentación.
+Los antiguos enlaces de revisión redirigen a la portada.
 
 ## Qué incluye
 - Monitor macro global con tipos, reuniones, curva y datos.
