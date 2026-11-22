@@ -15,6 +15,17 @@ ARCHIVES={
  'nz':('https://www.rbnz.govt.nz/monetary-policy/monetary-policy-decisions',r'/2026/.*(ocr|official-cash|monetary-policy)'),
 }
 
+
+def is_decision_publication(eid, title, url=''):
+    """Publication of minutes/opinions is not a new interest-rate meeting."""
+    if re.search(r'summary of opinions|speech|implementation note|report|meeting schedule', title, re.I):
+        return False
+    if eid == 'jp' and re.search(r'/opinion_|/giji_|/opi\d', url, re.I):
+        return False
+    if 'minutes' in title.lower():
+        return eid == 'uk' and 'monetary policy summary' in title.lower()
+    return True
+
 def date_from(text):
     for pattern,fmt in [(r'20\d{2}-\d{2}-\d{2}','%Y-%m-%d'),(r'20\d{6}','%Y%m%d'),
                         (r'\d{1,2} [A-Z][a-z]+ 20\d{2}','%d %B %Y')]:

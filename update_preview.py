@@ -232,7 +232,8 @@ def meetings(feed, force=False):
                 # Minutes, speeches, implementation notes and reports are documents, not extra meetings.
                 if not when or when > NOW() or (not item.get('officialArchive') and not re.search(cfg['match'], title, re.I)):
                     continue
-                if re.search(r'speech|implementation note|report|meeting schedule',title,re.I) or ('minutes' in title.lower() and 'summary' not in title.lower()):
+                from v7_meetings import is_decision_publication
+                if not is_decision_publication(eid, title, item.get('link', '')):
                     continue
                 if not item.get('link'):
                     continue
@@ -326,9 +327,10 @@ JOBS = {
  'ETF':(etf_flows, 6), 'MEETINGS':(meetings, 2),
  'CALENDAR':(calendar, 24), 'ECONOMIC_CALENDAR':(legacy.update_te, 6), 'RELEASE_CALENDAR':(release_calendar, 6),
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
+ 'SQUAWK':(mf.update_squawkflow, 2),
  'OPTIONS':(options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
  'EUREX':(v7_eurex.update, 2),
- 'COT':(mf.update_cot, 24), 'DARK_PRINTS':(dark_prints, 12),
+ 'COT':(mf.update_cot, 24), 'DARK_POOLS':(mf.update_dark_pools, 24), 'DARK_PRINTS':(dark_prints, 12),
  'INFOLIB_PRINTS':(v7_infolib.update, 12),
  'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 6), 'RISK':(legacy.update_risk, 1),
  'BONDS':(mf.update_bond_market, 6), 'SENTIMENT':(mf.update_traditional_sentiment, 24),

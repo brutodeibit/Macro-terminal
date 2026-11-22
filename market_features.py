@@ -431,6 +431,7 @@ def _cboe_option_chain(sym):
    vol_raw=num(x.get("volume"));iv_raw=num(x.get("iv") if x.get("iv") is not None else x.get("implied_volatility"))
    iv=(iv_raw/100.0 if iv_raw is not None and iv_raw>3 else iv_raw) if iv_raw is not None and iv_raw>0 else None
    delta=num(x.get("delta"));gamma=num(x.get("gamma"));vega=num(x.get("vega"));theta=num(x.get("theta"))
+   provider_greeks_available=any(v is not None for v in (delta,gamma,vega,theta))
    bid=num(x.get("bid"));ask=num(x.get("ask"));last=num(x.get("last_trade_price") or x.get("lastPrice"))
    T=max((ex-datetime.now(timezone.utc)).total_seconds()/31536000,1/3650);vanna=charm=None
    if iv is not None and 0<iv<3:
@@ -447,7 +448,7 @@ def _cboe_option_chain(sym):
       if gamma is None:gamma=cg
    groups.setdefault(ex.date().isoformat(),[]).append({"strike":strike,"openInterest":oi_raw if oi_raw is not None else 0,"oiDataAvailable":oi_raw is not None,
     "volume":vol_raw if vol_raw is not None else 0,"iv":iv,"ivDataAvailable":iv is not None and 0<iv<3,"ivProviderAvailable":iv_raw is not None and iv_raw>0,
-    "greeksProviderAvailable":any(v is not None for v in (delta,gamma,vega,theta)),"greeksAvailable":all(v is not None for v in (delta,gamma,vega)),
+    "greeksProviderAvailable":provider_greeks_available,"greeksAvailable":all(v is not None for v in (delta,gamma,vega)),
     "gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":vega,"theta":theta,"type":typ,"expiration":ex,"bid":bid,"ask":ask,"lastPrice":last,"contractSymbol":code})
   if not groups:raise ValueError("Cboe chain did not contain parseable expirations")
   exps=sorted(groups);buckets=[]
@@ -1206,20 +1207,16 @@ def update_options(feed):
  old_by={m.get("ticker"):m for m in previous.get("markets",[]) if isinstance(m,dict) and m.get("ticker")}
  chain_targets=("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT")
  detailed={}
- # Preferred chain source: Massive.  Cboe is the no-login delayed fallback for
- # listed US options; Yahoo is deliberately last because its public endpoint
+ # Preferred chain source: Massive. Yahoo is deliberately last because its public endpoint
  # frequently rejects unattended requests.
  for sym in chain_targets:
   try:
    x=_massive_option_chain(sym)
    if x:detailed[sym]=x
   except Exception as e:print("MASSIVE TARGET",sym,type(e).__name__,str(e)[:120])
- for sym in ("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
-  if sym in detailed:continue
-  try:
-   x=_cboe_option_chain(sym)
-   if x:detailed[sym]=x
-  except Exception as e:print("CBOE FALLBACK",sym,type(e).__name__,str(e)[:140])
+ # Cboe's public quote dashboard explicitly prohibits automated extraction.
+ # Keep the parser for archived/authorized fixtures, never poll that dashboard.
+ # https://www.cboe.com/data/quotes/spx/options
  for sym in ("SPY","QQQ","DIA","IWM","EWG","FEZ","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
   if sym in detailed:continue
   try:
@@ -1258,15 +1255,20 @@ def update_options(feed):
  sf=feed.get("squawkFlow",{}) if isinstance(feed.get("squawkFlow"),dict) else {}
  sx=sf.get("spxGex",{}).get("data") if isinstance(sf.get("spxGex"),dict) else None
  if isinstance(sx,dict) and not any(m.get("ticker")=="SPX" and not m.get("referenceOnly") for m in out):
-  spxprof={"expiration":sx.get("asOfDate"),"daysToExpiry":None,"gammaNet":sx.get("netGex"),
+  model_day = str(sx.get("asOfDate") or '')[:10]
+  try:model_stale=(datetime.now(timezone.utc).date()-datetime.fromisoformat(model_day).date()).days>4
+  except ValueError:model_stale=True
+  model_status = 'STALE · provider model; observation ' + (model_day or 'unknown') if model_stale else 'PROVIDER MODEL · delayed; expiry coverage not supplied'
+  spxprof={"expiration":None,"observedAt":sx.get("asOfDate"),"daysToExpiry":None,"gammaNet":sx.get("netGex"),
            "gammaFlip":sx.get("gexFlipPrice"),"callWall":sx.get("callWall"),"putWall":sx.get("putWall"),
            "callWallOi":sx.get("callWall"),"putWallOi":sx.get("putWall"),"maxGammaStrike":sx.get("maxGammaStrike"),
            "volTrigger":sx.get("volTrigger"),"bucket":"SPX · GEX model","source":"SquawkFlow / Cboe OI-derived estimate",
-           "dataStatus":"REAL / DELAYED · OI-derived"}
+           "dataStatus":model_status,"gammaFlipStatus":model_status,
+           "coverageStatus":"Aggregate provider model; individual expiration coverage unavailable"}
   spx={"ticker":"SPX","instrumentCode":"SPX","family":"S&P 500","name":"S&P 500 Index · SPX",
        "spot":sx.get("spotPrice"),"profiles":[spxprof],"referenceOnly":False,
        "source":"SquawkFlow · SPX GEX model","sourceUrl":"https://squawkflow.com/docs/endpoints",
-       "dataStatus":"REAL / DELAYED · calculated from Cboe open interest",
+       "dataStatus":model_status,"asOf":sx.get("asOfDate"),
        "method":"Fallback GEX model from Cboe open interest; used only when a full chain source is unavailable."}
   out=[m for m in out if m.get("ticker")!="SPX"];out.insert(0,spx)
 
@@ -1334,7 +1336,7 @@ def update_options(feed):
   "markets":out,"history":hist,"flow":flow_data,
   "optionsStats":feed.get("optionsStats") if isinstance(feed.get("optionsStats"),dict) else {},
   "catalog":OPTION_CATALOG,
-  "source":"Massive full-chain snapshots + Cboe + Barchart + Deribit/CME + Yahoo fallback",
+  "source":"Massive full-chain snapshots + Barchart + Deribit/CME + Yahoo fallback; Cboe public chain automation disabled",
   "sourceStatus":"REAL / DELAYED · multi-source",
   "publication":"Massive supplies chain-level OI/volume/IV/Greeks where available; Cboe supplies market-wide statistics; Barchart complements IV rank/percentile; Deribit is primary crypto chain; Yahoo is fallback only.",
   "note":"No se rellenan métricas inexistentes. Reference-only instruments muestran precio/fecha y explican por qué no hay cadena. Max Pain/GEX/Gamma Flip/DEX son cálculos sobre snapshots públicos y no observación directa del libro de dealers."
@@ -1349,7 +1351,7 @@ def _update_dark_pools_finra(feed):
         for x in part.get("availablePartitions",[]) if isinstance(part,dict) else []:
             p=(x.get("partitions") or []) if isinstance(x,dict) else []
             vals += [str(v)[:10] for v in p]
-        weeks=sorted(set(v for v in vals if re.match(r"^20\\d\\d-\\d\\d-\\d\\d$",v)),reverse=True)[:8]
+        weeks=sorted(set(v for v in vals if re.match(r"^20\d\d-\d\d-\d\d$",v)),reverse=True)[:8]
     except Exception as e:
         print("FINRA PARTITIONS",type(e).__name__,str(e)[:160]); weeks=[]
     if not weeks:
