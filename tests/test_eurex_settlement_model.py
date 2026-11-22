@@ -81,3 +81,11 @@ class SettlementModelTests(unittest.TestCase):
         self.assertIsNone(result['gammaFlip'])
         self.assertEqual(result['gammaFlipRoots'],[])
         self.assertIn('No sign change',result['gammaFlipStatus'])
+
+    def test_settlement_iv_survives_when_no_open_interest_can_support_gex(self):
+        rows = [{**row, 'openInterest': 0} for row in fixture()]
+        result = self.model(rows)
+        self.assertAlmostEqual(result['ivAtm'], 20, places=8)
+        self.assertIsNone(result['gammaFlip'])
+        self.assertIsNone(result['gammaFlipCoveragePct'])
+        self.assertIn('Sin interés abierto', result['gammaFlipStatus'])

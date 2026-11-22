@@ -12,7 +12,7 @@
     <p style="font-size:13px;line-height:1.6;margin-bottom:16px">La consulta se ejecuta en segundo plano. Los datos retrasados conservan su fecha; consultar de nuevo no elimina el retraso del proveedor.</p>
     <label for="sourceRefreshGroup">Qué quieres actualizar</label>
     <select id="sourceRefreshGroup" style="display:block;width:100%;margin:10px 0 16px;padding:10px;background:#1e293b;border:1px solid #475569;border-radius:8px">
-      <option value="options">Opciones y niveles gamma</option><option value="dark">Dark Pools y prints</option><option value="macro">Economías, bancos centrales y tipos</option>
+      <option value="market">Panel global, divisas y sectores</option><option value="options">Opciones y niveles gamma</option><option value="dark">Dark Pools y prints</option><option value="macro">Economías, bancos centrales y tipos</option>
     </select>
     <button type="button" id="sourceRefreshStart" style="background:#2563eb;color:white;border-radius:8px;padding:10px 16px">Consultar ahora</button>
     <p id="sourceRefreshStatus" role="status" aria-live="polite" style="margin-top:16px;font-size:13px;line-height:1.6"></p>
@@ -22,7 +22,7 @@
   const start = dialog.querySelector('#sourceRefreshStart');
   const group = dialog.querySelector('select');
   const list = dialog.querySelector('ul');
-  const names = {options:'Opciones', dark:'Dark Pools y prints', macro:'Economías y tipos'};
+  const names = {market:'Panel global y sectores', options:'Opciones', dark:'Dark Pools y prints', macro:'Economías y tipos'};
   const states = {processed:'Consulta procesada; revisa la fecha y cobertura', unchanged_or_unavailable:'Sin cambios o sin datos nuevos', retained:'Error: último dato conservado'};
   async function request(url, options = {}) {
     const response = await fetch(url, {...options, cache:'no-store', signal:AbortSignal.timeout(8000)});

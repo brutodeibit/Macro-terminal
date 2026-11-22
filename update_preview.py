@@ -302,9 +302,12 @@ def official_europe_macro(feed):
 
 
 def options(feed):
+    expiry_history = feed.get('options', {}).get('eurexExpiryHistory')
     preserved = copy.deepcopy([m for m in feed.get('options', {}).get('markets', [])
                                if m.get('ticker') in v7_eurex.PRODUCTS and str(m.get('source', '')).startswith('Eurex')])
     mf.update_options(feed)
+    if expiry_history:
+        feed.setdefault('options', {})['eurexExpiryHistory'] = expiry_history
     markets = feed.setdefault('options', {}).setdefault('markets', [])
     tickers = {m['ticker'] for m in preserved}
     markets[:] = [m for m in markets if m.get('ticker') not in tickers] + preserved
@@ -338,7 +341,8 @@ JOBS = {
  'EUREX':(v7_eurex.update, 2),
  'COT':(mf.update_cot, 24), 'DARK_POOLS':(mf.update_dark_pools, 24), 'DARK_PRINTS':(dark_prints, 12),
  'INFOLIB_PRINTS':(v7_infolib.update, 12),
- 'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 6), 'RISK':(legacy.update_risk, 1),
+ 'GLOBAL':(mf.update_global_markets, 6), 'ROTATION':(mf.update_markets_rotation, 6),
+ 'BREADTH':(mf.update_market_breadth, 6), 'RISK':(legacy.update_risk, 1),
  'BONDS':(mf.update_bond_market, 6), 'SENTIMENT':(mf.update_traditional_sentiment, 24),
  'FEAR':(mf.update_traditional_fear_greed, 6), 'OHLC':(dark_ohlc,12),
 }

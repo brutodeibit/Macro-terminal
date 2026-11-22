@@ -109,16 +109,27 @@ def settlement_model(rows, spot, observed_day, expiration, code):
             model_rows.append({**row, 'iv': iv})
         total_oi = sum(r['openInterest'] for r in rows)
         valid = [r for r in model_rows if r['iv'] is not None]
-        coverage = sum(r['openInterest'] for r in valid) / total_oi if total_oi else 0
+        coverage = sum(r['openInterest'] for r in valid) / total_oi if total_oi else None
         meta.update(**fit, multiplier=multiplier, currency='EUR', years=years,
                     timeConvention='ACT/365 by observation and expiry dates; no intraday valuation',
-                    status='derived', oiCoveragePct=round(coverage * 100, 2),
+                    status='derived', oiCoveragePct=round(coverage * 100, 2) if coverage is not None else None,
                     method='Black-76 settlement inversion; same-expiry put/call parity carry fit',
                     assumptions='Fixed OI, fitted carry and strike IV; calls positive, puts negative; not observed dealer inventory')
-        result['gammaFlipCoveragePct'] = round(coverage * 100, 2)
+        near = [min((r for r in valid if r['type'] == side),
+                    key=lambda r: abs(r['strike'] - forward), default=None) for side in ('C', 'P')]
+        if all(near) and all(abs(r['strike'] / forward - 1) <= .02 for r in near):
+            result.update(ivAtm=50 * sum(r['iv'] for r in near),
+                          ivAtmMethod='Mean call/put settlement IV within 2% of fitted forward',
+                          ivCoveragePct=round(100*len(valid)/max(1,len(rows)), 2),
+                          providerIvCoveragePct=0, providerGreeksCoveragePct=0)
+        result['gammaFlipCoveragePct'] = meta['oiCoveragePct']
+        if coverage is None:
+            raise ValueError('Sin interés abierto positivo reportado en la cadena')
         # Require enough OI for the entire exposure profile, not just the root.
-        if coverage < .9 or len({r['type'] for r in valid if r['openInterest'] > 0}) < 2:
+        if coverage < .9:
             raise ValueError('Less than 90% of reported OI has identifiable settlement IV')
+        if len({r['type'] for r in valid if r['openInterest'] > 0}) < 2:
+            raise ValueError('Se requiere interés abierto valorizable en calls y puts')
         result.update(gamma_flip(model_rows, spot, years, fit['rate'], fit['dividendYield'], multiplier))
         strikes = {}
         for r in rows:
@@ -144,14 +155,11 @@ def settlement_model(rows, spot, observed_day, expiration, code):
         for r in rows:
             if r['openInterest'] > 0 and (r['type'], r['strike']) not in covered_keys:
                 strikes[r['strike']]['gex'] = None
-        nearest = [min((r for r in valid if r['type'] == side), key=lambda r: abs(r['strike'] - forward)) for side in ('C', 'P')]
         result.update(gammaPositive=positive, gammaNegative=negative,
                       gammaNet=positive+negative, gammaTotal=positive+negative,
                       gammaRegime='MODELED · settlement-derived · partial coverage' if coverage < 1 else 'MODELED · settlement-derived',
                       gammaEffect='Daily scenario; not an intraday hedge-flow observation',
                       strikeMap=sorted(strikes.values(), key=lambda r: r['strike']),
-                      ivAtm=100*sum(r['iv'] for r in nearest)/len(nearest),
-                      ivAtmMethod='Mean of nearest available call/put settlement IV to fitted forward',
                       gexUnit='EUR per 1% underlying move', gexCurrency='EUR',
                       gammaCoveragePct=round(coverage*100, 2),
                       ivCoveragePct=round(100*len(valid)/max(1,len(rows)), 2),

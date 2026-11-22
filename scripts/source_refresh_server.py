@@ -17,6 +17,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 GROUPS = {
+    'market': ['RISK', 'FX', 'GLOBAL', 'ROTATION'],
     'options': ['SQUAWK', 'OPTIONS', 'EUREX'],
     'dark': ['DARK_POOLS', 'DARK_PRINTS', 'INFOLIB_PRINTS', 'OHLC'],
     'macro': ['MEETINGS', 'MACRO', 'EUROSTAT', 'ECONOMIC_CALENDAR', 'RELEASE_CALENDAR',

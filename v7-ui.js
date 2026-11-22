@@ -72,13 +72,47 @@ renderCurveChart=function(data){
  return '<div class="curve-wrap"><div id="'+id+'" style="height:480px"></div><div class="text-xs text-gray-400">'+esc(bonds.source||'Fuente sin identificar')+' · '+esc(bonds.date||'sin fecha')+' · '+esc(bonds.status==='estimated'?'Curva oficial estimada':'Rendimientos observados')+' · '+esc(bonds.methodology||'Sin interpolación propia')+'</div></div>';
 };
 
+function renderEurexRollover(history, code) {
+ const dates = Object.keys(history || {}).sort().reverse();
+ if (!code || !dates.length) return '';
+ const [latest, previous] = dates;
+ const priorRows = history[previous]?.rows || [];
+ const currentRows = history[latest].rows;
+ const key = r => r.expiration + ':' + r.type;
+ const currentKeys = new Set(currentRows.map(key));
+ const priorByKey = new Map(priorRows.map(r => [key(r), r]));
+ const rows = currentRows.concat(priorRows.filter(r => r.expiration <= latest && !currentKeys.has(key(r))));
+ rows.sort((a,b) => a.expiration.localeCompare(b.expiration) || a.type.localeCompare(b.type));
+ const total = (r, call, put) => Number.isFinite(r?.[call]) && Number.isFinite(r?.[put]) ? r[call]+r[put] : null;
+ const body = rows.map(r => {
+  const active = currentKeys.has(key(r));
+  const oi = active ? total(r,'callOpenInterest','putOpenInterest') : null;
+  const old = total(priorByKey.get(key(r)),'callOpenInterest','putOpenInterest');
+  const delta = r.expiration > latest && oi !== null && old !== null ? oi-old : null;
+  const volume = active ? total(r,'callVolume','putVolume') : null;
+  const beforeExpiry = r.expiration<=latest && dates.find(day => day<r.expiration &&
+   history[day].rows.some(item => key(item)===key(r) && total(item,'callOpenInterest','putOpenInterest')!==null));
+  const lastBefore = beforeExpiry && history[beforeExpiry].rows.find(item => key(item)===key(r));
+  const kind = ({M:'Mensual',W:'Semanal',E:'Fin de mes',Q:'Trimestral'})[r.type]||r.type;
+  return '<tr><td>'+esc(r.expiration)+' · '+esc(kind)+(r.expiration<=latest?' · vencido':'')+
+   (lastBefore?'<small class="block text-gray-400">OI previo '+fmtNum(total(lastBefore,'callOpenInterest','putOpenInterest'),0)+' · '+esc(beforeExpiry)+'</small>':'')+'</td>'+
+   '<td>'+fmtNum(old,0)+'</td><td>'+fmtNum(oi,0)+'</td><td>'+
+   (delta>0?'+':'')+fmtNum(delta,0)+'</td><td>'+fmtNum(volume,0)+'</td></tr>';
+ }).join('');
+ return '<details class="metric p-4"><summary class="cursor-pointer font-semibold">Vencimientos y rollover · Eurex '+esc(code)+'</summary>'+
+  '<p class="text-xs text-gray-400 my-3">Cierre '+esc(latest)+(previous?' · comparación con '+esc(previous):' · esperando otro cierre comparable')+
+  '. El cambio de interés abierto describe la posición agregada. El traslado efectivo entre vencimientos requiere identificar las operaciones vinculadas.</p>'+
+  '<div class="overflow-auto max-h-80"><table class="w-full text-xs"><thead><tr><th>Vencimiento</th><th>OI anterior</th><th>OI último</th><th>Variación OI</th><th>Volumen último</th></tr></thead><tbody>'+
+  body+'</tbody></table></div></details>';
+}
+
 const v7Options=renderOptionsSection;
 renderOptionsSection=function(){
  const html=v7Options(),o=macroDatabase.__options||{},m=(o.markets||[]).find(x=>x.ticker===window.__optTicker)||{},p=optionsSelectedProfile(m)||{};
  const roots=(p.gammaFlipRoots||[]).map(x=>fmtNum(x,2)).join(' · '),model=p.gammaFlipModel;
  const coverage = p.gammaFlipCoveragePct;
  const sm=p.settlementModel;
- const settlementNotice=sm?'<div class="metric p-4 border border-amber-700/60"><b>Europa · '+esc(p.contractCode||'')+' · '+(sm.status==='derived'?'modelo diario de liquidación':'modelo no disponible')+'</b><p class="text-sm text-gray-300 mt-2">'+(sm.status==='derived'?'GEX y Gamma Flip son estimaciones a fecha '+esc(p.observedAt)+', en '+esc(p.gexUnit||'EUR')+'. IV derivada de precios de liquidación, no griegas publicadas por Eurex. No son niveles intradía.':esc(sm.reason||p.gammaFlipStatus||'Faltan entradas verificables'))+'</p>'+(sm.status==='derived'?'<details class="mt-2 text-xs text-gray-400"><summary>Calidad y supuestos del cálculo</summary><p class="mt-2">'+esc(sm.method)+' · Cobertura OI '+fmtNum(sm.oiCoveragePct,1)+'% · '+sm.pairedStrikes+' pares call/put. Error de paridad '+fmtNum(sm.parityRmse,4)+' puntos. Multiplicador '+sm.multiplier+' EUR/punto.</p><p>Forward ajustado '+fmtNum(sm.forward,2)+' · descuento '+fmtNum(sm.discountFactor,6)+'. Tipos y carry implícitos en los precios; no expectativas oficiales del banco central. OI e IV por strike constantes, calls positivas y puts negativas como hipótesis; no posiciones observadas de dealers. ACT/365 por fechas; sin valoración intradía.</p></details>':'')+'</div>':'';
+ const settlementNotice=sm?'<div class="metric p-4 border border-amber-700/60"><b>Europa · '+esc(p.contractCode||'')+' · '+(sm.status==='derived'?'modelo diario de liquidación':Number.isFinite(p.ivAtm)?'IV de liquidación disponible · GEX sin dato':'modelo no disponible')+'</b><p class="text-sm text-gray-300 mt-2">'+(sm.status==='derived'?'GEX y Gamma Flip son estimaciones a fecha '+esc(p.observedAt)+', en '+esc(p.gexUnit||'EUR')+'. IV derivada de precios de liquidación, no griegas publicadas por Eurex. No son niveles intradía.':esc(sm.reason||p.gammaFlipStatus||'Faltan entradas verificables'))+'</p>'+(sm.status==='derived'?'<details class="mt-2 text-xs text-gray-400"><summary>Calidad y supuestos del cálculo</summary><p class="mt-2">'+esc(sm.method)+' · Cobertura OI '+fmtNum(sm.oiCoveragePct,1)+'% · '+sm.pairedStrikes+' pares call/put. Error de paridad '+fmtNum(sm.parityRmse,4)+' puntos. Multiplicador '+sm.multiplier+' EUR/punto.</p><p>Forward ajustado '+fmtNum(sm.forward,2)+' · descuento '+fmtNum(sm.discountFactor,6)+'. Tipos y carry implícitos en los precios; no expectativas oficiales del banco central. OI e IV por strike constantes, calls positivas y puts negativas como hipótesis; no posiciones observadas de dealers. ACT/365 por fechas; sin valoración intradía.</p></details>':'')+'</div>':'';
  const flipNote = p.gammaFlipStatus === 'Insufficient data' && Number.isFinite(coverage) && coverage < 90
   ? `<p class="text-xs text-gray-400">Gamma Flip · ${esc(p.expiration||'')}: ${fmtNum(coverage,1)}% del interés abierto con datos utilizables. Mínimo del modelo: 90%.</p>`
   : '';
@@ -88,7 +122,8 @@ renderOptionsSection=function(){
  const djx=(o.markets||[]).find(x=>x.ticker==='DJX'),rawDow=djx?.referenceIndex?.price;
  const dowValue=rawDow??(Number.isFinite(djx?.spot)?djx.spot*100:null);
  const dow=['DJX','DIA'].includes(window.__optTicker)?'<div class="metric p-4"><div class="flex flex-wrap gap-3 justify-between"><b>Dow Jones · DJIA / DJI</b><span>'+fmtNum(dowValue,2)+' puntos</span></div><p class="text-sm text-gray-400 mt-2">'+(rawDow!=null?'Precio del índice de referencia · '+esc(djx.referenceIndex.source):'Equivalente del índice calculado como DJX × 100')+' · '+esc(djx?.asOf||'sin fecha')+'</p><p class="text-xs text-gray-400 mt-2">DJX / DJXW: opciones sobre 1/100 del DJIA; multiplicador 100 USD por punto. DIA: ETF con precio y cadena propios. Los strikes y el OI se interpretan en la escala del instrumento seleccionado.</p></div>':'';
- return html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+tabs+dow+settlementNotice).replace('</div></section>',flipNote+details+'</div></section>');
+ const rollover=renderEurexRollover(o.eurexExpiryHistory?.[p.contractCode],p.contractCode);
+ return html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+tabs+dow+settlementNotice+rollover).replace('</div></section>',flipNote+details+'</div></section>');
 };
 
 const v7Dark=renderDarkPoolSection;

@@ -6,6 +6,18 @@ from v7_eurex import chain_rows, expiration_time
 from market_features import _max_pain
 
 class EurexTests(unittest.TestCase):
+    def test_archive_keeps_expiring_series_and_distinguishes_missing_from_zero(self):
+        from v7_eurex import archive_expirations
+        options = {}
+        for day, oi in [('20261119', 100), ('20261120', 0)]:
+            archive_expirations(options, 'OESX', 'https://example.invalid', day, {
+                'dataRows': [{'date': '20261120', 'contractType': 'M', 'callOpenInterest': oi}]
+            })
+        history = options['eurexExpiryHistory']['OESX']
+        self.assertEqual(history['2026-11-19']['rows'][0]['callOpenInterest'], 100)
+        self.assertEqual(history['2026-11-20']['rows'][0]['callOpenInterest'], 0)
+        self.assertIsNone(history['2026-11-20']['rows'][0]['putOpenInterest'])
+
     def test_selected_expiries_and_contract_coverage_are_recorded(self):
         import v7_eurex
         today=datetime.now(timezone.utc)
