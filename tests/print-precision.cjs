@@ -18,4 +18,11 @@ const html=ctx.v7PrintCoverage({prints:[print]},'1h');
 assert(html.includes('1 filas'));
 assert(html.includes('0 filas con precisión suficiente'));
 assert(html.includes('no implica dark pool'));
+vm.runInContext(js.slice(js.indexOf('function v7CboePrints'),js.indexOf('async function v7LoadCboePrints')),ctx);
+const columns='Trading Date Time,Publication Date Time,Trade ID,Symbol,Price,Price Currency,Price Notation,Executed Shares,Execution Venue,Market Mechanism,Modification Indicator,Deferral Or Enrichment Type';
+const trade=(id,mechanism,change='',currency='EUR')=>
+ [precise.timestamp,'2026-11-20T15:15:08Z',id,'DE0002635307',62.4,currency,'MONE',200,'BATF',mechanism,change,''].join(',');
+const trades=ctx.v7CboePrints([columns,trade('X','OB'),trade('Y','DB'),trade('Y','DB','CANC'),trade('Z','DB','','USD')].join('\n'));
+assert.equal(trades.length,1);
+assert.equal(trades[0].category,'Fuera de libro');
 console.log('Print precision: daily anchor, intraday exclusion, table retention and source classification OK');

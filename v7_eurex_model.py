@@ -86,6 +86,16 @@ def settlement_model(rows, spot, observed_day, expiration, code):
                                   'providerIv': False, 'providerGreeks': False}}
     meta = result['settlementModel']
     try:
+        if code == 'EXSA':
+            meta.update(exerciseStyle='American', multiplier=100, currency='EUR',
+                        contractUrl='https://www.eurex.com/ex-en/markets/etf-etc/eqt-idx-etfs/iShares-STOXX-Europe-600-UCITS-DE-Options-70302',
+                        dividendUrl='https://www.ishares.com/de/privatanleger/de/wissen-service/service/dividendenkalender')
+            if observed_day == '2026-11-20' and expiration.date().isoformat() in {'2026-12-18', '2027-01-15'}:
+                meta['scheduledExDate'] = '2026-12-15'
+                raise ValueError('El calendario de iShares señala el exdividendo del 15/12. '
+                                 'Falta el importe verificable a fecha de liquidación (20/11).')
+            raise ValueError('Opciones americanas sobre un ETF con distribuciones. '
+                             'Faltan el calendario y los importes verificados para valorar el ejercicio anticipado.')
         if code not in CONTRACTS:
             raise ValueError('Exercise style/model not validated for this contract')
         if not number(spot) or spot <= 0:

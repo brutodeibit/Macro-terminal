@@ -29,13 +29,27 @@ def four_hour(candles, exchange_zone):
     return result
 
 def update(feed,get):
-    for symbol,asset in feed.get('darkPoolPrints',{}).get('assets',{}).items():
+    section = feed.setdefault('darkPoolPrints', {})
+    assets = section.get('assets', {})
+    europe = section.setdefault('europePrice', {})
+    for symbol,asset in [*assets.items(), ('EXSA.DE', europe)]:
         frames=asset.setdefault('ohlcTimeframes',{})
-        for frame,period in [('1d','1y'),('1h','60d')]:
+        intervals = [('1d','3mo')] if symbol == 'EXSA.DE' else [('1d','1y'),('1h','60d')]
+        for frame,period in intervals:
             try:
-                payload=get('https://query1.finance.yahoo.com/v8/finance/chart/'+symbol,
-                            {'range':period,'interval':frame,'includePrePost':'false'}).json()
+                params = {'range':period, 'interval':frame}
+                if symbol != 'EXSA.DE':
+                    params['includePrePost'] = 'false'
+                try:
+                    payload=get('https://query1.finance.yahoo.com/v8/finance/chart/'+symbol, params).json()
+                except OSError:
+                    if symbol != 'EXSA.DE':
+                        raise
+                    payload=get('https://query2.finance.yahoo.com/v8/finance/chart/'+symbol, params).json()
                 series=(payload.get('chart',{}).get('result') or [{}])[0]
+                if symbol == 'EXSA.DE' and (series.get('meta', {}).get('symbol') != symbol
+                                           or series.get('meta', {}).get('currency') != 'EUR'):
+                    raise ValueError('Expected EXSA.DE in EUR')
                 candles=candles_from_series(series)
                 if not candles:raise ValueError('No valid OHLC')
                 zone=series.get('meta',{}).get('exchangeTimezoneName','America/New_York')

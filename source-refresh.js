@@ -4,6 +4,28 @@
   let endpoint, busy = false, timer;
   const button = document.getElementById('sourceRefreshButton');
   if (!button) return;
+  const local = ['localhost','127.0.0.1'].includes(location.hostname);
+  if (!local && !window.MACRO_REFRESH_ENDPOINT) {
+    button.title = 'Carga la última copia publicada y conserva la fecha de cada fuente.';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      setFeedStatus('Buscando la última copia publicada…', true);
+      try {
+        const loaded = await loadExternalFeed(['./macro-feed-v7.json'], false, {
+          source:'Copia publicada', signal:AbortSignal.timeout(15000)
+        });
+        const date = macroDatabase.__feedMeta?.updated;
+        if (!loaded) setFeedStatus(date && date !== '—'
+          ? 'Publicación no disponible · se conserva la copia del '+date
+          : 'Publicación no disponible · se muestran los datos integrados', false);
+      } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+      }
+    });
+    return;
+  }
   const dialog = document.createElement('dialog');
   dialog.setAttribute('aria-labelledby', 'sourceRefreshTitle');
   dialog.style.cssText = 'width:min(94vw,560px);max-height:85vh;overflow:auto;padding:24px;border:1px solid #334155;border-radius:18px;background:#0f172a;color:#e2e8f0;box-shadow:0 24px 90px #0008';
@@ -31,10 +53,9 @@
     return body;
   }
   async function connect() {
-    const local = ['localhost','127.0.0.1'].includes(location.hostname);
     // A hosted service can provide this same API later; no credentials in the page.
     const urls = window.MACRO_REFRESH_ENDPOINT ? [window.MACRO_REFRESH_ENDPOINT] :
-      local ? ['/api/refresh','http://127.0.0.1:8766/api/refresh'] : ['http://127.0.0.1:8766/api/refresh'];
+      ['/api/refresh','http://127.0.0.1:8766/api/refresh'];
     for (const url of urls) {
       try {
         const data = await request(url);

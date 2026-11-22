@@ -302,12 +302,13 @@ def official_europe_macro(feed):
 
 
 def options(feed):
-    expiry_history = feed.get('options', {}).get('eurexExpiryHistory')
+    previous = feed.get('options', {})
     preserved = copy.deepcopy([m for m in feed.get('options', {}).get('markets', [])
                                if m.get('ticker') in v7_eurex.PRODUCTS and str(m.get('source', '')).startswith('Eurex')])
     mf.update_options(feed)
-    if expiry_history:
-        feed.setdefault('options', {})['eurexExpiryHistory'] = expiry_history
+    for key in ('eurexExpiryHistory', 'dailySnapshots'):
+        if key in previous:
+            feed.setdefault('options', {})[key] = previous[key]
     markets = feed.setdefault('options', {}).setdefault('markets', [])
     tickers = {m['ticker'] for m in preserved}
     markets[:] = [m for m in markets if m.get('ticker') not in tickers] + preserved
@@ -317,6 +318,8 @@ def dark_prints(feed):
     previous = copy.deepcopy(feed.get('darkPoolPrints', {}))
     mf.update_dark_pool_prints(feed)
     current = feed.setdefault('darkPoolPrints', {})
+    if 'europePrice' in previous:
+        current['europePrice'] = previous['europePrice']
     for symbol, asset in previous.get('assets', {}).items():
         rows = [p for p in asset.get('prints', []) if p.get('sourceMode') == 'PROVIDER_REPORTED']
         if rows:
