@@ -125,7 +125,7 @@
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="manualRefresh()" title="Descarga la última publicación. No ejecuta los proveedores ni garantiza datos en tiempo real." class="text-xs bg-gray-900 border border-gray-800 text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
+                <button id="publishedRefreshButton" onclick="manualRefresh()" title="Descarga la última publicación. No ejecuta los proveedores ni garantiza datos en tiempo real." class="text-xs bg-gray-900 border border-gray-800 text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
                     <i class="fa-solid fa-rotate mr-1"></i> Cargar última publicación
                 </button>
                 <button id="sourceRefreshButton" type="button" title="Consulta las fuentes y muestra el progreso dentro del monitor." class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">Actualizar Macro Monitor</button>
@@ -2214,6 +2214,6 @@ new MutationObserver(()=>{drawFG();drawETF();}).observe(document.body,{childList
 
     <script src="./v7-ui.js?v=20261122.5"></script>
     <script src="./design-preview-v2.js?v=20261119"></script>
-    <script src="./source-refresh.js?v=20261122.3"></script>
+    <script src="./source-refresh.js?v=20261122.4"></script>
 </body>
 </html>

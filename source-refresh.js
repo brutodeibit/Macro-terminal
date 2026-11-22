@@ -24,6 +24,8 @@
         button.removeAttribute('aria-busy');
       }
     });
+    document.getElementById('publishedRefreshButton')?.remove();
+    document.getElementById('feedStatus')?.setAttribute('aria-live','polite');
     return;
   }
   const dialog = document.createElement('dialog');
