@@ -296,6 +296,11 @@ def release_calendar(feed):
     update(feed, mf.get)
 
 
+def official_europe_macro(feed):
+    from v7_official_macro import update
+    update(feed, mf.get)
+
+
 def options(feed):
     preserved = copy.deepcopy([m for m in feed.get('options', {}).get('markets', [])
                                if m.get('ticker') in v7_eurex.PRODUCTS and str(m.get('source', '')).startswith('Eurex')])
@@ -327,6 +332,7 @@ JOBS = {
  'ETF':(etf_flows, 6), 'MEETINGS':(meetings, 2),
  'CALENDAR':(calendar, 24), 'ECONOMIC_CALENDAR':(legacy.update_te, 6), 'RELEASE_CALENDAR':(release_calendar, 6),
  'MACRO':(legacy.update_us, 6), 'FX':(mf.update_fx, 1),
+ 'EUROSTAT':(official_europe_macro, 24),
  'SQUAWK':(mf.update_squawkflow, 2),
  'OPTIONS':(options, 2), 'CRYPTO':(mf.update_crypto_sentiment, 6),
  'EUREX':(v7_eurex.update, 2),

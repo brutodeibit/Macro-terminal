@@ -11,6 +11,7 @@ on:
       - "source-refresh.js"
       - "tests/dashboard-runtime.cjs"
       - "tests/chart-config.cjs"
+      - "tests/print-precision.cjs"
   pull_request:
     branches: [main]
     paths:
@@ -22,6 +23,7 @@ on:
       - "source-refresh.js"
       - "tests/dashboard-runtime.cjs"
       - "tests/chart-config.cjs"
+      - "tests/print-precision.cjs"
 permissions:
   contents: read
 jobs:
@@ -37,3 +39,4 @@ jobs:
       - run: node --check source-refresh.js
       - run: node tests/dashboard-runtime.cjs
       - run: node tests/chart-config.cjs
+      - run: node tests/print-precision.cjs

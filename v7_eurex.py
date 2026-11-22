@@ -1,4 +1,4 @@
-"""Official delayed Eurex OI chains. Settlement prices are not live quotes or IV."""
+"""Official Eurex OI chains; separately labelled settlement-derived scenarios."""
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import json
@@ -46,6 +46,8 @@ def update(feed):
             overview=mf.get(url,{'busdate':date,'filtertype':'overview'}).json()
             if overview.get('meta',{}).get('productCode')!=code:raise ValueError('Wrong Eurex product')
             spot=overview['header']['underlyingClosingPrice'];profiles=[];selected=set()
+            if not isinstance(spot,(int,float)) or not math.isfinite(spot) or spot<=0:
+                raise ValueError('No positive same-date underlying closing price')
             for expiry in sorted(overview.get('dataRows',[]),key=lambda x:x['date']):
                 exp=expiration_time(expiry['date'],code)
                 days=(exp.date()-now.date()).days
@@ -63,19 +65,34 @@ def update(feed):
                     z=strikes.setdefault(r['strike'],dict(strike=r['strike'],gex=None,callOi=0,putOi=0,callVolume=0,putVolume=0))
                     side='call' if r['type']=='C' else 'put'
                     z[side+'Oi']+=r['openInterest'];z[side+'Volume']+=r['volume']
-                p.update(bucket=bucket,expirationAt=exp.isoformat(),strikeMap=sorted(strikes.values(),key=lambda x:x['strike']),
+                p.update(bucket=bucket,expirationAt=exp.isoformat(),underlyingClose=spot,strikeMap=sorted(strikes.values(),key=lambda x:x['strike']),
                          source='Eurex · '+code,sourceUrl=url,sourceWindow='Official OI/volume by strike; settlement prices, no IV/Greeks supplied.',
                          gammaFlip=None,gammaFlipStatus='No IV/Greeks in official statistics',
                          oiCoveragePct=100*len(rows)/max(1,len(detail.get('dataRowsCall',[]))+len(detail.get('dataRowsPut',[]))),
                          observedAt=datetime.strptime(date,'%Y%m%d').date().isoformat(),fetchedAt=now.isoformat(),
                          dataStatus='REAL / DELAYED · Eurex OI and volume',contractCode=code)
+                from v7_eurex_model import settlement_model
+                modeled = settlement_model(rows, spot, p['observedAt'], exp, code)
+                p.update(modeled)
+                if modeled['settlementModel']['status'] == 'derived':
+                    p['sourceWindow'] = ('Official daily OI/volume. IV, Greeks, GEX and Gamma Flip modeled '
+                                         'from settlement prices and fitted same-expiry carry; not live quotes.')
+                    p['dataStatus'] = 'OBSERVED OI + MODELED DAILY SETTLEMENT ANALYTICS'
                 profiles.append(p);selected.add(bucket)
             if not profiles:raise ValueError('No unexpired chains')
             prior=next((m for m in markets if m.get('ticker')==ticker),{})
+            expiry_coverage = {**prior.get('expiryCoverage', {}), code: {
+                'observedAt': datetime.strptime(date,'%Y%m%d').date().isoformat(),
+                'availableExpirations': sorted({row['date'] for row in overview.get('dataRows', [])
+                    if expiration_time(row['date'],code)>now and (expiration_time(row['date'],code).date()-now.date()).days <= 90}),
+                'selectedExpirations': [p['expiration'] for p in profiles],
+                'method':'One expiry per time bucket, up to 90 calendar days. Contract families remain separate.'}}
             profiles = [p for p in prior.get('profiles',[]) if p.get('contractCode') and p['contractCode'] != code] + profiles
             entry={**prior,'ticker':ticker,'name':prior.get('name',ticker),'spot':spot,'referenceOnly':False,
                    'profiles':profiles,'source':'Eurex · '+code,'sourceUrl':page,'asOf':datetime.strptime(date,'%Y%m%d').date().isoformat(),
-                   'dataStatus':'REAL / DELAYED · official Eurex chains','method':'Observed OI and volume; Max Pain calculated. GEX unavailable without verified IV/Greeks.'}
+                   'expiryCoverage':expiry_coverage,
+                   'dataStatus':'REAL / DELAYED · official Eurex chains',
+                   'method':'Observed OI/volume and calculated Max Pain. Validated European index profiles may include explicitly modeled settlement IV/GEX/Gamma Flip; see per-expiry coverage and assumptions.'}
             markets[:]=[m for m in markets if m.get('ticker')!=ticker]+[entry]
             feed.setdefault('sourceWarnings',{}).pop('EUREX_'+code,None)
         except Exception as exc:

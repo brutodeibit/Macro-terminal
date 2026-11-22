@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GROUPS = {
     'options': ['SQUAWK', 'OPTIONS', 'EUREX'],
     'dark': ['DARK_POOLS', 'DARK_PRINTS', 'INFOLIB_PRINTS', 'OHLC'],
-    'macro': ['MEETINGS', 'MACRO', 'ECONOMIC_CALENDAR', 'RELEASE_CALENDAR',
+    'macro': ['MEETINGS', 'MACRO', 'EUROSTAT', 'ECONOMIC_CALENDAR', 'RELEASE_CALENDAR',
               'FX', 'RISK', 'TREASURY', 'CURVES', 'CANADA_CURVE', 'ECB_CURVE',
               'CANADA_LONG_CURVE', 'JAPAN_CURVE', 'AUSTRALIA_CURVE',
               'SWISS_CURVE', 'GERMANY_CURVE'],

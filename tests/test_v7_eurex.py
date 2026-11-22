@@ -1,9 +1,34 @@
 import unittest
-from datetime import datetime, timezone
+import json
+from unittest.mock import patch, Mock
+from datetime import datetime, timezone, timedelta
 from v7_eurex import chain_rows, expiration_time
 from market_features import _max_pain
 
 class EurexTests(unittest.TestCase):
+    def test_selected_expiries_and_contract_coverage_are_recorded(self):
+        import v7_eurex
+        today=datetime.now(timezone.utc)
+        busdate=(today-timedelta(days=2)).strftime('%Y%m%d')
+        dates=[(today+timedelta(days=d)).strftime('%Y%m%d') for d in (10,40)]
+        def get(url, params=None):
+            if params is None:
+                cfg=json.dumps({'productId':'test','busDate':busdate})
+                return Mock(text='<script data-product="true">'+cfg+'</script>')
+            if params['filtertype']=='overview':
+                return Mock(json=lambda:{'meta':{'productCode':'OESX'},'header':{'underlyingClosingPrice':100},
+                         'dataRows':[{'date':day,'contractType':'M'} for day in dates]})
+            return Mock(json=lambda:{'meta':{'productCode':'OESX'},'dataRowsCall':[{'strike':100,'openInterest':10}],
+                                     'dataRowsPut':[{'strike':100,'openInterest':20}]})
+        feed={'options':{'markets':[]}}
+        with patch.object(v7_eurex,'PRODUCTS',{'SX5E':('OESX','https://example.invalid')}), patch.object(v7_eurex,'DAILY_PRODUCTS',{}),patch('market_features.get',side_effect=get):
+            v7_eurex.update(feed)
+        market=feed['options']['markets'][0]
+        self.assertEqual(market['expiryCoverage']['OESX']['availableExpirations'],dates)
+        self.assertEqual(len(market['expiryCoverage']['OESX']['selectedExpirations']),2)
+        self.assertTrue(all(p['underlyingClose']==100 for p in market['profiles']))
+        self.assertTrue(all(p['gammaFlip'] is None for p in market['profiles']))
+
     def test_contract_cutoffs_and_daylight_saving(self):
         self.assertEqual(expiration_time('20261120','ODAX').hour,12)
         self.assertEqual(expiration_time('20260619','ODAX').hour,11)
