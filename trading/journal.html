@@ -1,0 +1,829 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Journal de Trading · productos y parciales v4</title><style>:root{color-scheme:dark;--bg:#0b111a;--panel:#141e2a;--line:#283746;--text:#edf3f7;--muted:#9babba;--green:#83e6bd;--red:#ff9f9f}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#153b38 0,transparent 38%),var(--bg);color:var(--text);font:15px system-ui,sans-serif}header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 5%;border-bottom:1px solid var(--line)}.brand{display:flex;gap:12px;color:var(--green);font-size:22px;font-weight:800;letter-spacing:1px;text-decoration:none}.brand small{display:block;font-size:9px;color:var(--muted);margin-top:5px}nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}a{color:var(--green)}main{max-width:1440px;margin:auto;padding:24px 5% 70px}.hero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:28px 0}.eyebrow{font-size:10px;color:var(--green);letter-spacing:2px;font-weight:700}h1{font-size:clamp(34px,5vw,60px);letter-spacing:-2px;line-height:1.06;margin:16px 0}h1 span{color:var(--green)}p{color:var(--muted);line-height:1.6}h2{font-size:18px;margin:0 0 18px}h3{font-size:15px}.notice{border:1px solid #36554e;background:#16302988;border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.5;color:#bdded3}.filters,.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.filters{grid-template-columns:repeat(7,minmax(0,1fr));margin:24px 0}label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--muted)}input,select,textarea{width:100%;min-width:0;background:#0e1721;color:var(--text);border:1px solid #344657;padding:11px;border-radius:8px;font:inherit;font-size:14px}textarea{min-height:75px;resize:vertical}input:focus,select:focus,textarea:focus{outline:2px solid var(--green)}button,.button{cursor:pointer;background:#1e2d3b;color:var(--text);border:1px solid #3b4c5c;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none}.primary{background:var(--green);color:#11271e;border:0;padding:14px 20px}.danger{color:var(--red)}.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:24px 0}.metric,.panel{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:22px}.metric small{display:block;color:var(--muted);font-size:11px;margin-bottom:12px}.metric b{font-size:25px;font-weight:600}.overview{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:20px}.panel{margin-bottom:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:12px}.section-title h2{margin:0}.section-title span,.muted,.hint{color:var(--muted);font-size:11px;line-height:1.7}.table-scroll{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;white-space:nowrap}th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}th,td{padding:16px 12px;border-bottom:1px solid var(--line)}td{font-size:13px}td small{display:block;color:var(--muted);font-size:10px;margin-top:4px}.up{color:var(--green)}.down{color:var(--red)}.pill{border-radius:30px;background:#243746;padding:5px 10px;font-size:10px}.empty{text-align:center;padding:45px;color:var(--muted);line-height:2}dialog{width:min(1100px,95vw);max-height:92vh;border:1px solid #435966;border-radius:16px;background:var(--panel);color:var(--text);padding:26px}dialog::backdrop{background:#02070ce0;backdrop-filter:blur(5px)}.leg{margin:14px 0;border:1px solid var(--line);padding:18px;border-radius:10px}.leg .form-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.leg h4{margin:0 0 12px}details{margin:22px 0}summary{cursor:pointer;margin-bottom:16px;font-weight:600}form>label{margin:14px 0}footer{display:flex;justify-content:space-between;margin-top:22px}.check{flex-direction:row;align-items:center}.check input{width:auto}#message:not(:empty),#formError:not(:empty){margin:16px 0;padding:12px;background:#413125;color:#ffdaa5;border-radius:8px}#fieldList>div{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid var(--line)}#settings{max-width:500px}#fieldForm{display:grid;gap:12px;margin:20px 0}#chart svg{width:100%;height:160px}.insight{border-bottom:1px solid var(--line);padding:13px 0;font-size:13px}.insight b{float:right} @media(max-width:900px){.filters{grid-template-columns:repeat(3,1fr)}.metrics{grid-template-columns:repeat(3,1fr)}.overview{grid-template-columns:1fr}.form-grid,.leg .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}header{flex-wrap:wrap}}@media(max-width:520px){main{padding:16px}header{padding:16px}.hero{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:repeat(2,1fr)}.metric{padding:16px}.metric b{font-size:22px}dialog{padding:16px}.panel{padding:16px}nav a{display:inline-block}}
+.subrow td{background:#101b26;border-bottom:1px solid #243240;padding-top:9px;padding-bottom:9px;font-size:12px}.subrow td:first-child{padding-left:30px}.subrow .muted{font-size:11px}.history-toggle{padding:5px 9px;margin-right:7px}.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.cal-day{min-height:70px;border:1px solid #344657;border-radius:9px;background:#101a25;padding:9px;text-align:left}.cal-day.win{background:#16392e}.cal-day.loss{background:#42252a}.cal-day.be{background:#2b3440}.cal-day b{display:block}.cal-day span{font-size:11px}.cal-day:disabled{opacity:.35;cursor:default}.cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.cal-toolbar button{padding:7px 12px}.cal-detail{margin-top:12px;font-size:12px;color:var(--muted)}@media(max-width:520px){.cal-grid{gap:3px}.cal-day{padding:4px;min-height:57px}.cal-day span{font-size:9px}}
+
+.exit,.stop-move{border-left:3px solid var(--green);padding:14px;margin:12px 0;background:#0e1721;border-radius:6px}.option-leg{border-left:3px solid #c8a7ff}.leg-summary{font-weight:600}.insight{overflow:auto}.subrow td{white-space:normal;min-width:110px}#navigationDialog{max-width:640px}#navigationForm{display:grid;gap:14px}#option-fields[hidden]{display:none}.product-summary{border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0}.product-summary summary{margin:0}.product-summary[open] summary{margin-bottom:12px}
+</style><style>
+#cloudAccess{padding:1rem;max-width:62rem;margin:auto}
+#cloudLogin{max-width:24rem;display:grid;gap:.75rem}
+#cloudLogin[hidden],#cloudApp[hidden]{display:none}
+</style><script src="cloud-config.js"></script></head><body><section id="cloudAccess"><p><a href="./">Atlas y Journal</a></p>
+<h1>Trading Journal privado</h1>
+<form id="cloudLogin"><label>Correo<input id="cloudEmail" type="email" autocomplete="username" required></label>
+<label>Contraseña<input id="cloudPassword" type="password" autocomplete="current-password" required></label>
+<button class="primary" type="submit">Entrar</button></form>
+<p id="cloudStatus" role="status">Inicia sesión para continuar.</p></section>
+<div id="cloudApp" hidden><section class="panel"><button id="cloudReload" type="button">Actualizar</button>
+<button id="cloudExit" type="button">Cerrar sesión</button><p id="cloudUsage"></p><p id="cloudWarning" role="status"></p>
+<details><summary>Archivar operaciones cerradas</summary><p>Exporta primero una copia completa. Guárdala en tu nube privada y selecciona aquí ese mismo JSON. Las fichas abiertas y pendientes quedan fuera del archivo.</p>
+<form id="cloudArchive"><label>Retirar cerradas hasta <input id="cloudArchiveCut" type="date" required></label>
+<label>Copia JSON guardada <input id="cloudArchiveFile" type="file" accept="application/json,.json" required></label>
+<button type="submit">Verificar copia y revisar retirada</button></form></details></section>
+<header><a class="brand" href="./">◈ <span>JOURNAL DE TRADING<small>PRODUCTOS Y PARCIALES V4 · REGISTRO LOCAL</small></span></a><nav><a class="button" id="atlasLink" target="_blank" rel="noopener">Atlas ↗</a><a class="button" id="macroLink" target="_blank" rel="noopener">Macro Monitor ↗</a><button id="navigationSettings">Configurar accesos</button><button id="export">Copia JSON</button><button id="csv">CSV</button><label class="button">Restaurar<input id="import" type="file" accept="application/json" hidden></label></nav></header>
+<main><div class="hero"><div><div class="eyebrow">TU PROCESO, OPERACIÓN A OPERACIÓN</div><h1>Menos ruido.<br><span>Más criterio.</span></h1><p>Registra, revisa y descubre qué setups funcionan en tu muestra.</p></div><button class="primary" id="new">＋ Registrar operación</button></div><section class="panel" id="opportunityPanel" hidden><h2>Pendientes y descartadas</h2><div id="opportunities"></div></section>
+<div class="notice">Journal v4: registra CFD, futuros y spot, además de opciones en demo, backtest o real. Conserva entradas, patas y cierres parciales. Importa tu copia JSON anterior al cambiar de archivo o dispositivo.</div><div id="message" role="status" aria-live="polite"></div>
+<section class="filters"><label>Producto<select id="productFilter"><option value="derivative" selected>CFD / futuro / spot</option><option value="option">Opciones</option><option value="">Todos (resumen separado abajo)</option></select></label><label>Registro<select id="mode"><option value="real">Real</option><option value="demo">Demo</option><option value="backtest">Backtest</option></select></label><label>Moneda<select id="currency"><option>EUR</option><option>USD</option><option>USDT</option></select></label><label>Activo<input id="assetFilter" placeholder="Todos los activos"></label><label>Setup<input id="setupFilter" placeholder="Todos los setups"></label><label>Dirección<select id="directionFilter"><option value="">Todas</option><option value="long">Long / alcista</option><option value="short">Short / bajista</option><option value="neutral">Neutral</option></select></label><label>Desde<input id="fromFilter" type="date"></label><label>Hasta<input id="toFilter" type="date"></label></section>
+<section id="metrics" class="metrics"></section><section class="overview"><article class="panel"><div class="section-title"><h2>Resultado acumulado</h2><span>NETO · POR IDEA CERRADA</span></div><div id="chart"></div><p class="muted">Solo ideas completamente cerradas. R = neto / suma de riesgos iniciales de las entradas. Los parciales no multiplican ese riesgo. El drawdown de cierres no es el de equity de la cuenta. Los costes no confirmados hacen provisionales los resultados.</p></article><article class="panel"><h2>Lo que dice tu muestra</h2><div id="insights"></div></article></section>
+<section class="panel"><div class="section-title"><h2>Historial de operaciones</h2><button id="fields">⚙ Mis parámetros</button></div><div class="table-scroll"><table><thead><tr><th>Fecha / activo</th><th>Setup</th><th>Lado</th><th>Entradas</th><th>Resultado</th><th>R</th><th>Revisión</th><th></th></tr></thead><tbody id="history"></tbody></table></div><div id="empty" class="empty">Tu historial empieza aquí.<br><small>Añade una operación real, demo o de backtest. Las estadísticas se calculan con tus registros.</small></div></section>
+<section class="panel"><div class="section-title"><h2>Calendario de resultados</h2><span>PARCIALES Y COSTES · FECHA LOCAL REGISTRADA</span></div><div class="cal-toolbar"><button id="calPrev" type="button">‹ Mes anterior</button><strong id="calTitle"></strong><button id="calNext" type="button">Mes siguiente ›</button></div><div id="calendar" class="cal-grid"></div><div id="calDetail" class="cal-detail">Selecciona un día para consultar sus operaciones.</div></section>
+<section class="panel"><h2>Consistencia de ejecución</h2><p class="muted">Solo operaciones cerradas, en el modo y moneda filtrados. Comparaciones descriptivas, no causales; «sin clasificar» se excluye de cada agrupación.</p><div id="consistency"></div></section>
+<section class="panel"><h2>Resumen por producto</h2><div id="productStats"></div></section><section class="panel"><details><summary>Comparar dos casos del historial filtrado</summary><div class="form-grid"><label>Primer caso<select id="compareFirst"></select></label><label>Segundo caso<select id="compareSecond"></select></label></div><div class="form-grid" id="comparison"></div></details></section><section class="panel"><h2>Resultados por setup</h2><div id="setups"></div><p class="muted">Las muestras pequeñas son descriptivas: no demuestran una ventaja. Backtest, demo y real se analizan por separado.</p></section>
+</main>
+<dialog id="editor"><form id="tradeForm"><div class="section-title"><div><span class="eyebrow">REGISTRO MANUAL</span><h2 id="editorTitle">Nueva operación</h2></div><button type="button" id="close">Cerrar ✕</button></div><div class="form-grid">
+<label>Producto<select name="product"><option value="derivative">CFD / futuro / spot</option><option value="option">Opción / estrategia de opciones</option></select></label><label>Activo o subyacente *<input name="asset" required placeholder="WTI, Brent, BTCUSDT, XAUUSD, NQ, AAPL…" maxlength="60"></label><label>Setup *<input name="setup" required list="setupList" placeholder="Spring + recuperación" maxlength="100"><datalist id="setupList"></datalist></label><label>Dirección o sesgo<select name="direction"><option value="long">Long / alcista ↗</option><option value="short">Short / bajista ↘</option><option value="neutral">Neutral</option></select></label><label>Tipo<select name="mode"><option value="real">Real</option><option value="demo">Demo</option><option value="backtest">Backtest</option></select></label><label>Moneda del resultado<select name="currency"><option>EUR</option><option>USD</option><option>USDT</option></select></label><label>Valor monetario por punto, prima o unidad *<input name="multiplier" type="number" min="0.00000001" step="any" value="1" required></label><label>Cobertura de costes<select name="costQuality"><option value="">Desconocida</option><option value="parcial">Parcial</option><option value="completo">Completa: precios y cargos revisados</option></select></label><label>Temporalidad<input name="timeframe" placeholder="M5, M15, H1…"></label><label>Sesión<select name="session"><option value="">Sin registrar</option><option>Asia</option><option>Londres</option><option>Premercado USA</option><option>Nueva York</option><option>Swing / otra</option></select></label><label>Versión del setup<input name="setupVersion" value="1"></label><label>Zona horaria registrada<input name="timezone" readonly></label></div><div id="option-fields" class="form-grid"><label>Estructura de opciones<input name="optionStructure" placeholder="Call, put, vertical, straddle…"></label><label>Riesgo máximo planificado *<input name="plannedRisk" type="number" min="0" step="any" placeholder="En la moneda del resultado"></label><label>Fuente / plataforma<input name="optionPlatform" placeholder="BlackBull Invest, demo…"></label><label>Notas de volatilidad<input name="volatilityNote" placeholder="IV, entorno, evento…"></label></div>
+<p class="hint">El tamaño se expresa en unidades o contratos. Valor por punto convierte 1 punto × 1 unidad a tu moneda. Ej.: NQ estándar = 20 USD; comprueba las especificaciones de tu instrumento. El precio del activo puede estar en USD aunque tu cuenta esté en EUR: ajusta el multiplicador con la conversión correspondiente, pues NO existe conversión automática. Registra la cantidad inicial una sola vez. Añade debajo todas sus salidas parciales; cada porcentaje se refiere a ESA cantidad inicial, no al saldo restante. No dupliques entradas para hacer parciales nuevos. Los costes de entrada se descuentan al abrir y los de cada salida al cerrar; si ya están en el precio no vuelvas a sumarlos.</p>
+<div class="section-title"><h3>Entradas, reentradas y salidas</h3><button type="button" id="addLeg">＋ Añadir entrada / reentrada</button></div><div id="legs"></div><div id="live" class="notice"></div><p class="hint">Realizado = resultado de salidas menos costes de entrada y salida. No es beneficio garantizado: la posición restante puede perder. El porcentaje se calcula por entrada; con reentradas, cada una tiene su base.</p>
+<details><summary>Plan e invalidaciones (opcional)</summary><p class="hint">Diario = contexto, 1H = tesis, 5M = ejecución. No es obligatorio rellenar todas las temporalidades. 3M/15M y semanal/mensual son alternativas.</p><div class="form-grid"><label>ID estrategia (Atlas)<input name="strategyId" placeholder="Ej. WYCKOFF-CONT"></label><label>ID setup compartido<input name="setupId" placeholder="Ej. SPRING-RECOVERY"></label><label>Temporalidad contexto<input name="contextTf" value="D" placeholder="D, W, M"></label><label>Temporalidad tesis<input name="thesisTf" value="1H" placeholder="1H"></label><label>Temporalidad ejecución<input name="executionTf" value="5M" placeholder="5M, 3M, 15M"></label><label>Régimen de mercado<input name="marketRegime" placeholder="Tendencia, rango, alta volatilidad…"></label><label>Resultado de tesis<select name="thesisOutcome"><option value="">Sin evaluar</option><option value="vigente">Vigente</option><option value="confirmada">Confirmada</option><option value="invalidada">Invalidada</option><option value="indeterminada">Indeterminada</option></select></label></div><label>Invalidación estructural (tesis 1H)<textarea name="structuralInvalidation" placeholder="Qué precio/estructura invalida la hipótesis, independientemente del resultado monetario"></textarea></label><label>Invalidación táctica (ejecución 5M)<textarea name="tacticalInvalidation" placeholder="Qué invalida esta entrada o reentrada sin invalidar necesariamente la tesis"></textarea></label></details><details><summary>Tesis y proceso de decisión (opcional)</summary><label>Tesis previa<textarea name="preTradeThesis" placeholder="Contexto y escenario esperado"></textarea></label><label>Condición del mercado<input name="marketCondition" placeholder="Tendencia, rango, volatilidad, noticia…"></label><label>Sesgo previo<input name="bias" placeholder="Alcista, bajista, neutral…"></label><label>Motivo de entrada<textarea name="entryReasoning" placeholder="Confirmaciones y criterios"></textarea></label><label>Gestión de la operación<textarea name="tradeManagement" placeholder="Parciales, movimientos del SL, decisiones"></textarea></label><label>Motivo de salida<textarea name="exitReasoning" placeholder="Qué desencadenó la salida"></textarea></label></details><details open><summary>Revisión rápida</summary><div class="form-grid"><label>¿Setup válido?<select name="valid"><option value="">Sin revisar</option><option>Sí</option><option>No</option><option>Dudoso</option></select></label><label>¿Volverías a entrar?<select name="again"><option value="">Sin revisar</option><option>Sí</option><option>No</option><option>Con ajustes</option></select></label><label>Entrada<select name="timing"><option value="">Sin revisar</option><option>Correcta</option><option>Temprana</option><option>Tardía</option><option>Sin señal</option></select></label><label>Emoción<select name="emotion"><option value="">Sin registrar</option><option>Calma</option><option>Confianza</option><option>Miedo</option><option>FOMO</option><option>Frustración</option><option>Impaciencia</option><option>Euforia</option></select></label></div><div class="form-grid"><label>Tipo de entrada<select name="entryType"><option value="">Sin clasificar</option><option value="anticipada">Anticipada</option><option value="confirmada">Confirmada</option><option value="retroceso">Retroceso</option><option value="persecucion">Persecución del precio</option></select></label><label>Motivo de salida<select name="exitType"><option value="">Sin clasificar</option><option value="objetivo">Objetivo</option><option value="stop">Stop</option><option value="invalidacion">Invalidación del setup / tesis</option><option value="discrecional">Cierre discrecional</option><option value="miedo">Miedo</option><option value="contexto">Cambio de contexto sin invalidación</option></select></label><label>Gestión<select name="planCompliance"><option value="">Sin evaluar</option><option value="plan">Conforme al plan</option><option value="modificada">Fuera del plan</option></select><small>Una salida por invalidación sigue el plan si ese criterio ya estaba previsto.</small></label><label>Emoción previa<select name="emotionBefore"><option value="">Sin registrar</option><option>Calma</option><option>Confianza</option><option>Miedo</option><option>FOMO</option><option>Impaciencia</option><option>Frustración</option></select></label><label>Emoción durante<select name="emotionDuring"><option value="">Sin registrar</option><option>Calma</option><option>Confianza</option><option>Miedo</option><option>FOMO</option><option>Impaciencia</option><option>Frustración</option></select></label><label>Emoción posterior<select name="emotionAfter"><option value="">Sin registrar</option><option>Calma</option><option>Confianza</option><option>Miedo</option><option>FOMO</option><option>Frustración</option></select></label></div><label>Motivo de intervención anticipada (opcional)<input name="interventionReason" placeholder="Miedo a devolver beneficio, ruptura sin confirmar…"></label><label>Posible fallo / qué repetirías<textarea name="lesson" placeholder="Entrada correcta; stop demasiado ajustado…"></textarea></label><label>Otras observaciones<textarea name="notes" placeholder="Contexto, noticias, lectura de precio…"></textarea></label><label>Enlace a captura o gráfico<input name="screenshot" type="url" placeholder="https://…"></label></details><details><summary>Clasificación y revisión de la decisión</summary>
+<div class="form-grid"><label>Dirección de la tesis superior<select name="higherBias"><option value="">Sin registrar</option><option value="bullish">Alcista</option><option value="bearish">Bajista</option><option value="neutral">Neutral</option><option value="unknown">Indeterminada</option></select></label><label>Alineación<select name="alignment"><option value="">Sin registrar</option><option value="trend">Protendencia</option><option value="countertrend">Contratendencia</option><option value="range">Lateral</option><option value="unknown">Indeterminada</option></select></label><label>Tipo de oportunidad<select name="opportunityType"><option value="">Sin registrar</option><option value="continuation">Continuación</option><option value="reversal">Reversión</option><option value="range">Dentro de rango</option><option value="other">Otra</option></select></label><label>Origen del régimen<select name="regimeSource"><option value="">Sin registrar</option><option value="observed">Observado mediante reglas</option><option value="model">Estimado por modelo</option><option value="unavailable">No disponible</option></select></label></div>
+<div class="form-grid"><label>Gatillo observado<input name="entryTrigger"></label><label>Ubicación e invalidación observadas<input name="locationQuality"></label></div>
+<div class="form-grid"><label>Calidad de la decisión<select name="reviewDecision"><option value="">Sin registrar</option><option value="pending">Pendiente o indeterminada</option><option value="valid">Decisión válida</option><option value="errors">Decisión con errores</option></select></label>
+<label>Error de análisis<select name="errorAnalysis"><option value="">Sin señalar</option><option value="yes">Identificado</option></select></label><label>Error de ejecución<select name="errorExecution"><option value="">Sin señalar</option><option value="yes">Identificado</option></select></label><label>Error de gestión<select name="errorManagement"><option value="">Sin señalar</option><option value="yes">Identificado</option></select></label></div>
+<label>Conclusiones posteriores y causas<textarea name="reviewConclusions"></textarea></label><label>Acción de mejora<textarea name="reviewAction"></textarea></label>
+</details><details><summary>Capturas del setup</summary><p class="hint">PNG, JPEG o WebP. Hasta 200 KB por captura. Las imágenes se incluyen en la copia JSON.</p>
+<div class="form-grid"><div><label>Contexto 1H<input type="file" accept="image/png,image/jpeg,image/webp" data-chart-file="chart1h"></label><input type="hidden" name="chart1h"><label>Nota<input name="chart1hNote"></label><output id="chart1hStatus"></output> <button type="button" data-chart-clear="chart1h">Quitar captura</button></div><div><label>Gatillo 5M<input type="file" accept="image/png,image/jpeg,image/webp" data-chart-file="chart5m"></label><input type="hidden" name="chart5m"><label>Nota<input name="chart5mNote"></label><output id="chart5mStatus"></output> <button type="button" data-chart-clear="chart5m">Quitar captura</button></div></div></details>
+<div id="customValues"></div><div id="formError" role="alert"></div><footer><button type="button" id="delete" class="danger">Eliminar</button><button type="button" id="savePending">Guardar pendiente</button><button type="button" id="saveDiscarded">Guardar descartada</button><button class="primary" type="submit">Guardar operación</button></footer></form></dialog>
+<dialog id="settings"><h2>Mis parámetros</h2><p>Añade datos que te resulten útiles. Ocultar un campo conserva sus valores.</p><div id="fieldList"></div><form id="fieldForm"><label>Nombre<input name="label" required maxlength="60" placeholder="Régimen, noticias, calidad…"></label><label>Tipo<select name="type"><option value="text">Texto</option><option value="number">Número</option><option value="date">Fecha</option><option value="boolean">Sí / no</option></select></label><label class="check"><input name="important" type="checkbox"> Destacar como importante</label><button class="primary">Añadir parámetro</button></form><button id="closeSettings">Cerrar</button></dialog>
+<dialog id="navigationDialog"><h2>Accesos a tus herramientas</h2><p>Abren otra pestaña. No sincronizan ni duplican registros. Si mueves el archivo o lo abres en el móvil, configura las direcciones disponibles en ese dispositivo.</p><form id="navigationForm"><label>Atlas<input id="link-atlas" required></label><label>Macro Monitor<input id="link-macro" required></label><div id="navigationError" role="alert"></div><button type="submit">Guardar accesos</button><button id="navigationClose" type="button">Cerrar</button></form></dialog></div><script>'use strict';
+// Embedded in the portable HTML by build.cjs. No broker, network or DOM.
+(function(root){
+const num=v=>v===''||v==null||!['number','string'].includes(typeof v)?null:(Number.isFinite(Number(v))?Number(v):null);
+const instant=(row,key)=>Date.parse(row[key+'Instant']||row[key]);
+const localDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(s)&&(()=>{const d=new Date(s.slice(0,10)+'T00:00Z');return Number.isFinite(+d)&&d.toISOString().slice(0,10)===s.slice(0,10);})();
+const productOf=t=>t.product||'derivative';
+const isoDay=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&(()=>{const d=new Date(s+'T00:00Z');return Number.isFinite(+d)&&d.toISOString().slice(0,10)===s;})();
+const decisionChoices={
+ higherBias:{bullish:'Alcista',bearish:'Bajista',neutral:'Neutral',unknown:'Indeterminada'},
+ alignment:{trend:'Protendencia',countertrend:'Contratendencia',range:'Lateral',unknown:'Indeterminada'},
+ opportunityType:{continuation:'Continuación',reversal:'Reversión',range:'Dentro de rango',other:'Otra'},
+ regimeSource:{observed:'Observado mediante reglas',model:'Estimado por modelo',unavailable:'No disponible'},
+ reviewDecision:{pending:'Pendiente o indeterminada',valid:'Decisión válida',errors:'Decisión con errores'},
+ stopMoveKind:{be:'Break-even de precio',profit:'Stop en beneficios',other:'Otro ajuste'}
+};
+const thesisKeys=['preTradeThesis','marketCondition','bias','higherBias','alignment','opportunityType','setup','setupId',
+ 'setupVersion','entryReasoning','structuralInvalidation','tacticalInvalidation','entryTrigger','locationQuality'];
+const jsonValue=(text,fallback)=>text?JSON.parse(text):fallback;
+const imageValid=value=>typeof value==='string'&&value.length<=275000&&
+ /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+function reviewErrors(t){
+ const errors=[];
+ for(const [key,choices] of Object.entries(decisionChoices)){
+  if(key==='stopMoveKind')continue;
+  if(t[key]!=null&&t[key]!==''&&!Object.hasOwn(choices,t[key]))errors.push('Clasificación inválida: '+key);
+ }
+ if(t.reviewDecision==='valid'&&['errorAnalysis','errorExecution','errorManagement'].some(k=>t[k]==='yes'))
+  errors.push('Selecciona decisión con errores para registrar errores identificados.');
+ for(const key of ['errorAnalysis','errorExecution','errorManagement'])
+  if(t[key]!=null&&t[key]!==''&&t[key]!=='yes')errors.push('Indicador de error inválido');
+ for(const key of ['chart1h','chart5m'])if(t[key]&&!imageValid(t[key]))errors.push('Captura inválida o demasiado grande');
+ try{
+  const original=jsonValue(t.originalThesis,{}),log=jsonValue(t.revisionLog,[]);
+  if(!original||typeof original!=='object'||Array.isArray(original)||
+     Object.entries(original).some(([k,v])=>!thesisKeys.includes(k)||!['string','number'].includes(typeof v)))
+   throw Error();
+  if(!Array.isArray(log)||log.some(x=>!x||typeof x.at!=='string'||!Number.isFinite(Date.parse(x.at))||
+     !Array.isArray(x.fields)||x.fields.some(k=>typeof k!=='string')))throw Error();
+ }catch{errors.push('Historial de revisión inválido');}
+ return errors;
+}
+function recordRevision(t,previous,at=new Date().toISOString()){
+ const original=previous||t;
+ t.originalThesis=original.originalThesis||JSON.stringify(Object.fromEntries(
+  thesisKeys.filter(key=>original[key]!=null&&original[key]!=='').map(key=>[key,original[key]])));
+ const fields=previous?Object.keys(t).filter(k=>!['originalThesis','revisionLog'].includes(k)&&
+  JSON.stringify(t[k]??'')!==JSON.stringify(previous[k]??'')):[];
+ if(fields.length)t.revisionLog=JSON.stringify([...jsonValue(previous.revisionLog,[]),{at,fields}]);
+ return t;
+}
+function validate(t){
+ const errors=[];if(!t||typeof t!=='object')return ['Operación inválida'];
+ errors.push(...reviewErrors(t));
+ for(const k of ['asset','setup'])if(typeof t[k]!=='string'||!t[k].trim())errors.push('Indica '+k+'.');
+ const product=productOf(t);
+ if(!['derivative','option'].includes(product)||!['long','short','neutral'].includes(t.direction)||
+    (product==='derivative'&&t.direction==='neutral')||!['real','demo','backtest'].includes(t.mode)||
+    !['EUR','USD','USDT'].includes(t.currency))errors.push('Producto, dirección, tipo o moneda inválidos.');
+ if(!(num(t.multiplier)>0))errors.push('Valor por punto/unidad debe ser mayor que cero.');
+ if(product==='option'&&!(num(t.plannedRisk)>0))errors.push('Indica el riesgo máximo planificado de la estrategia de opciones.');
+ if(!Array.isArray(t.legs)||!t.legs.length)return [...errors,'Añade una entrada.'];
+ const ids=new Set();
+ const checkId=id=>{if(typeof id!=='string'||!/^[-\w]{1,120}$/.test(id)||ids.has(id))errors.push('ID de entrada/salida inválido o duplicado.');ids.add(id);};
+ const checkTime=(r,key)=>{if(!localDate(r[key])||!Number.isFinite(instant(r,key)))errors.push('Fecha/hora '+key+' inválida.');if(r[key+'Instant']!=null&&(!/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d\d:\d\d)$/.test(r[key+'Instant'])||!Number.isFinite(Date.parse(r[key+'Instant']))))errors.push('Instante absoluto inválido.');};
+ for(const [i,l] of t.legs.entries()){
+  if(!l||typeof l!=='object'){errors.push('Entrada inválida');continue;}
+  checkId(l.id);const entry=num(l.entry),stop=num(l.stop),size=num(l.size),cost=num(l.cost);
+  if(!(entry>0&&size>0))errors.push('Entrada '+(i+1)+': precio y tamaño positivos obligatorios.');
+  if(product==='derivative'&&!(stop>0))errors.push('Entrada '+(i+1)+': SL inicial positivo obligatorio.');
+  else if(product==='derivative'&&(t.direction==='long'?stop>=entry:stop<=entry))errors.push('Entrada '+(i+1)+': SL inicial en el lado incorrecto.');
+  if(product==='option'){
+   if(!['call','put'].includes(l.optionType)||!['buy','sell'].includes(l.side)||!(num(l.strike)>0)||!isoDay(l.expiry))errors.push('Pata '+(i+1)+': call/put, compra/venta, strike y vencimiento válidos obligatorios.');
+   if(isoDay(l.expiry)&&localDate(l.open)&&l.open.slice(0,10)>l.expiry)errors.push('Pata '+(i+1)+': el vencimiento es anterior a la apertura.');
+  }
+  checkTime(l,'open');if(cost===null||cost<0)errors.push('Costes de entrada no negativos obligatorios.');
+  const tp=num(l.tp);if(product==='derivative'&&tp!==null&&(t.direction==='long'?tp<=entry:tp>=entry))errors.push('TP debe estar a favor de la operación.');
+  if(!Array.isArray(l.exits)){errors.push('Lista de salidas inválida.');continue;}
+  let total=0;
+  for(const x of l.exits){if(!x||typeof x!=='object'){errors.push('Salida inválida');continue;}checkId(x.id);checkTime(x,'close');
+   if(!(num(x.price)>0&&num(x.size)>0)||num(x.cost)===null||num(x.cost)<0)errors.push('Salida: precio y cantidad positivos, costes no negativos.');
+   if(instant(x,'close')<instant(l,'open'))errors.push('No se puede cerrar antes de la entrada.');total+=Number(x.size);
+  }
+  if(total>size+Math.max(size*1e-10,Number.MIN_VALUE))errors.push('Los parciales superan el tamaño de la entrada '+(i+1)+'.');
+  if(product==='option'&&l.stopMoves?.length)errors.push('Los cambios de stop de precio se registran en CFD/futuros. Usa la gestión de la estrategia para opciones.');
+  if(l.stopMoves===undefined)continue;
+  if(!Array.isArray(l.stopMoves)){errors.push('Historial de stop inválido.');continue;}
+  for(const move of l.stopMoves){
+   if(!move||typeof move!=='object'){errors.push('Cambio de stop inválido.');continue;}
+   checkId(move.id);checkTime(move,'at');
+   const at=instant(move,'at');
+   const remaining=size-l.exits.filter(x=>x&&instant(x,'close')<at).reduce((n,x)=>n+Number(x.size),0);
+   if(at<instant(l,'open')||remaining<=size*1e-10)errors.push('El cambio de stop debe ocurrir mientras la entrada está abierta.');
+   if(!(num(move.price)>0)||typeof move.reason!=='string')errors.push('Indica un nuevo SL positivo y un motivo en texto.');
+   if(move.kind&&!Object.hasOwn(decisionChoices.stopMoveKind,move.kind))errors.push('Tipo de cambio de stop inválido');
+   if(move.scope==='partial'){
+    const amount=num(move.size);
+    if(!(amount>0&&amount<remaining-size*1e-10))errors.push('El cambio parcial de stop debe afectar a menos de la cantidad abierta.');
+   }else if(move.scope!=='all')errors.push('Alcance del cambio de stop inválido.');
+  }
+ }
+ if(!errors.length){const a=accounting(t);if(![a.risk,a.realized,a.size,a.averageEntry,...a.legs.flatMap(l=>[l.risk,l.realized,...l.exits.flatMap(x=>[x.net,x.gross,x.percent])])].every(Number.isFinite)||a.risk<=0)errors.push('Cálculo fuera de rango numérico.');}
+ return errors;
+}
+function accounting(t){
+ const product=productOf(t),m=Number(t.multiplier);
+ const legs=t.legs.map(l=>{const entry=Number(l.entry),size=Number(l.size),sign=product==='option'?(l.side==='buy'?1:-1):(t.direction==='long'?1:-1);
+  const risk=product==='option'?(l.side==='buy'?entry*size*m+Number(l.cost):0):Math.abs(entry-Number(l.stop))*size*m;
+  let closedSize=0,cumulative=-Number(l.cost);
+  const exits=[...l.exits].sort((a,b)=>instant(a,'close')-instant(b,'close')||a.id.localeCompare(b.id)).map(x=>{
+   closedSize+=Number(x.size);const gross=(Number(x.price)-entry)*sign*Number(x.size)*m,net=gross-Number(x.cost);cumulative+=net;
+   return {...x,gross,net,percent:100*Number(x.size)/size,remaining:Math.max(0,size-closedSize),cumulative,time:instant(x,'close')};
+  });
+  const remaining=Math.max(0,size-closedSize),closed=remaining<=size*1e-10,realized=cumulative,end=exits.length?exits.at(-1).time:null;
+  return {...l,exits,risk,closedSize,remaining:closed?0:remaining,closed,net:closed?realized:null,realized,end,
+   plannedR:product==='derivative'&&num(l.tp)!==null?Math.abs(Number(l.tp)-entry)/Math.abs(entry-Number(l.stop)):null,duration:closed?(end-instant(l,'open'))/60000:null};
+ });
+ const risk=product==='option'?Number(t.plannedRisk):legs.reduce((s,l)=>s+l.risk,0),closed=legs.every(l=>l.closed),realized=legs.reduce((s,l)=>s+l.realized,0),size=legs.reduce((s,l)=>s+Number(l.size),0);
+ const end=closed?Math.max(...legs.map(l=>l.end)):null;
+ return {legs,risk,closed,net:closed?realized:null,realized,r:closed&&risk>0?realized/risk:null,size,remaining:legs.reduce((s,l)=>s+l.remaining,0),averageEntry:legs.reduce((s,l)=>s+Number(l.entry)*Number(l.size),0)/size,end,duration:closed?(end-Math.min(...legs.map(l=>instant(l,'open'))))/60000:null};
+}
+function stats(trades){
+ const rows=trades.map(accounting).filter(x=>x.closed).sort((a,b)=>a.end-b.end),n=rows.length,wins=rows.filter(x=>x.net>1e-8),losses=rows.filter(x=>x.net< -1e-8),be=n-wins.length-losses.length;
+ const grossWin=wins.reduce((s,x)=>s+x.net,0),grossLoss=-losses.reduce((s,x)=>s+x.net,0);let equity=0,peak=0,drawdown=0;
+ const groups=new Map();for(const x of rows)groups.set(x.end,(groups.get(x.end)||0)+x.net);
+ const curve=[...groups].sort((a,b)=>a[0]-b[0]).map(([,net])=>{equity+=net;peak=Math.max(peak,equity);drawdown=Math.max(drawdown,peak-equity);return equity;});
+ return {n,wins:wins.length,losses:losses.length,be,winRate:n?wins.length/n*100:null,net:equity,expectancy:n?equity/n:null,meanR:n?rows.reduce((s,x)=>s+x.r,0)/n:null,pf:grossLoss?grossWin/grossLoss:null,avgWin:wins.length?grossWin/wins.length:null,avgLoss:losses.length?-grossLoss/losses.length:null,drawdown,curve};
+}
+function consistency(trades){
+ const rows=trades.map(t=>({t,a:accounting(t)})).filter(x=>x.a.closed).sort((x,y)=>x.a.end-y.a.end);
+ const summarize=items=>({n:items.length,net:items.reduce((s,x)=>s+x.a.net,0),meanR:items.length?items.reduce((s,x)=>s+x.a.r,0)/items.length:null,winRate:items.length?100*items.filter(x=>x.a.net>1e-8).length/items.length:null});
+ const groups={};for(const key of ['entryType','exitType','planCompliance','setup','asset','session','marketRegime','setupId','executionTf','hour','opportunityType','alignment','reviewDecision']){const map=new Map();for(const x of rows){const v=String(key==='hour'?(x.t.legs[0].open||'').slice(11,13):x.t[key]||'').trim();if(v){if(!map.has(v))map.set(v,[]);map.get(v).push(x);}}groups[key]=Object.fromEntries([...map].map(([k,v])=>[k,summarize(v)]));}
+ let win=0,loss=0,maxWin=0,maxLoss=0;for(const {a} of rows){if(a.net>1e-8){win++;loss=0;}else if(a.net< -1e-8){loss++;win=0;}else win=loss=0;maxWin=Math.max(maxWin,win);maxLoss=Math.max(maxLoss,loss);}
+ const early=rows.filter(x=>['miedo','discrecional'].includes(x.t.exitType));return {total:summarize(rows),groups,early:summarize(early),earlyCount:early.length,maxWin,maxLoss};
+}
+function load(input){
+ const db=JSON.parse(JSON.stringify(input));if(!db||![1,2].includes(db.version)||!Array.isArray(db.trades)||!Array.isArray(db.fields))throw Error('Copia incompatible');
+ const legacy=db.version===1,ids=new Set();
+ for(const t of db.trades){if(!t||typeof t.id!=='string'||!/^[-\w]{1,120}$/.test(t.id)||ids.has(t.id))throw Error('ID de operación inválido o duplicado');ids.add(t.id);
+  if(!Array.isArray(t.legs))throw Error('Entradas inválidas');
+  if(t.product===undefined)t.product='derivative';
+  if(legacy)t.legs=t.legs.map((l,i)=>{if(!l||typeof l!=='object')throw Error('Entrada inválida');if(num(l.exit)===null&&((l.exit!==''&&l.exit!=null)||l.close))throw Error('Salida antigua inválida; no se convierte en posición abierta');const id='legacy-'+i;return {...l,id,exits:num(l.exit)===null?[]:[{id:id+'-exit',size:l.size,price:l.exit,close:l.close,closeInstant:l.closeInstant||null,cost:0,reason:'Salida importada v2'}]};});
+  const errors=validate(t);if(errors.length)throw Error(errors.join(' '));
+  // Optional form metadata must be scalar strings; custom fields are validated separately.
+  for(const [key,value] of Object.entries(t))if(!['legs','custom','multiplier'].includes(key)&&value!==null&&!['string','number','boolean'].includes(typeof value))throw Error('Metadato inválido: '+key);
+  if(t.custom!==undefined&&(!t.custom||typeof t.custom!=='object'||Array.isArray(t.custom)||Object.values(t.custom).some(v=>v!==null&&!['string','number','boolean'].includes(typeof v))))throw Error('Parámetros inválidos');
+ }
+ const fieldIds=new Set();for(const f of db.fields){if(!f||!/^[-a-zA-Z0-9]+$/.test(f.id)||fieldIds.has(f.id)||typeof f.label!=='string'||!['text','number','date','boolean'].includes(f.type))throw Error('Parámetro no válido');fieldIds.add(f.id);}
+ if(db.opportunities!==undefined){
+  if(!Array.isArray(db.opportunities))throw Error('Oportunidades inválidas');
+  for(const item of db.opportunities){
+   if(!item||typeof item.id!=='string'||!/^[-\w]{1,120}$/.test(item.id)||ids.has(item.id)||
+      !['pending','discarded'].includes(item.opportunityStatus)||typeof item.asset!=='string'||!item.asset.trim()||
+      !Array.isArray(item.legs)||item.legs.some(l=>!l||!Array.isArray(l.exits)||!Array.isArray(l.stopMoves))||
+      reviewErrors(item).length)throw Error('Oportunidad inválida o ID duplicado');
+   ids.add(item.id);
+  }
+ }
+ db.version=2;return db;
+}
+const api={num,validate,accounting,stats,consistency,load,decisionChoices,recordRevision,reviewErrors};if(typeof module!=='undefined')module.exports=api;else root.JournalCore=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
+</script><script>'use strict';
+const $=id=>document.getElementById(id),C=JournalCore,KEY='trading-journal-partials-v2',LEGACY_KEY='trading-atlas-journal-v1';
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join(''),fmt=(n,d=2)=>n===null||!Number.isFinite(n)?'—':n.toLocaleString('es-ES',{maximumFractionDigits:d,minimumFractionDigits:d});
+let db={version:2,trades:[],fields:[]},editing=null,blocked=false;
+async function persist(next){await saveCloud(next);}
+function message(s){$('message').textContent=s;}
+let calMonth=new Date();calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth(),1);
+const form=$('tradeForm');const field=n=>form.elements.namedItem(n);
+function selected(){return db.trades.filter(t=>t.mode===$('mode').value&&t.currency===$('currency').value&&t.asset.toLowerCase().includes($('assetFilter').value.toLowerCase())&&t.setup.toLowerCase().includes($('setupFilter').value.toLowerCase())&&(!$('directionFilter').value||t.direction===$('directionFilter').value)&&(!$('fromFilter').value||t.legs[0].open.slice(0,10)>=$('fromFilter').value)&&(!$('toFilter').value||t.legs[0].open.slice(0,10)<=$('toFilter').value));}
+$('calPrev').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);render();};$('calNext').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);render();};
+function localNow(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+function customHTML(t={}){return db.fields.filter(x=>!x.hidden).map(x=>'<label style="margin:14px 0">'+(x.important?'★ ':'')+esc(x.label)+(x.type==='boolean'?'<select data-custom="'+esc(x.id)+'"><option value="">Sin dato</option><option '+(t.custom?.[x.id]==='Sí'?'selected':'')+'>Sí</option><option '+(t.custom?.[x.id]==='No'?'selected':'')+'>No</option></select>':'<input data-custom="'+esc(x.id)+'" type="'+esc(x.type)+'" step="any" value="'+esc(t.custom?.[x.id])+'">')+'</label>').join('');}
+function openEditor(t=null){editing=t?.id||null;form.reset();$('editorTitle').textContent=t?'Editar operación':'Nueva operación';$('delete').hidden=!t;$('formError').textContent='';$('legs').innerHTML='';
+ if(t){for(const [k,v] of Object.entries(t)){const e=field(k);if(e&&typeof v!=='object')e.value=v;}}else{field('mode').value=$('mode').value;field('currency').value=$('currency').value;field('timezone').value=Intl.DateTimeFormat().resolvedOptions().timeZone;}
+ syncProduct(false);(t?.legs?.length?t.legs:[{}]).forEach(leg);syncReviewEditor(t);$('customValues').innerHTML=customHTML(t||{});$('editor').showModal();live();}
+$('new').onclick=()=>openEditor();$('close').onclick=()=>$('editor').close();$('addLeg').onclick=()=>{leg({kind:'reentry'});live();};form.oninput=live;
+form.onsubmit=e=>{e.preventDefault();const t=collect(),errors=C.validate(t);if(errors.length){$('formError').textContent=errors.join(' ');return;}try{persist({...db,trades:[...db.trades.filter(x=>x.id!==t.id),t]});$('mode').value=t.mode;$('currency').value=t.currency;$('editor').close();render();message('Operación guardada.');}catch(err){$('formError').textContent='No se pudo guardar: '+err.message;}};
+$('history').onclick=e=>{const toggle=e.target.closest('[data-expand]');if(toggle){const expanded=toggle.getAttribute('aria-expanded')==='true';toggle.setAttribute('aria-expanded',String(!expanded));toggle.textContent=expanded?'▸':'▾';[...$('history').querySelectorAll('[data-parent]')].filter(r=>r.dataset.parent===toggle.dataset.expand).forEach(r=>r.hidden=expanded);return;}const b=e.target.closest('[data-edit]');if(b)openCloudEditor(db.trades.find(t=>t.id===b.dataset.edit));};
+$('delete').onclick=async ()=>{if(!confirm('¿Eliminar esta operación y sus tramos? Exporta una copia si quieres conservarla.'))return;try{await persist({...db,trades:db.trades.filter(t=>t.id!==editing)});$('editor').close();render();}catch(e){$('formError').textContent=e.message;}};
+for(const id of ['mode','currency','assetFilter','setupFilter','directionFilter','fromFilter','toFilter'])$(id).oninput=render;
+function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+$('export').onclick=()=>download('trading-atlas-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json');
+$('csv').onclick=()=>{const rows=[['id','modo','activo','setup','version','direccion','moneda','tipo_tramo','entrada_fecha','entrada','tamano','sl_inicial','sl_modificado','tp','salida_fecha','salida','costes','neto_tramo','riesgo_tramo','observaciones_sl','valido','volveria','emocion','revision','notas','parametros','tipo_entrada','motivo_salida','gestion_plan','emocion_antes','emocion_durante','emocion_despues','motivo_intervencion','strategy_id','setup_id','context_tf','thesis_tf','execution_tf','invalidacion_estructural','invalidacion_tactica','resultado_tesis','regimen']];for(const t of selected())for(const l of C.accounting(t).legs)rows.push([t.id,t.mode,t.asset,t.setup,t.setupVersion,t.direction,t.currency,l.kind,l.open,l.entry,l.size,l.stop,l.newStop,l.tp,l.close,l.exit,l.cost,l.net,l.risk,l.reason,t.valid,t.again,t.emotion,t.lesson,t.notes,JSON.stringify(t.custom),t.entryType,t.exitType,t.planCompliance,t.emotionBefore,t.emotionDuring,t.emotionAfter,t.interventionReason,t.strategyId,t.setupId,t.contextTf,t.thesisTf,t.executionTf,t.structuralInvalidation,t.tacticalInvalidation,t.thesisOutcome,t.marketRegime]);download('operaciones.csv','\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"').join(';')).join('\r\n'),'text/csv;charset=utf-8');};
+$('import').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>10000000)throw Error('La copia supera 10 MB.');const x=JSON.parse(await file.text());if(x.version!==1||!Array.isArray(x.trades)||!Array.isArray(x.fields))throw Error('Copia incompatible');const ids=new Set();for(const t of x.trades){if(typeof t.id!=='string'||ids.has(t.id)||C.validate(t).length)throw Error('Operación inválida o duplicada en la copia');ids.add(t.id);}for(const f of x.fields)if(!/^[-a-zA-Z0-9]+$/.test(f.id)||typeof f.label!=='string'||!['text','number','date','boolean'].includes(f.type))throw Error('Parámetro no válido');if(!confirm('Restaurar '+x.trades.length+' operaciones sustituirá este historial. Exporta antes si necesitas conservarlo.'))return;localStorage.setItem(KEY,JSON.stringify(x));db=x;blocked=false;render();message('Copia restaurada.');}catch(err){message('No se importó: '+err.message);}e.target.value='';};
+function renderFields(){$('fieldList').innerHTML=db.fields.map(f=>'<div><span>'+esc(f.label)+(f.important?' ★':'')+'</span><button data-toggle="'+esc(f.id)+'">'+(f.hidden?'Mostrar':'Ocultar')+'</button></div>').join('')||'<p class="muted">Sin parámetros adicionales.</p>';}
+$('fields').onclick=()=>{renderFields();$('settings').showModal();};$('closeSettings').onclick=()=>$('settings').close();
+$('fieldForm').onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await persist({...db,fields:[...db.fields,{id:uid(),label:f.label.trim(),type:f.type,important:!!f.important,hidden:false}]});e.target.reset();renderFields();}catch(err){message(err.message);}};
+$('fieldList').onclick=async e=>{const b=e.target.closest('[data-toggle]');if(!b)return;try{await persist({...db,fields:db.fields.map(f=>f.id===b.dataset.toggle?{...f,hidden:!f.hidden}:f)});renderFields();}catch(err){message(err.message);}};
+render();
+// Overrides the original view functions; retains setup/review/custom fields and editor.
+function leg(l={}){
+ const el=document.createElement('section');el.className='leg';el.dataset.legId=l.id||uid();
+ const input=(name,label,type='number',val='')=>'<label>'+label+'<input data-k="'+name+'" type="'+type+'" '+(type==='number'?'step="any" min="0"':'')+' value="'+esc(val)+'"></label>';
+ const option=field('product').value==='option';
+ if(option){
+  el.classList.add('option-leg');
+  el.innerHTML='<div class="section-title"><h4>Pata de opciones</h4><button type="button" data-remove>Quitar pata</button></div><div class="form-grid"><label>Call / Put<select data-k="optionType"><option value="call">Call</option><option value="put">Put</option></select></label><label>Compra / Venta<select data-k="side"><option value="buy">Comprada</option><option value="sell">Vendida</option></select></label>'+input('strike','Strike *','number',l.strike)+input('expiry','Vencimiento *','date',l.expiry)+input('open','Fecha y hora de apertura *','datetime-local',l.open||localNow())+input('entry','Prima de entrada *','number',l.entry)+input('size','Contratos iniciales *','number',l.size)+input('cost','Comisiones de apertura','number',l.cost??0)+input('iv','IV de entrada (%)','number',l.iv)+input('delta','Delta de entrada','number',l.delta)+'</div><label>Función de esta pata / notas<input data-k="reason" value="'+esc(l.reason||'')+'" placeholder="Débito, cobertura, pata corta…"></label><h4 style="margin-top:20px">Cierres de esta pata</h4><div class="exit-list"></div><button type="button" data-add-exit>＋ Registrar cierre parcial / final</button><p class="leg-summary hint"></p>';
+  el.querySelector('[data-k=optionType]').value=l.optionType||'call';
+  el.querySelector('[data-k=side]').value=l.side||'buy';
+ }else{
+  el.innerHTML='<div class="section-title"><h4>Entrada / reentrada</h4><button type="button" data-remove>Quitar entrada</button></div><div class="form-grid"><label>Tipo<select data-k="kind"><option value="initial">Entrada inicial</option><option value="reentry">Reentrada</option><option value="addition">Ampliación</option><option value="partial">Tramo parcial heredado</option></select></label>'+input('open','Fecha y hora entrada *','datetime-local',l.open||localNow())+input('entry','Precio entrada *','number',l.entry)+input('size','Cantidad inicial *','number',l.size)+input('stop','SL inicial *','number',l.stop)+input('tp','Objetivo previsto','number',l.tp)+input('cost','Costes de entrada / heredados','number',l.cost??0)+input('newStop','Último SL modificado','number',l.newStop)+'</div><label>Motivo / gestión del stop<input data-k="reason" value="'+esc(l.reason||'')+'"></label><h4 style="margin-top:20px">Salidas parciales de esta entrada</h4><div class="exit-list"></div><button type="button" data-add-exit>＋ Registrar salida parcial / final</button><p class="leg-summary hint"></p>';
+  el.querySelector('[data-k=size]').parentElement.firstChild.textContent='Cantidad inicial o lotes *';
+  el.querySelector('[data-k=newStop]').parentElement.firstChild.textContent='Último SL (campo anterior)';
+  if(!l.newStop)el.querySelector('[data-k=newStop]').parentElement.style.display='none';
+  el.querySelector('[data-k=reason]').parentElement.firstChild.textContent='Nota general de gestión del stop';
+  const stopLog=document.createElement('details');
+  stopLog.innerHTML='<summary>Cambios de stop</summary><div class="stop-list"></div><button type="button" data-add-stop>＋ Registrar cambio de stop</button>';
+  el.querySelector('.exit-list').previousElementSibling.before(stopLog);
+  if(l.stopMoves?.length)stopLog.open=true;
+  for(const move of l.stopMoves||[])addStopMove(el,move);
+  stopLog.querySelector('[data-add-stop]').onclick=()=>{addStopMove(el,{at:localNow()});live();};
+  el.querySelector('[data-k=kind]').value=l.kind||'initial';
+ }
+ $('legs').append(el);
+ for(const x of l.exits||[])addExit(el,x);
+ el.querySelector('[data-add-exit]').onclick=()=>{const size=Number(el.querySelector('[data-k=size]').value),used=[...el.querySelectorAll('[data-x=size]')].reduce((s,e)=>s+Number(e.value||0),0);addExit(el,{size:Math.max(0,size-used)||'',close:localNow()});live();};
+ el.querySelector('[data-remove]').onclick=()=>{if($('legs').children.length>1&&confirm('¿Quitar esta entrada y todas sus salidas del formulario? Se aplicará al guardar.')){el.remove();live();}};
+}
+function addStopMove(parent,move={}){
+ const row=document.createElement('div');
+ row.className='stop-move';row.dataset.stopId=move.id||uid();
+ row.innerHTML=`<div class="form-grid">
+   <label>Fecha y hora<input data-stop="at" type="datetime-local" value="${esc(move.at||'')}"></label>
+   <label>Nuevo precio del SL<input data-stop="price" type="number" min="0" step="any" value="${esc(move.price??'')}"></label>
+   <label>Tipo de ajuste<select data-stop="kind"><option value="">Sin registrar</option>${Object.entries(C.decisionChoices.stopMoveKind).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select></label>
+   <label>Cantidad afectada<select data-stop="scope"><option value="all">Toda la cantidad abierta de esta entrada</option><option value="partial">Solo una parte</option></select></label>
+   <label>Unidades o lotes afectados<input data-stop="size" type="number" min="0" step="any" value="${esc(move.size??'')}"></label>
+  </div><label>Motivo<input data-stop="reason" value="${esc(move.reason||'')}"></label><button type="button" data-remove-stop>Quitar cambio</button>`;
+ const scope=row.querySelector('[data-stop=scope]'),size=row.querySelector('[data-stop=size]');
+ scope.value=move.scope||'all';
+ row.querySelector('[data-stop=kind]').value=move.kind||'';
+ function syncScope(){size.disabled=scope.value==='all';size.parentElement.style.display=size.disabled?'none':'';}
+ scope.onchange=syncScope;syncScope();
+ row.querySelector('[data-remove-stop]').onclick=()=>{row.remove();live();};
+ parent.querySelector('.stop-list').append(row);
+}
+function addExit(parent,x={}){
+ const el=document.createElement('div');el.className='exit trade-exit';el.dataset.exitId=x.id||uid();
+ const input=(name,label,type,val)=>'<label>'+label+'<input data-x="'+name+'" type="'+type+'" '+(type==='number'?'min="0" step="any"':'')+' value="'+esc(val??'')+'"></label>';
+ const initial=Number(parent.querySelector('[data-k=size]').value);
+ const option=field('product').value==='option';
+ el.innerHTML='<div class="section-title"><strong>'+(option?'Cierre de la pata':'Salida')+'</strong><button type="button" data-remove-exit>Quitar salida</button></div><div class="form-grid">'+input('close','Fecha y hora del cierre *','datetime-local',x.close)+input('price',option?'Prima de cierre *':'Precio del cierre *','number',x.price)+input('size',option?'Contratos cerrados *':'Cantidad cerrada *','number',x.size)+'<label>% de la cantidad inicial<input data-percent type="number" min="0" max="100" step="any" value="'+(initial&&x.size?100*Number(x.size)/initial:'')+'"></label>'+input('cost','Costes de este cierre','number',x.cost??0)+input('reason','Motivo / objetivo','text',x.reason)+'</div>';
+ parent.querySelector('.exit-list').append(el);
+ el.querySelector('[data-percent]').oninput=()=>{const n=Number(el.querySelector('[data-percent]').value),base=Number(parent.querySelector('[data-k=size]').value);el.querySelector('[data-x=size]').value=Number.isFinite(n*base)?n*base/100:'';};
+ el.querySelector('[data-x=size]').oninput=()=>{const base=Number(parent.querySelector('[data-k=size]').value);el.querySelector('[data-percent]').value=base?Number(el.querySelector('[data-x=size]').value)/base*100:'';};
+ el.querySelector('[data-remove-exit]').onclick=()=>{if(confirm('¿Quitar esta salida del formulario? Se aplicará al guardar.')){el.remove();live();}};
+}
+function collect(){
+ const old=editingRecord(),t={...(old||{}),...Object.fromEntries(new FormData(form))};t.id=editing||uid();t.custom={...(old?.custom||{})};
+ document.querySelectorAll('[data-custom]').forEach(e=>t.custom[e.dataset.custom]=e.value);
+ const stamp=(row,key,original)=>{if(original?.[key]===row[key]&&original[key+'Instant']){row[key+'Instant']=original[key+'Instant'];return;}
+  if(row[key]&&t.timezone&&t.timezone!==Intl.DateTimeFormat().resolvedOptions().timeZone)throw Error('Para cambiar horas, usa la zona '+t.timezone+' del registro. Las horas existentes se conservan sin convertir.');
+  row[key+'Instant']=row[key]&&Number.isFinite(Date.parse(row[key]))?new Date(row[key]).toISOString():null;
+ };
+ t.legs=[...$('legs').children].map(el=>{const original=old?.legs.find(l=>l.id===el.dataset.legId);const l={id:el.dataset.legId,...Object.fromEntries([...el.querySelectorAll('[data-k]')].map(e=>[e.dataset.k,e.value]))};stamp(l,'open',original);
+  l.exits=[...el.querySelectorAll('.trade-exit')].map(e=>{const x={id:e.dataset.exitId,...Object.fromEntries([...e.querySelectorAll('[data-x]')].map(i=>[i.dataset.x,i.value]))};stamp(x,'close',original?.exits.find(p=>p.id===x.id));return x;});
+  l.stopMoves=[...el.querySelectorAll('.stop-move')].map(row=>{
+   const move={id:row.dataset.stopId,...Object.fromEntries([...row.querySelectorAll('[data-stop]')].map(i=>[i.dataset.stop,i.value]))};
+   if(move.scope==='all')move.size='';
+   stamp(move,'at',original?.stopMoves?.find(x=>x.id===move.id));
+   return move;
+  });
+  return l;});
+ return t;
+}
+function editingRecord(){
+ return db.trades.find(t=>t.id===editing)||(db.opportunities||[]).find(t=>t.id===editing);
+}
+function syncReviewEditor(t){
+ const isTrade=t&&!t.opportunityStatus;
+ $('savePending').hidden=Boolean(isTrade);
+ $('saveDiscarded').hidden=Boolean(isTrade);
+ $('delete').hidden=!isTrade;
+ for(const key of ['chart1h','chart5m']){
+  const input=form.querySelector('[data-chart-file='+key+']');
+  input.value='';
+  input.dataset.read='';
+  $(key+'Status').textContent=t?.[key]?'Captura guardada':'Sin captura';
+ }
+}
+async function saveOpportunity(status){
+ try{
+  if(db.trades.some(t=>t.id===editing))throw Error('La operación ya tiene un registro de ejecución');
+  if(form.querySelector('[data-chart-file][data-read="pending"]'))throw Error('Espera a que termine la lectura de la captura');
+  const t=collect();
+  if(!t.asset.trim())throw Error('Indica el activo para guardar la oportunidad');
+  t.opportunityStatus=status;
+  C.recordRevision(t,editingRecord());
+  const opportunities=[...(db.opportunities||[]).filter(x=>x.id!==t.id),t];
+  await persist(C.load({...db,opportunities}));
+  $('editor').close();render();message('Oportunidad guardada sin contabilizar ejecución.');
+ }catch(error){$('formError').textContent=error.message;}
+}
+function chartDetails(t){
+ if(t.cloudPhotos&&!t.chart1h&&!t.chart5m)
+  return '<span><button type="button" data-cloud-photo="'+esc(t.id)+'">Ver capturas privadas</button></span>';
+ return ['chart1h','chart5m'].filter(k=>t[k]).map(k=>`<figure><figcaption>${k==='chart1h'?'Contexto 1H':'Gatillo 5M'} ${esc(t[k+'Note']||'')}</figcaption><a href="${esc(t[k])}" download="${esc(t.id)}-${k}.${t[k].slice(11,t[k].indexOf(';'))}"><img alt="${k==='chart1h'?'Contexto 1H':'Gatillo 5M'}" src="${esc(t[k])}" loading="lazy" style="max-width:100%;max-height:360px"></a></figure>`).join('');
+}
+function decisionLabel(t,a){
+ if(t.reviewDecision==='valid'){
+  if(!a.closed)return 'Decisión válida · resultado pendiente';
+  return a.net>1e-8?'Operación válida ganadora':a.net< -1e-8?'Operación válida perdedora':'Operación válida · BE financiero';
+ }
+ if(t.reviewDecision==='errors')return a.closed&&a.net>1e-8?'Operación rentable con errores':'Decisión con errores';
+ return 'Pendiente o indeterminada';
+}
+function reviewDetails(t){
+ const labels=[['errorAnalysis','Análisis'],['errorExecution','Ejecución'],['errorManagement','Gestión']];
+ const errors=labels.filter(([k])=>t[k]==='yes').map(([,label])=>label).join(', ');
+ const original=JSON.parse(t.originalThesis||'{}');
+ const revisions=JSON.parse(t.revisionLog||'[]');
+ return `<div class="form-grid">${chartDetails(t)}</div>
+  <p>Errores señalados: ${esc(errors||'sin señalar')} · Cumplimiento: ${esc(t.planCompliance||'sin revisar')}</p>
+  <p>Conclusiones: ${esc(t.reviewConclusions||'—')} · Mejora: ${esc(t.reviewAction||'—')}</p>
+  <details><summary>Tesis registrada inicialmente e historial (${revisions.length})</summary>
+  ${Object.entries(original).map(([key,value])=>'<p>'+esc(key)+': '+esc(value)+'</p>').join('')}
+  ${revisions.map(x=>'<p>'+esc(x.at)+' · '+esc(x.fields.join(', '))+'</p>').join('')}</details>`;
+}
+function refreshComparison(trades){
+ const options='<option value="">Elige una operación</option>'+trades.map(t=>
+  `<option value="${esc(t.id)}">${esc(t.asset)} · ${esc(t.setup)} · v${esc(t.setupVersion||'—')} · ${esc(t.legs[0].open.replace('T',' '))}</option>`).join('');
+ const controls=[$('compareFirst'),$('compareSecond')];
+ for(const input of controls){
+  const old=input.value;
+  input.innerHTML=options;
+  if(trades.some(t=>t.id===old))input.value=old;
+ }
+ function show(){
+  const [first,second]=controls.map(input=>trades.find(t=>t.id===input.value));
+  if(!first||!second||first===second){$('comparison').textContent='Elige dos casos distintos.';return;}
+  $('comparison').innerHTML=[first,second].map(t=>`<article class="insight">
+   <strong>${esc(t.asset)} · ${esc(t.setup)} · v${esc(t.setupVersion||'—')}</strong>
+   <p>${esc(decisionLabel(t,C.accounting(t)))} · ${esc(t.legs[0].open.replace('T',' '))}</p>
+   <p>Gatillo: ${esc(t.entryTrigger||'—')} · Ubicación: ${esc(t.locationQuality||'—')}</p>
+   ${reviewDetails(t)}</article>`).join('');
+ }
+ for(const input of controls)input.onchange=show;
+ show();
+}
+function selected(){
+ return db.trades.filter(t=>{
+  const product=t.product||'derivative';
+  return (!$('productFilter').value||product===$('productFilter').value)&&t.mode===$('mode').value&&t.currency===$('currency').value&&
+   t.asset.toLowerCase().includes($('assetFilter').value.toLowerCase())&&t.setup.toLowerCase().includes($('setupFilter').value.toLowerCase())&&
+   (!$('directionFilter').value||t.direction===$('directionFilter').value)&&
+   (!$('fromFilter').value||t.legs[0].open.slice(0,10)>=$('fromFilter').value)&&(!$('toFilter').value||t.legs[0].open.slice(0,10)<=$('toFilter').value);
+ });
+}
+function syncProduct(resetLegs=false){
+ const option=field('product').value==='option';
+ const previous=form.dataset.product;
+ $('option-fields').hidden=!option;
+ field('plannedRisk').required=option;
+ if(resetLegs&&option&&previous!=='option')field('multiplier').value='100';
+ if(resetLegs&&!option&&previous==='option')field('multiplier').value='1';
+ field('multiplier').parentElement.firstChild.textContent=option?'Multiplicador del contrato *':'Valor monetario por punto y unidad *';
+ $('addLeg').textContent=option?'＋ Añadir pata de opciones':'＋ Añadir entrada / reentrada';
+ if(resetLegs){$('legs').innerHTML='';leg({});live();}
+ form.dataset.product=option?'option':'derivative';
+}
+function live(){try{const t=collect(),errors=C.validate(t);if(errors.length){$('live').textContent=errors.join(' ');return;}const a=C.accounting(t);
+ const unit=t.product==='option'?' contratos abiertos':' cantidad abierta';
+ $('live').textContent='Realizado hasta ahora: '+fmt(a.realized)+' '+t.currency+' · '+fmt(a.remaining,6)+unit+' · Riesgo planificado: '+fmt(a.risk)+' · '+(a.closed?'Operación cerrada: '+fmt(a.r)+' R':'Operación abierta: R final pendiente');
+ [...$('legs').children].forEach((el,i)=>{const l=a.legs[i];el.querySelector('.leg-summary').textContent='Cerrado: '+fmt(100*l.closedSize/Number(l.size),2)+'% · Restante: '+fmt(l.remaining,6)+' · Realizado de esta entrada: '+fmt(l.realized)+' '+t.currency;
+  for(const e of el.querySelectorAll('.trade-exit'))if(document.activeElement!==e.querySelector('[data-percent]'))e.querySelector('[data-percent]').value=100*Number(e.querySelector('[data-x=size]').value)/Number(l.size);
+ });
+ }catch(e){$('live').textContent=e.message;}}
+function render(){
+ const trades=selected(),s=C.stats(trades),currency=$('currency').value,all=trades.map(t=>({t,a:C.accounting(t)})),realized=all.reduce((sum,x)=>sum+x.a.realized,0);
+ $('metrics').innerHTML=[['Realizado (incluye parciales)',fmt(realized)+' '+currency],['Neto de ideas cerradas',fmt(s.net)+' '+currency],['R medio · cerradas',fmt(s.meanR)+' R'],['Acierto · cerradas',fmt(s.winRate,1)+' %'],['Profit factor · cerradas',fmt(s.pf)],['DD de ideas cerradas',fmt(s.drawdown)+' '+currency]].map(([k,v])=>'<article class="metric"><small>'+k+'</small><b>'+v+'</b></article>').join('');
+ const curve=[0,...s.curve],lo=Math.min(...curve),hi=Math.max(...curve),span=hi-lo||1;
+ $('chart').innerHTML=s.n?'<svg viewBox="0 0 800 180" role="img" aria-label="Neto acumulado de ideas cerradas"><polyline fill="none" stroke="#83e6bd" stroke-width="3" points="'+curve.map((v,i)=>(10+i*780/(curve.length-1))+','+(155-(v-lo)/span*130)).join(' ')+'"/></svg>':'<div class="empty">El gráfico aparece al cerrar por completo una operación.</div>';
+ $('insights').innerHTML=[['Ganancia media',fmt(s.avgWin)+' '+currency],['Pérdida media',fmt(s.avgLoss)+' '+currency],['Expectativa neta · cerradas',fmt(s.expectancy)+' '+currency],['Ganadoras / perdedoras / BE',s.wins+' / '+s.losses+' / '+s.be],['Ideas cerradas / abiertas',s.n+' / '+(trades.length-s.n)],['Costes sin confirmar',trades.filter(t=>t.costQuality!=='completo').length]].map(([k,v])=>'<div class="insight">'+k+'<b>'+v+'</b></div>').join('');
+ $('history').innerHTML=[...all].sort((a,b)=>b.t.legs[0].open.localeCompare(a.t.legs[0].open)).map(({t,a})=>{
+  const id=esc(t.id);let detail='';
+  detail+=`<tr class="subrow" data-parent="${id}" hidden><td colspan="8">${reviewDetails(t)}</td></tr>`;
+  const option=(t.product||'derivative')==='option';
+  for(const [i,l] of a.legs.entries()){
+   const descriptor=option?(esc((l.side==='sell'?'Vendida ':'Comprada ')+(l.optionType||'').toUpperCase())+' · strike '+fmt(Number(l.strike),4)+' · vence '+esc(l.expiry||'sin dato')+' · prima '+fmt(Number(l.entry),5)):(fmt(Number(l.size),6)+' uds a '+fmt(Number(l.entry),5)+' · SL inicial '+fmt(Number(l.stop),5));
+   detail+='<tr class="subrow" data-parent="'+id+'" hidden><td colspan="8"><strong>'+(option?'Pata ':'Entrada ')+(i+1)+'</strong> · '+esc(l.open.replace('T',' '))+' · '+esc(t.timezone||'zona sin dato')+' · '+descriptor+' · Costes '+fmt(Number(l.cost))+' '+esc(t.currency)+' · Restante '+fmt(l.remaining,6)+' · Realizado '+fmt(l.realized)+' '+esc(t.currency)+'</td></tr>';
+   for(const [j,x] of l.exits.entries())detail+='<tr class="subrow" data-parent="'+id+'" hidden><td>↳ Salida '+(j+1)+'<small>'+esc(x.close.replace('T',' '))+'</small></td><td>'+fmt(x.percent)+'% de esta entrada<small>'+fmt(Number(x.size),6)+' uds · quedan '+fmt(x.remaining,6)+'</small></td><td colspan="2">Precio '+fmt(Number(x.price),5)+'<small>'+esc(x.reason||'Sin motivo')+'</small></td><td class="'+(x.net<0?'down':'up')+'">'+fmt(x.net)+' '+esc(t.currency)+'<small>Salida menos su coste '+fmt(Number(x.cost))+'</small></td><td colspan="3">Acumulado entrada: '+fmt(x.cumulative)+' '+esc(t.currency)+'<small>Incluye coste de entrada; no incluye P&amp;L flotante</small></td></tr>';
+   for(const move of [...(l.stopMoves||[])].sort((a,b)=>(a.atInstant||a.at).localeCompare(b.atInstant||b.at))){
+    const scope=move.scope==='all'?'Toda la cantidad abierta':fmt(Number(move.size),6)+' unidades o lotes';
+    detail+=`<tr class="subrow" data-parent="${id}" hidden><td colspan="8">↳ ${esc(C.decisionChoices.stopMoveKind[move.kind]||'Cambio de SL')} · ${esc(move.at.replace('T',' '))} · ${fmt(Number(move.price),5)} · ${scope}<small>${esc(move.reason||'Sin motivo')}</small></td></tr>`;
+   }
+  }
+  return '<tr><td><button type="button" class="history-toggle" data-expand="'+id+'" aria-expanded="false">▸</button><b>'+esc(t.asset)+'</b><small>'+(option?'OPCIONES':'CFD / FUTURO / SPOT')+' · '+esc(t.legs[0].open.replace('T',' '))+'</small></td><td>'+esc(t.setup)+'<small>'+(option?esc(t.optionStructure||'Estrategia sin clasificar'):'v'+esc(t.setupVersion||1))+'</small></td><td>'+esc(t.direction.toUpperCase())+'</td><td>'+t.legs.length+' '+(option?'patas':'entradas')+'<small>'+a.legs.reduce((n,l)=>n+l.exits.length,0)+' cierres · '+fmt(a.remaining,6)+' abiertos</small></td><td class="'+(a.realized<0?'down':'up')+'">'+fmt(a.realized)+' '+esc(t.currency)+'<small>'+(a.closed?'Cerrada':'Realizado · aún abierta')+' · costes '+(t.costQuality==='completo'?'confirmados':'provisionales')+'</small></td><td>'+fmt(a.r)+'</td><td>'+esc(decisionLabel(t,a))+'<small>Tesis: '+esc(t.thesisOutcome||'Sin evaluar')+'</small></td><td><button data-edit="'+id+'">Editar</button></td></tr>'+detail;
+ }).join('');
+ $('empty').hidden=trades.length>0;renderCalendar(trades);
+ const names=[...new Set(trades.map(t=>t.setup+' · v'+(t.setupVersion||1)))];$('setups').innerHTML=names.map(name=>{const g=C.stats(trades.filter(t=>t.setup+' · v'+(t.setupVersion||1)===name));return '<div class="insight">'+esc(name)+'<span style="float:right">n='+g.n+' · '+fmt(g.winRate,1)+'% · '+fmt(g.meanR)+' R</span></div>';}).join('')||'<p class="muted">Sin setups en este filtro.</p>';
+ const co=C.consistency(trades);$('consistency').innerHTML='<p class="muted">Ideas cerradas: '+co.total.n+' · Rachas máximas ganadoras/perdedoras: '+co.maxWin+'/'+co.maxLoss+'. Muestras descriptivas; los costes no confirmados hacen provisionales los resultados.</p>'+[['Tipo de entrada','entryType'],['Gestión','planCompliance'],['Motivo salida','exitType'],['Activo','asset'],['Sesión','session'],['Régimen','marketRegime'],['Setup ID','setupId'],['Ejecución','executionTf'],['Hora local','hour']].map(([label,key])=>'<h3>'+label+'</h3>'+Object.entries(co.groups[key]).map(([name,x])=>'<div class="insight">'+esc(name)+'<b>n='+x.n+' · '+fmt(x.meanR)+' R · '+fmt(x.winRate,1)+'%</b></div>').join('')).join('');
+ $('productStats').innerHTML=[['derivative','CFD, futuros y spot'],['option','Opciones']].map(([key,label])=>{const rows=trades.filter(t=>(t.product||'derivative')===key),m=C.stats(rows);return '<details class="product-summary"><summary>'+label+' · '+rows.length+' registradas</summary><div class="insight">Cerradas<b>'+m.n+'</b></div><div class="insight">Neto cerrado<b>'+fmt(m.net)+' '+currency+'</b></div><div class="insight">R media<b>'+fmt(m.meanR)+' R</b></div><div class="insight">Acierto<b>'+fmt(m.winRate,1)+'%</b></div></details>';}).join('');
+ $('setupList').innerHTML=[...new Set(db.trades.map(t=>t.setup))].map(x=>'<option value="'+esc(x)+'"></option>').join('');
+ refreshComparison(trades);
+ const opportunities=db.opportunities||[];
+ $('opportunityPanel').hidden=!opportunities.length;
+ $('opportunities').innerHTML=opportunities.map(t=>`<div class="insight"><b>${esc(t.asset)} · ${esc(t.setup||'Setup sin registrar')}</b> · ${t.opportunityStatus==='pending'?'Pendiente':'Descartada'} <button type="button" data-opportunity="${esc(t.id)}">Editar oportunidad</button><details><summary>Notas y capturas</summary><p>${esc(t.notes||'—')}</p><div class="form-grid">${chartDetails(t)}</div></details></div>`).join('');
+}
+function renderCalendar(trades){
+ const year=calMonth.getFullYear(),month=calMonth.getMonth(),days=new Date(year,month+1,0).getDate(),first=(new Date(year,month,1).getDay()+6)%7,byDay=new Map();
+ const add=(date,row)=>{const arr=byDay.get(date)||[];arr.push(row);byDay.set(date,arr);};
+ for(const t of trades)for(const l of C.accounting(t).legs){if(Number(l.cost))add(l.open.slice(0,10),{text:t.asset+' · coste de entrada',net:-Number(l.cost)});for(const x of l.exits)add(x.close.slice(0,10),{text:t.asset+' · salida '+fmt(x.percent)+'% · '+x.close.slice(11),net:x.net});}
+ $('calTitle').textContent=calMonth.toLocaleDateString('es-ES',{month:'long',year:'numeric'});let html=['L','M','X','J','V','S','D'].map(x=>'<div class="muted" style="text-align:center">'+x+'</div>').join('');for(let i=0;i<first;i++)html+='<div></div>';
+ for(let d=1;d<=days;d++){const key=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),arr=byDay.get(key)||[],sum=arr.reduce((s,x)=>s+x.net,0);html+='<button type="button" class="cal-day '+(arr.length?(sum>1e-8?'win':sum< -1e-8?'loss':'be'):'')+'" data-cal="'+key+'"><b>'+d+'</b><span>'+(arr.length?fmt(sum)+' '+esc($('currency').value):'')+'</span></button>';}
+ $('calendar').innerHTML=html;$('calDetail').textContent='Parciales y costes por fecha local registrada (sin convertir zonas). Selecciona un día.';$('calendar').onclick=e=>{const b=e.target.closest('[data-cal]');if(!b)return;const arr=byDay.get(b.dataset.cal)||[];$('calDetail').textContent=arr.length?arr.map(x=>x.text+': '+fmt(x.net)+' '+$('currency').value).join(' · '):'Sin importes realizados ese día.';};
+}
+form.onsubmit=async e=>{e.preventDefault();try{
+ if(form.querySelector('[data-chart-file][data-read="pending"]'))throw Error('Espera a que termine la lectura de la captura');
+ const t=collect(),errors=C.validate(t);
+ if(errors.length)throw Error(errors.join(' '));
+ if(t.opportunityStatus&&!confirm('¿Registrar esta oportunidad como ejecución? Se conservará su identificador.'))return;
+ delete t.opportunityStatus;
+ C.recordRevision(t,editingRecord());
+ const next=C.load({...db,opportunities:(db.opportunities||[]).filter(x=>x.id!==t.id),trades:[...db.trades.filter(x=>x.id!==t.id),t]});
+ await persist(next);$('mode').value=t.mode;$('currency').value=t.currency;saveFilters();$('editor').close();render();message('Operación y salidas guardadas. Exporta una copia JSON.');
+ }catch(err){$('formError').textContent=err.message;}};
+$('savePending').onclick=()=>saveOpportunity('pending');
+$('saveDiscarded').onclick=()=>saveOpportunity('discarded');
+$('opportunities').onclick=e=>{const id=e.target.closest('[data-opportunity]')?.dataset.opportunity;if(id)openCloudEditor(db.opportunities.find(t=>t.id===id));};
+for(const input of form.querySelectorAll('[data-chart-file]')){
+ const key=input.dataset.chartFile,status=$(key+'Status');
+ input.onchange=async()=>{
+  const file=input.files[0];
+  input.dataset.read='';
+  if(!file)return;
+  if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>200000){
+   status.textContent='Usa PNG, JPEG o WebP de hasta 200 KB';return;
+  }
+  input.dataset.read='pending';
+  const reader=new FileReader();
+  reader.onloadend=async()=>{
+   if(input.files[0]!==file)return;
+   try{
+    if(typeof reader.result!=='string')throw Error();
+    const img=new Image();img.src=reader.result;
+    await img.decode();
+    if(input.files[0]!==file)return;
+    field(key).value=reader.result;status.textContent='Captura lista para guardar';
+   }catch{if(input.files[0]===file)status.textContent='No se pudo abrir la captura';}
+   finally{if(input.files[0]===file)input.dataset.read='';}
+  };
+  reader.readAsDataURL(file);
+ };
+ form.querySelector('[data-chart-clear='+key+']').onclick=()=>{input.value='';input.dataset.read='';field(key).value='';status.textContent='Sin captura';};
+}
+$('import').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>10000000)throw Error('La copia supera 10 MB');const next=C.load(JSON.parse(await file.text()));if(!confirm('Restaurar '+next.trades.length+' operaciones y '+(next.opportunities?.length||0)+' oportunidades sustituirá el historial de esta versión. Exporta antes una copia.'))return;localStorage.setItem(KEY,JSON.stringify(next));db=next;blocked=false;render();message('Copia restaurada y validada. No se ha modificado el historial de la versión anterior.');}catch(err){message('No se importó: '+err.message);}e.target.value='';};
+$('export').onclick=()=>download('journal-productos-v4-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json');
+$('csv').onclick=()=>{const cols=['trade_id','leg_id','exit_id','evento','producto','modo','activo_subyacente','strategy_id','setup_id','setup','estructura_opciones','sesgo','call_put','compra_venta','strike','vencimiento','multiplicador','riesgo_planificado','moneda','zona','fecha_local','instante','precio_prima','cantidad_contratos','porcentaje_entrada','restante_entrada','coste_evento','neto_evento','costes_cobertura','motivo'];const rows=[cols];
+ for(const t of selected())for(const l of C.accounting(t).legs){const product=t.product||'derivative',base=[t.id,l.id];rows.push([...base,'','entrada',product,t.mode,t.asset,t.strategyId,t.setupId,t.setup,t.optionStructure,t.direction,l.optionType,l.side,l.strike,l.expiry,t.multiplier,t.plannedRisk,t.currency,t.timezone,l.open,l.openInstant,l.entry,l.size,'','',l.cost,-Number(l.cost),t.costQuality,l.reason]);for(const x of l.exits)rows.push([...base,x.id,'salida',product,t.mode,t.asset,t.strategyId,t.setupId,t.setup,t.optionStructure,t.direction,l.optionType,l.side,l.strike,l.expiry,t.multiplier,t.plannedRisk,t.currency,t.timezone,x.close,x.closeInstant,x.price,x.size,x.percent,x.remaining,x.cost,x.net,t.costQuality,x.reason]);}
+ download('journal-ejecuciones.csv','\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/^[\s\uFEFF]*[=+@-]/,"'$&").replaceAll('"','""')+'"').join(';')).join('\r\n'),'text/csv;charset=utf-8');};
+// Navigation preferences are independent of trade backups and never sync data.
+function setLinks(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('journal-navigation-v1')||'{}');}catch{}for(const key of ['atlas','macro']){const value=typeof prefs[key]==='string'?prefs[key]:key==='atlas'?'../Estrategia_Atlas_v1_2_1_auditoria.html':'../../Macromonitor/claude-preview.html';try{const u=new URL(value,location.href);if(!['file:','http:','https:'].includes(u.protocol))throw Error();$(key+'Link').href=u.href;$('link-'+key).value=value;}catch{$(key+'Link').removeAttribute('href');}}}
+$('navigationSettings').onclick=()=>$('navigationDialog').showModal();$('navigationClose').onclick=()=>$('navigationDialog').close();$('navigationForm').onsubmit=e=>{e.preventDefault();try{const prefs={};for(const key of ['atlas','macro']){const val=$('link-'+key).value.trim(),url=new URL(val,location.href);if(!val||!['file:','http:','https:'].includes(url.protocol)||url.username||url.password)throw Error('Usa una ruta o enlace http/https válido');prefs[key]=val;}localStorage.setItem('journal-navigation-v1',JSON.stringify(prefs));setLinks();$('navigationDialog').close();message('Accesos guardados en este navegador. No comparten ni duplican operaciones.');}catch(e){$('navigationError').textContent=e.message;}};
+const filterIds=['productFilter','mode','currency','assetFilter','setupFilter','directionFilter','fromFilter','toFilter'];
+function saveFilters(){try{localStorage.setItem('journal-filters-v1',JSON.stringify(Object.fromEntries(filterIds.map(id=>[id,$(id).value]))));}catch{}}
+try{const prefs=JSON.parse(localStorage.getItem('journal-filters-v1')||'{}');for(const id of filterIds)if(typeof prefs[id]==='string'&&($(id).tagName!=='SELECT'||[...$(id).options].some(o=>o.value===prefs[id])))$(id).value=prefs[id];}catch{}
+for(const id of filterIds)$(id).oninput=()=>{saveFilters();render();};
+field('product').onchange=()=>{const chosen=field('product').value,previous=form.dataset.product||'derivative';if($('legs').children.length&&!confirm('Cambiar el producto reinicia las entradas o patas del formulario. ¿Continuar?')){field('product').value=previous;return;}syncProduct(true);};
+syncProduct(false);setLinks();render();
+
+
+(function(root){
+'use strict';
+const buckets=['trades','opportunities'];
+const sessionKey='trading-journal-cloud-session';
+const cap=400000000;
+const mapRows=db=>new Map(buckets.flatMap(kind=>(db[kind]||[]).map(body=>[body.id,{id:body.id,kind,body}])));
+const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const canonical=x=>Array.isArray(x)?x.map(canonical):x&&typeof x==='object'?
+ Object.fromEntries(Object.keys(x).filter(k=>k!=='cloudPhotos').sort().map(k=>[k,canonical(x[k])])):x;
+function diff(previous,next){
+ const old=mapRows(previous), revised=mapRows(next);
+ return {
+  next_fields:next.fields,
+  upserts:[...revised.values()].filter(x=>!same(x,old.get(x.id))),
+  remove_ids:[...old.keys()].filter(id=>!revised.has(id))
+ };
+}
+function mergeBackup(current,backup,skipDuplicates=false,fullCurrent=current){
+ const ids=mapRows(fullCurrent);
+ const merged={...current,opportunities:[...(current.opportunities||[])],trades:[...current.trades],fields:[...current.fields]};
+ for(const x of mapRows(backup).values()){
+  if(ids.has(x.id)){
+   if(skipDuplicates&&same(canonical(ids.get(x.id)),canonical(x)))continue;
+   throw Error('La copia contiene identificadores que ya están en la nube. La importación no sustituye fichas.');
+  }
+  merged[x.kind].push(x.body);
+ }
+ for(const field of backup.fields){
+  const earlier=merged.fields.find(x=>x.id===field.id);
+  if(earlier&&!same(canonical(earlier),canonical(field)))throw Error('La copia usa un campo personalizado con otra definición');
+  if(!earlier)merged.fields.push(field);
+ }
+ return merged;
+}
+function verifiedArchiveIds(current,backup,cutoff,isClosed){
+ const date=new Date(cutoff+'T00:00:00Z');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(cutoff)||!Number.isFinite(+date)||date.toISOString().slice(0,10)!==cutoff)
+  throw Error('Indica una fecha de corte válida');
+ const backed=mapRows(backup);
+ return current.trades.filter(t=>isClosed(t)&&
+  t.legs.every(l=>l.exits.length&&l.exits.every(x=>x.close.slice(0,10)<=cutoff))).map(t=>{
+   const copy=backed.get(t.id);
+   if(copy?.kind!=='trades'||!same(canonical(copy.body),canonical(t)))
+    throw Error('La copia no contiene todas las fichas seleccionadas con sus cambios y capturas. Exporta una copia nueva.');
+   return t.id;
+  });
+}
+function client(config,{fetcher=fetch,storage}={}){
+ if(!storage){
+  const memory=new Map();
+  storage={getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)};
+ }
+ const origin=new URL(config.url);
+ if(origin.protocol!=='https:'||!/^[-a-z0-9]+\.supabase\.co$/.test(origin.hostname)||origin.origin!==config.url||
+    typeof config.key!=='string'||!config.key.startsWith('sb_publishable_'))
+  throw Error('Configuración pública de Supabase inválida');
+ let session=null, revision=null, lastRead=null, usedBytes=0, pendingRefresh=null;
+ const key=sessionKey+':'+origin.hostname;
+ const conflict=()=>Error('Se guardó un cambio en otro dispositivo. Copia tus notas y pulsa Actualizar antes de volver a editar.');
+ function reset(){
+  session=null;revision=null;usedBytes=0;storage.removeItem(key);
+ }
+ async function raw(path,{token,body,method=body===undefined?'GET':'POST'}={}){
+  const response=await fetcher(origin.origin+path,{method,cache:'no-store',
+   headers:{apikey:config.key,...(token?{Authorization:'Bearer '+token}:{}),
+    ...(body===undefined?{}:{'Content-Type':'application/json'})},
+   ...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok){const e=Error('El servicio devolvió un error');e.status=response.status;e.code=data?.code;throw e;}
+  return data;
+ }
+ function accept(tokens){
+  if(!tokens?.access_token||!tokens?.refresh_token)throw Error('Sesión inválida');
+  session=tokens;storage.setItem(key,tokens.refresh_token);return tokens;
+ }
+ async function refresh(){
+  if(!pendingRefresh){
+   const token=session?.refresh_token||storage.getItem(key);
+   if(!token)throw Error('Inicia sesión en el Journal');
+   pendingRefresh=raw('/auth/v1/token?grant_type=refresh_token',{body:{refresh_token:token}})
+    .then(accept).catch(error=>{if(error.status===400||error.status===401)reset();throw error;})
+    .finally(()=>{pendingRefresh=null;});
+  }
+  return pendingRefresh;
+ }
+ async function signIn(email,password){
+  try{accept(await raw('/auth/v1/token?grant_type=password',{body:{email,password}}));}
+  catch(error){if(error.status===400||error.status===401)throw Error('Correo o contraseña incorrectos.');throw error;}
+ }
+ async function remote(path,body){
+  if(!session)await refresh();
+  try{return await raw(path,{token:session.access_token,body});}
+  catch(error){
+   if(error.status!==401)throw error;
+   await refresh();
+   return raw(path,{token:session.access_token,body});
+  }
+ }
+ async function read(includeImages=false){
+  let after='',first=null;
+  const next={version:2,fields:[],trades:[],opportunities:[]};
+  while(true){
+   const page=await remote('/rest/v1/rpc/journal_read',{after_id:after,include_images:includeImages});
+   if(!first)first=page;
+   if(page.revision!==first.revision)throw conflict();
+   for(const item of page.items)next[item.kind].push(item.body);
+   const last=page.items.at(-1);
+   if(page.items.length<(includeImages?8:80))break;
+   if(!last||last.id===after)throw Error('No se pudo completar la paginación');
+   after=last.id;
+  }
+  next.fields=first.fields;
+  lastRead=first.revision;
+  if(!includeImages){revision=first.revision;usedBytes=first.used_bytes;}
+  return next;
+ }
+ async function entry(id){
+  if(!/^[-\w]{1,120}$/.test(id))throw Error('ID inválido');
+  const rows=await remote('/rest/v1/journal_items?select=body&id=eq.'+encodeURIComponent(id));
+  if(rows.length!==1)throw Error('Ficha ausente. Pulsa Actualizar.');
+  // A stale base revision will still reject any subsequent save.
+  return rows[0].body;
+ }
+ async function write(change){
+  if(revision===null)throw Error('Descarga el historial antes de guardar');
+  let data;
+  try{data=await remote('/rest/v1/rpc/journal_write',{expected_revision:revision,...change});}
+  catch(error){
+   if(error.code==='40001')throw conflict();
+   if(error.code==='42501')throw Error('La cuenta no está habilitada para el Journal.');
+   if(error.code==='22023')throw Error('El lote es demasiado grande o alcanzaste el límite de uso. Exporta una copia.');
+   throw Error('No se confirmó el guardado. Conserva la ficha abierta y comprueba el historial antes de reintentar.');
+  }
+  revision=data.revision;usedBytes=data.used_bytes;
+ }
+ return {
+  signIn, read, entry, write, reset, lastReadRevision:()=>lastRead,
+  hasSession:()=>Boolean(session||storage.getItem(key)),
+  usage:()=>({usedBytes,cap,ratio:usedBytes/cap}),
+  save:(before,next)=>write(diff(before,next)),
+  signOut:async()=>{try{if(session)await raw('/auth/v1/logout?scope=local',{method:'POST',token:session.access_token});}finally{reset();}}
+ };
+}
+const api={client,diff,mergeBackup,verifiedArchiveIds,cap};
+if(typeof module!=='undefined')module.exports=api;
+else root.JournalCloud=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+/* The hosted Journal uses the same validation and accounting as the portable file. */
+let cloud=null, cloudSaving=false, cloudLoading=false;
+const emptyJournal=()=>({version:2,fields:[],trades:[],opportunities:[]});
+const cloudForm=$('cloudLogin'), cloudApp=$('cloudApp'), cloudStatus=$('cloudStatus');
+function setUsage(){
+ if(!cloud)return;
+ const {usedBytes,cap,ratio}=cloud.usage();
+ $('cloudUsage').textContent='Uso del Journal: '+(usedBytes/1e6).toFixed(2)+' de '+cap/1e6+' MB reservados.';
+ $('cloudWarning').textContent=ratio>=.9?'Queda menos del 10 % del margen. Exporta y verifica una copia cuanto antes.':
+  ratio>=.8?'Has usado el 80 % del margen. Revisa las capturas y prepara una copia para archivar.':'';
+}
+function showCloud(connected){
+ cloudApp.hidden=!connected;cloudForm.hidden=connected;
+ if(!connected){db=emptyJournal();render();renderFields();}
+}
+async function readCloud(){
+ if(cloudSaving||cloudLoading||$('editor').open)return;
+ cloudLoading=true;
+ try{
+  db=C.load(await cloud.read());render();renderFields();setUsage();showCloud(true);
+  cloudStatus.textContent='Sincronizado · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+ }finally{cloudLoading=false;}
+}
+async function saveCloud(next){
+ if(!cloud||cloudApp.hidden)throw Error('Inicia sesión antes de guardar');
+ if(cloudSaving||cloudLoading)throw Error('Hay otra sincronización en curso. Conserva la ficha abierta.');
+ cloudSaving=true;cloudStatus.textContent='Guardando en la nube…';
+ try{
+  await cloud.save(db,next);db=next;setUsage();
+  cloudStatus.textContent='Sincronizado · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+ }catch(error){cloudStatus.textContent='Guardado no confirmado';throw error;}
+ finally{cloudSaving=false;}
+}
+async function openCloudEditor(item=null){
+ if(cloudSaving||cloudLoading)return;
+ try{
+  if(item?.cloudPhotos&&!item.chart1h&&!item.chart5m){
+   cloudLoading=true;
+   const full=await cloud.entry(item.id);
+   const list=db[item.opportunityStatus?'opportunities':'trades'];
+   const i=list.findIndex(x=>x.id===item.id);
+   if(i<0)throw Error('La ficha ya no está en el historial visible.');
+   const checked=C.load({version:2,fields:db.fields,trades:item.opportunityStatus?[]:[full],
+     opportunities:item.opportunityStatus?[full]:[]});
+   item=(item.opportunityStatus?checked.opportunities:checked.trades)[0];
+   list[i]=item;
+  }
+  openEditor(item);
+ }catch(error){message(error.message);}
+ finally{cloudLoading=false;}
+}
+async function exportCloud(){
+ if(cloudApp.hidden||cloudSaving||cloudLoading)return;
+ cloudLoading=true;cloudStatus.textContent='Preparando copia completa, incluidas las capturas…';
+ try{
+  const backup=C.load(await cloud.read(true));
+  const payload=JSON.stringify(backup);
+  download('journal-privado-'+new Date().toISOString().slice(0,10)+'.json',payload,'application/json');
+  cloudStatus.textContent='Copia validada en memoria y descargada · '+backup.trades.length+' operaciones.';
+ }catch(error){cloudStatus.textContent='No se pudo exportar: '+error.message;}
+ finally{cloudLoading=false;}
+}
+async function restoreCloud(input){
+ const file=input.files[0];
+ if(!file||cloudSaving||cloudLoading)return;
+ cloudSaving=true;
+ let saved=0;
+ try{
+  const backup=C.load(JSON.parse(await file.text()));
+  const current=C.load(await cloud.read(true));
+  const revision=cloud.lastReadRevision();
+  const before=C.load(await cloud.read());
+  if(revision!==cloud.lastReadRevision())
+   throw Error('El historial cambió durante la lectura. Actualiza y vuelve a importar.');
+  const next=JournalCloud.mergeBackup(before,backup,true,current);
+  const patch=JournalCloud.diff(before,next);
+  if(!patch.upserts.length&&JSON.stringify(next.fields)===JSON.stringify(before.fields)){
+   cloudStatus.textContent='La copia ya estaba incorporada.';return;
+  }
+  if(!confirm('Añadir '+patch.upserts.length+' fichas de la copia, conservando el historial actual. ¿Continuar?'))return;
+  for(let i=0;i<Math.max(1,patch.upserts.length);i+=12){
+   const batch=patch.upserts.slice(i,i+12);
+   await cloud.write({...patch,upserts:batch});saved+=batch.length;
+  }
+  cloudStatus.textContent='Copia incorporada · '+saved+' fichas nuevas.';
+ }catch(error){cloudStatus.textContent='Importación detenida · '+saved+' fichas incorporadas. '+error.message;}
+ finally{
+  input.value='';cloudSaving=false;
+  try{
+   db=C.load(await cloud.read());render();renderFields();setUsage();
+  }catch{cloudStatus.textContent+=' Pulsa Actualizar para comprobar el historial.';}
+ }
+}
+async function archiveCloud(e){
+ e.preventDefault();
+ if(cloudApp.hidden||cloudSaving||cloudLoading||$('editor').open)return;
+ const file=$('cloudArchiveFile').files[0];
+ const cutoff=$('cloudArchiveCut').value;
+ if(!file)return;
+ cloudSaving=true;
+ let removed=0;
+ try{
+  const backup=C.load(JSON.parse(await file.text()));
+  const current=C.load(await cloud.read(true));
+  const archived=JournalCloud.verifiedArchiveIds(current,backup,cutoff,t=>C.accounting(t).closed);
+  const revision=cloud.lastReadRevision();
+  const before=C.load(await cloud.read());
+  if(revision!==cloud.lastReadRevision())throw Error('El historial cambió. Descarga y verifica una copia nueva.');
+  if(!archived.length){cloudStatus.textContent='Sin fichas cerradas hasta esa fecha.';return;}
+  if(!confirm('Copia verificada para '+archived.length+' operaciones. ¿Confirmas que la guardaste fuera del Journal y quieres retirar esas fichas de la nube?'))return;
+  for(let i=0;i<archived.length;i+=12){
+   const batch=archived.slice(i,i+12);
+   await cloud.write({next_fields:before.fields,upserts:[],remove_ids:batch});
+   removed+=batch.length;
+  }
+  cloudStatus.textContent='Retiradas '+removed+' operaciones cerradas. Conserva la copia verificada.';
+ }catch(error){cloudStatus.textContent='Archivo detenido · '+removed+' fichas retiradas. '+error.message;}
+ finally{
+  cloudSaving=false;$('cloudArchiveFile').value='';
+  try{db=C.load(await cloud.read());render();renderFields();setUsage();}
+  catch{cloudStatus.textContent+=' Pulsa Actualizar para comprobar el historial.';}
+ }
+}
+$('cloudArchive').onsubmit=archiveCloud;
+cloudForm.onsubmit=async e=>{
+ e.preventDefault();
+ if(!cloud||cloudLoading)return;
+ const password=$('cloudPassword');
+ cloudLoading=true;cloudStatus.textContent='Conectando…';
+ try{
+  await cloud.signIn($('cloudEmail').value.trim(),password.value);
+  cloudLoading=false;await readCloud();
+ }catch(error){
+  cloud.reset();showCloud(false);
+  cloudStatus.textContent=error.code==='42501'?'Esta cuenta no tiene acceso al Journal privado.':error.message;
+ }finally{password.value='';cloudLoading=false;}
+};
+$('cloudReload').onclick=()=>readCloud().catch(error=>{cloudStatus.textContent=error.message;});
+cloudApp.addEventListener('click',async e=>{
+ const button=e.target.closest('[data-cloud-photo]');
+ if(!button||!cloud||cloudSaving||cloudLoading)return;
+ button.disabled=true;
+ try{
+  const full=await cloud.entry(button.dataset.cloudPhoto);
+  const checked=C.load({version:2,fields:db.fields,trades:full.opportunityStatus?[]:[full],
+   opportunities:full.opportunityStatus?[full]:[]});
+  const row=(full.opportunityStatus?checked.opportunities:checked.trades)[0];
+  button.parentElement.innerHTML=chartDetails(row)||'Sin capturas';
+ }catch(error){button.disabled=false;cloudStatus.textContent=error.message;}
+});
+$('cloudExit').onclick=async()=>{
+ if(cloudSaving||cloudLoading)return;
+ if($('editor').open&&!confirm('Hay una ficha abierta. ¿Cerrar sesión sin guardar el formulario?'))return;
+ if($('editor').open)$('editor').close();
+ try{await cloud.signOut();}catch{}
+ showCloud(false);cloudStatus.textContent='Sesión cerrada.';
+};
+$('export').onclick=exportCloud;
+$('import').onchange=e=>restoreCloud(e.target);
+showCloud(false);
+if(window.self!==window.top){
+ cloudStatus.textContent='Abre el Journal en una pestaña propia.';
+}else if(window.JOURNAL_PUBLIC_CONFIG){
+ try{cloud=JournalCloud.client(window.JOURNAL_PUBLIC_CONFIG);}
+ catch{cloudStatus.textContent='La configuración pública no es válida.';}
+}else cloudStatus.textContent='El Journal está pendiente de conexión con Supabase.';
+if(!cloud)cloudForm.querySelector('button').disabled=true;
+if(cloud?.hasSession())readCloud().catch(error=>{
+ cloud.reset();showCloud(false);
+ cloudStatus.textContent=error.code==='42501'?'Esta cuenta no tiene acceso al Journal privado.':'No se pudo recuperar la sesión. Vuelve a iniciar sesión.';
+});
+
+</script></body></html>
