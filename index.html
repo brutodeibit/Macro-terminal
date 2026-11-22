@@ -128,7 +128,7 @@
                 <button onclick="manualRefresh()" title="Descarga la última publicación. No ejecuta los proveedores ni garantiza datos en tiempo real." class="text-xs bg-gray-900 border border-gray-800 text-gray-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
                     <i class="fa-solid fa-rotate mr-1"></i> Cargar última publicación
                 </button>
-                <a href="https://github.com/brutodeibit/Macro-terminal/actions/workflows/update-preview.yml" target="_blank" rel="noopener" title="Abre GitHub: pulsa Run workflow para consultar las fuentes y publicar un nuevo feed. Requiere tu sesión de GitHub. Después carga la última publicación." class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">Actualizar fuentes · GitHub ↗</a>
+                <button id="sourceRefreshButton" type="button" title="Consulta las fuentes y muestra el progreso dentro del monitor." class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">Actualizar fuentes</button>
                 <a href="statistical-monitor.html" class="text-xs bg-gray-900 border border-blue-900/60 text-blue-300 px-3 py-1.5 rounded-full hover:bg-gray-800 transition">
                     <i class="fa-solid fa-chart-column mr-1"></i> Monitor estadístico
                 </a>
@@ -2005,12 +2005,12 @@ function renderContent() {
 
         // El archivo macro-feed.json debe permanecer en la misma carpeta que este HTML.
         // En HTTP/HTTPS se recarga al abrir y cada 15 min; en file:// se usa el respaldo interno.
-                async function loadExternalFeed(){
+                async function loadExternalFeed(requestedUrls, force = false){
             if(!['http:','https:'].includes(location.protocol)){
                 setFeedStatus('Modo local · usando datos integrados', false);
                 return false;
             }
-            const urls=[
+            const urls=requestedUrls || [
                 './macro-feed-v7.json',
                 'https://raw.githubusercontent.com/brutodeibit/Macro-terminal/main/macro-feed-v7.json'
             ];
@@ -2020,7 +2020,7 @@ function renderContent() {
                     const res=await fetch(url,{cache:'no-cache',headers:{Accept:'application/json'}});
                     if(!res.ok) throw new Error('HTTP '+res.status);
                     const revision=res.headers.get('etag')||res.headers.get('last-modified');
-                    if(revision&&window.__feedRevision===url+revision){setFeedStatus('Feed sin cambios · '+(macroDatabase.__feedMeta?.updated||'—'),true);return true;}
+                    if(!force&&revision&&window.__feedRevision===url+revision){setFeedStatus('Feed sin cambios · '+(macroDatabase.__feedMeta?.updated||'—'),true);return true;}
                     const feed=await res.json();
                     if(!feed || !feed.economies) throw new Error('JSON válido pero sin economies');
                     Object.entries(feed.economies).forEach(([k,v])=>{
@@ -2034,7 +2034,7 @@ function renderContent() {
                     });
                     const map={marketBreadth:'__marketBreadth',economicCalendar:'__economicCalendar',riskOnOff:'__riskOnOff',cot:'__cot',options:'__options',fx:'__fx',darkPools:'__darkPools',darkPoolPrints:'__darkPoolPrints',darkFlowRadar:'__darkFlowRadar',squawkFlow:'__squawkFlow',traditionalSentiment:'__traditionalSentiment',traditionalFearGreed:'__traditionalFearGreed',optionsStats:'__optionsStats',globalMarkets:'__globalMarkets',rotation:'__rotation',cryptoSentiment:'__cryptoSentiment',bondMarket:'__bondMarket'};
                     Object.entries(map).forEach(([src,dst])=>{if(feed[src]!==undefined) macroDatabase[dst]=feed[src];});
-                    macroDatabase.__feedMeta={updated:feed.updated||'—',source:url.includes('raw.githubusercontent')?'GitHub raw fallback':'GitHub Pages',loadedAt:new Date().toISOString()};
+                    macroDatabase.__feedMeta={updated:feed.updated||'—',source:requestedUrls?'Consulta manual de fuentes':url.includes('raw.githubusercontent')?'GitHub raw fallback':'Copia publicada',loadedAt:new Date().toISOString()};
                     if(revision)window.__feedRevision=url+revision;
                     setFeedStatus('Feed sincronizado · '+macroDatabase.__feedMeta.source+' · '+(feed.updated||'—'),true);
                     renderSidebar();
@@ -2181,5 +2181,6 @@ new MutationObserver(()=>{drawFG();drawETF();}).observe(document.body,{childList
 
     <script src="./v7-ui.js?v=20261114.1"></script>
     <script src="./design-preview-v2.js?v=20261119"></script>
+    <script src="./source-refresh.js?v=20261122"></script>
 </body>
 </html>

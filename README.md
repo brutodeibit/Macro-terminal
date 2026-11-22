@@ -18,7 +18,7 @@ Los antiguos enlaces de revisión redirigen a la portada.
 - **Econic personalizado integrado en el RESUMEN GLOBAL:** Risk-On/Risk-Off con SP500, Nasdaq, VIX, VVIX, SKEW, crédito HY (opcional FRED), DXY, AUD/JPY, oro, cobre, Brent/WTI, TLT/SPY y BTC/ETH.
 - `macro-feed.json` separado del HTML.
 - `update_feed.py` para actualizar automáticamente.
-- GitHub Actions cada 15 minutos.
+- Feed oficial V7 cada dos horas y feed base cada seis horas, con caché por fuente.
 
 ## Integridad de expectativas y bancos centrales
 
@@ -42,3 +42,13 @@ El score Risk-On/Risk-Off es descriptivo y transparente; no constituye una seña
 - Incluye pullbacks en tendencia, impulsos, días explosivos, drawdown y estacionalidad por día del mes.
 - Incluye una primera capa de ventanas de liquidez intradía en hora de Nueva York. La muestra intradía pública se etiqueta como parcial y **no se presenta todavía como el backtest de 1–3 años**.
 - `stats-feed.json` conserva el último snapshot válido.
+
+## Actualización manual de las fuentes
+
+El botón «Actualizar fuentes» de la copia de trabajo consulta los recolectores
+desde un servicio local, sin abrir GitHub. En Windows, abrir
+`Iniciar actualización de fuentes.cmd` y usar `http://127.0.0.1:8766/`.
+La primera ejecución prepara las dependencias de Python. Mantener su ventana
+abierta; los resultados quedan en el ordenador y no publican Pages.
+Para disponer de la consulta en cualquier dispositivo falta alojar el servicio.
+Estado, pruebas y limitaciones: [diagnóstico del 22/11](docs/REFRESCO_Y_COBERTURA_20261122.md).
