@@ -7,6 +7,21 @@ from datetime import datetime, timezone
 from v7_economy_state import synchronize
 
 class EconomyStateTests(unittest.TestCase):
+    def test_boj_opinions_do_not_become_a_new_meeting(self):
+        from v7_meetings import is_decision_publication
+        title = 'Summary of Opinions at the Monetary Policy Meeting on October 29 and 30, 2026'
+        url = 'https://www.boj.or.jp/en/mopo/mpmsche_minu/opinion_2026/opi261030.pdf'
+        self.assertFalse(is_decision_publication('jp', title, url))
+        self.assertTrue(is_decision_publication('uk', 'Monetary Policy Summary and Minutes'))
+        feed = {'economies': {'jp': {'conference': {'meetingArchive': [
+            {'date': '2026-11-09', 'title': title, 'sourceUrl': url, 'publicationType': 'decision'}]}}}}
+        synchronize(feed, '2026-11-22')
+        conference = feed['economies']['jp']['conference']
+        self.assertEqual(conference['history'][0]['date'], '2026-10-30')
+        self.assertEqual(len(conference['documents']), 1)
+        self.assertEqual(conference['documents'][0]['publicationType'], 'supporting_document')
+        self.assertNotIn('meetingDate', conference['documents'][0])
+
     def test_reviewed_updates_apply_when_network_jobs_are_cached(self):
         import update_preview as p
         job=Mock()

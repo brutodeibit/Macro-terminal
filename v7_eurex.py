@@ -1,5 +1,5 @@
-"""Official delayed Eurex OI chains. Settlement prices are not live quotes or IV."""
-from datetime import datetime, timezone
+"""Official Eurex OI chains; separately labelled settlement-derived scenarios."""
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import json
 import math
@@ -32,10 +32,34 @@ def chain_rows(data, expiration):
                          'settlementPrice':x.get('dSettle'),'version':x.get('versionNumber')})
     return rows
 
+
+def archive_expirations(options, code, url, date, overview):
+    """Keep exchange totals by session, including series that expired that day."""
+    observed = datetime.strptime(date, '%Y%m%d').date()
+    rows = []
+    for item in overview.get('dataRows', []):
+        expiry = datetime.strptime(item['date'], '%Y%m%d').date()
+        if not 0 <= (expiry - observed).days <= 90:
+            continue
+        row = {'expiration': expiry.isoformat(), 'type': item['contractType']}
+        for key in ('callOpenInterest', 'putOpenInterest', 'callVolume', 'putVolume'):
+            value = item.get(key)
+            row[key] = value if type(value) in (int, float) and math.isfinite(value) and value >= 0 else None
+        rows.append(row)
+    if not rows:
+        return
+    history = options.setdefault('eurexExpiryHistory', {}).setdefault(code, {})
+    history[observed.isoformat()] = {'sourceUrl': url, 'rows': rows}
+    oldest = (datetime.fromisoformat(max(history)).date() - timedelta(days=45)).isoformat()
+    for day in list(history):
+        if day < oldest:
+            del history[day]
+
 def update(feed):
     import market_features as mf
     now=datetime.now(timezone.utc)
-    markets=feed.setdefault('options',{}).setdefault('markets',[])
+    options = feed.setdefault('options', {})
+    markets = options.setdefault('markets', [])
     for ticker,(code,page) in list(PRODUCTS.items()) + list(DAILY_PRODUCTS.items()):
         try:
             soup=BeautifulSoup(mf.get(page).text,'html.parser')
@@ -45,13 +69,38 @@ def update(feed):
             date=config['busDate']
             overview=mf.get(url,{'busdate':date,'filtertype':'overview'}).json()
             if overview.get('meta',{}).get('productCode')!=code:raise ValueError('Wrong Eurex product')
+            archive_expirations(options, code, url, date, overview)
+            history = options.get('eurexExpiryHistory', {}).get(code, {})
+            # Backfill up to two listed sessions for comparisons around expiry.
+            prior_dates = sorted({
+                datetime.strptime(label.split()[0], '%d-%m-%Y').strftime('%Y%m%d')
+                for label in overview['header'].get('tradingDates', [])
+            } - {date}, reverse=True)
+            for prior_day in [day for day in prior_dates if day < date][:2]:
+                if datetime.strptime(prior_day, '%Y%m%d').date().isoformat() in history:
+                    continue
+                try:
+                    old = mf.get(url, {'busdate': prior_day, 'filtertype': 'overview'}).json()
+                    if old.get('meta', {}).get('productCode') == code:
+                        archive_expirations(options, code, url, prior_day, old)
+                except (ValueError, KeyError, OSError):
+                    continue
             spot=overview['header']['underlyingClosingPrice'];profiles=[];selected=set()
-            for expiry in sorted(overview.get('dataRows',[]),key=lambda x:x['date']):
+            if not isinstance(spot,(int,float)) or not math.isfinite(spot) or spot<=0:
+                raise ValueError('No positive same-date underlying closing price')
+            candidates = sorted(overview.get('dataRows', []), key=lambda row: row['date'])
+            upcoming = [row for row in candidates
+                        if expiration_time(row['date'], code) > now
+                        and (expiration_time(row['date'], code).date()-now.date()).days <= 90]
+            milestones = [next((row for row in upcoming if row['contractType'] in types), None)
+                          for types in (('M', 'Q'), ('E',))]
+            for expiry in upcoming:
                 exp=expiration_time(expiry['date'],code)
                 days=(exp.date()-now.date()).days
                 if exp<=now or days>90:continue
                 bucket='0DTE' if days==0 else 'NEXT' if days<=7 else '7-30D' if days<=30 else '30-90D'
-                if bucket in selected:continue
+                if bucket in selected and expiry not in milestones:continue
+                if any(p['expiration'] == exp.date().isoformat() for p in profiles):continue
                 detail=mf.get(url,{'busdate':date,'filtertype':'detail','productdate':expiry['date'],'contracttype':expiry['contractType']}).json()
                 if detail.get('meta',{}).get('productCode')!=code:raise ValueError('Wrong chain product')
                 rows=chain_rows(detail,exp)
@@ -63,19 +112,34 @@ def update(feed):
                     z=strikes.setdefault(r['strike'],dict(strike=r['strike'],gex=None,callOi=0,putOi=0,callVolume=0,putVolume=0))
                     side='call' if r['type']=='C' else 'put'
                     z[side+'Oi']+=r['openInterest'];z[side+'Volume']+=r['volume']
-                p.update(bucket=bucket,expirationAt=exp.isoformat(),strikeMap=sorted(strikes.values(),key=lambda x:x['strike']),
+                p.update(bucket=bucket,expirationAt=exp.isoformat(),underlyingClose=spot,strikeMap=sorted(strikes.values(),key=lambda x:x['strike']),
                          source='Eurex · '+code,sourceUrl=url,sourceWindow='Official OI/volume by strike; settlement prices, no IV/Greeks supplied.',
                          gammaFlip=None,gammaFlipStatus='No IV/Greeks in official statistics',
                          oiCoveragePct=100*len(rows)/max(1,len(detail.get('dataRowsCall',[]))+len(detail.get('dataRowsPut',[]))),
                          observedAt=datetime.strptime(date,'%Y%m%d').date().isoformat(),fetchedAt=now.isoformat(),
                          dataStatus='REAL / DELAYED · Eurex OI and volume',contractCode=code)
+                from v7_eurex_model import settlement_model
+                modeled = settlement_model(rows, spot, p['observedAt'], exp, code)
+                p.update(modeled)
+                if modeled['settlementModel']['status'] == 'derived':
+                    p['sourceWindow'] = ('Official daily OI/volume. IV, Greeks, GEX and Gamma Flip modeled '
+                                         'from settlement prices and fitted same-expiry carry; not live quotes.')
+                    p['dataStatus'] = 'OBSERVED OI + MODELED DAILY SETTLEMENT ANALYTICS'
                 profiles.append(p);selected.add(bucket)
             if not profiles:raise ValueError('No unexpired chains')
             prior=next((m for m in markets if m.get('ticker')==ticker),{})
+            expiry_coverage = {**prior.get('expiryCoverage', {}), code: {
+                'observedAt': datetime.strptime(date,'%Y%m%d').date().isoformat(),
+                'availableExpirations': sorted({row['date'] for row in overview.get('dataRows', [])
+                    if expiration_time(row['date'],code)>now and (expiration_time(row['date'],code).date()-now.date()).days <= 90}),
+                'selectedExpirations': [p['expiration'] for p in profiles],
+                'method':'First expiry per time bucket, plus nearest standard and month-end when listed. Up to 90 calendar days.'}}
             profiles = [p for p in prior.get('profiles',[]) if p.get('contractCode') and p['contractCode'] != code] + profiles
             entry={**prior,'ticker':ticker,'name':prior.get('name',ticker),'spot':spot,'referenceOnly':False,
                    'profiles':profiles,'source':'Eurex · '+code,'sourceUrl':page,'asOf':datetime.strptime(date,'%Y%m%d').date().isoformat(),
-                   'dataStatus':'REAL / DELAYED · official Eurex chains','method':'Observed OI and volume; Max Pain calculated. GEX unavailable without verified IV/Greeks.'}
+                   'expiryCoverage':expiry_coverage,
+                   'dataStatus':'REAL / DELAYED · official Eurex chains',
+                   'method':'Observed OI/volume and calculated Max Pain. Validated European index profiles may include explicitly modeled settlement IV/GEX/Gamma Flip; see per-expiry coverage and assumptions.'}
             markets[:]=[m for m in markets if m.get('ticker')!=ticker]+[entry]
             feed.setdefault('sourceWarnings',{}).pop('EUREX_'+code,None)
         except Exception as exc:

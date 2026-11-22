@@ -4,11 +4,26 @@ import json
 from pathlib import Path
 
 def synchronize(feed, today):
+    from v7_meetings import is_decision_publication
     reviewed=json.loads(Path(__file__).with_name('v7-reviewed-meetings.json').read_text(encoding='utf-8'))
     for eid,e in feed.get('economies',{}).items():
         if eid=='de':continue
         c=e.setdefault('conference',{})
-        archive={r['date']:r for r in c.get('meetingArchive',c.get('history',[])) if r.get('date')}
+        records = c.get('meetingArchive',c.get('history',[]))
+        documents = {r.get('sourceUrl') or str(r): r for r in c.get('documents', [])}
+        archive = {}
+        for record in records:
+            if not record.get('date'):
+                continue
+            if not is_decision_publication(eid, record.get('title', ''), record.get('sourceUrl', '')):
+                document = copy.deepcopy(record)
+                document['publicationType'] = 'supporting_document'
+                document.pop('meetingDate', None)
+                documents[document.get('sourceUrl') or str(document)] = document
+            else:
+                archive[record['date']] = record
+        if documents:
+            c['documents'] = list(documents.values())
         for row in reviewed['meetings'].get(eid,[]):
             if row['date']>today:continue
             archive[row['date']]={**archive.get(row['date'],{}),**row,

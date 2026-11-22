@@ -9,7 +9,7 @@ const files = new Set([
   'design-preview-v2.html','design-preview-v2.css','design-preview-v2.js',
   'design-lab-v2.html','design-lab-v2.css','design-lab-v2.js','index.html',
   'claude-preview.html','v7-ui.js','macro-feed-v7.json','macro-feed.json','data/cot-feed.json',
-  'statistical-monitor.html','stats-feed.json'
+  'statistical-monitor.html','stats-feed.json','source-refresh.js'
 ]);
 const mime = {'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json'};
 const port = Number(process.argv[2] || 8765);

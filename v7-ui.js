@@ -1,6 +1,21 @@
 /* Claude V7 extensions: retain existing interaction and layout. */
 function v7Fresh(value,days){const t=Date.parse(String(value||''));return Number.isFinite(t)&&t<=Date.now()+86400000&&t>=Date.now()-days*86400000;}
 function v7PrintAllowed(p){const day=String(p.timestamp||'').slice(0,10);return (!window.__darkFrom||day>=window.__darkFrom)&&(!window.__darkTo||day<=window.__darkTo);}
+function v7PrintRecord(p){return p.realPrint===true&&p.price!=null&&Number.isFinite(Number(p.price))&&Number(p.price)>0&&Number.isFinite(Date.parse(p.timestamp));}
+function v7PrintCanOverlay(p,frame){return v7PrintRecord(p)&&(/T.*(?:Z|[+-]\d\d:\d\d)$/.test(String(p.timestamp||''))||(p.timestampPrecision==='date'&&frame==='1d'&&/^\d{4}-\d{2}-\d{2}$/.test(String(p.timestamp||''))));}
+function v7PrintEpoch(p,candles,frame){
+ if(!v7PrintCanOverlay(p,frame))return NaN;
+ if(p.timestampPrecision==='date'){
+  const candle=candles.find(c=>Number.isFinite(c.ts)&&new Date(c.ts*1000).toISOString().slice(0,10)===p.timestamp);
+  return candle?candle.ts:NaN; // Visual daily anchor, never an inferred execution time.
+ }
+ return Date.parse(p.timestamp)/1000;
+}
+function v7PrintCoverage(a,frame){
+ const rows=(a.prints||[]).filter(v7PrintRecord).filter(v7PrintAllowed),provider=rows.filter(p=>p.sourceMode==='PROVIDER_REPORTED').length;
+ const dates=rows.map(p=>String(p.timestamp).slice(0,10)).sort();
+ return '<details class="metric p-4"><summary class="cursor-pointer text-sm font-semibold">Fuentes, precisión y cobertura de operaciones</summary><div class="text-xs text-gray-400 mt-3 space-y-2"><p>'+rows.length+' filas con precio y fecha para este activo y rango; '+provider+' reportadas por InfoLib. Fecha más reciente: '+esc(dates.at(-1)||'sin datos')+'. Esto no representa todo el mercado ni verifica por sí solo el venue.</p><p>'+rows.filter(p=>v7PrintCanOverlay(p,frame)).length+' filas con precisión suficiente para superponer en '+esc(frame)+'. Las filas sin zona horaria se conservan en la tabla y solo se anclan por fecha a una vela diaria; no se inventa una hora de ejecución.</p><p><a class="source-link" href="https://www.finra.org/filing-reporting/otc-transparency" target="_blank" rel="noopener">FINRA ATS/OTC</a>: agregados semanales retrasados, separados de las operaciones individuales.</p><p>Otras fuentes europeas: <a class="source-link" href="https://mfs.deutsche-boerse.com/DETR-posttrade" target="_blank" rel="noopener">Xetra oficial</a>, <a class="source-link" href="https://www.cboe.com/markets/eu/equities/transparency-data/" target="_blank" rel="noopener">Cboe Europe / APA</a> y <a class="source-link" href="https://tradereports.nasdaq.com/nasdaq-apa/trade-reports/post-trade" target="_blank" rel="noopener">Nasdaq APA</a>. Candidatas, sin conexión automática en este monitor. Operación publicada o fuera de bolsa no implica dark pool, lado comprador/vendedor ni institución.</p></div></details>';
+}
 function v7LabelLayout(annotations,trace,layout,el){
  const xs=(trace.x||[]).map(Number),ys=(trace.high||trace.y||[]).concat(trace.low||[]).filter(Number.isFinite);
  if(!xs.length||!ys.length)return annotations;
@@ -57,30 +72,220 @@ renderCurveChart=function(data){
  return '<div class="curve-wrap"><div id="'+id+'" style="height:480px"></div><div class="text-xs text-gray-400">'+esc(bonds.source||'Fuente sin identificar')+' · '+esc(bonds.date||'sin fecha')+' · '+esc(bonds.status==='estimated'?'Curva oficial estimada':'Rendimientos observados')+' · '+esc(bonds.methodology||'Sin interpolación propia')+'</div></div>';
 };
 
+function renderEurexRollover(history, code) {
+ const dates = Object.keys(history || {}).sort().reverse();
+ if (!code || !dates.length) return '';
+ const [latest, previous] = dates;
+ const priorRows = history[previous]?.rows || [];
+ const currentRows = history[latest].rows;
+ const key = r => r.expiration + ':' + r.type;
+ const currentKeys = new Set(currentRows.map(key));
+ const priorByKey = new Map(priorRows.map(r => [key(r), r]));
+ const rows = currentRows.concat(priorRows.filter(r => r.expiration <= latest && !currentKeys.has(key(r))));
+ rows.sort((a,b) => a.expiration.localeCompare(b.expiration) || a.type.localeCompare(b.type));
+ const total = (r, call, put) => Number.isFinite(r?.[call]) && Number.isFinite(r?.[put]) ? r[call]+r[put] : null;
+ const body = rows.map(r => {
+  const active = currentKeys.has(key(r));
+  const oi = active ? total(r,'callOpenInterest','putOpenInterest') : null;
+  const old = total(priorByKey.get(key(r)),'callOpenInterest','putOpenInterest');
+  const delta = r.expiration > latest && oi !== null && old !== null ? oi-old : null;
+  const volume = active ? total(r,'callVolume','putVolume') : null;
+  const beforeExpiry = r.expiration<=latest && dates.find(day => day<r.expiration &&
+   history[day].rows.some(item => key(item)===key(r) && total(item,'callOpenInterest','putOpenInterest')!==null));
+  const lastBefore = beforeExpiry && history[beforeExpiry].rows.find(item => key(item)===key(r));
+  const kind = ({M:'Mensual',W:'Semanal',E:'Fin de mes',Q:'Trimestral'})[r.type]||r.type;
+  return '<tr><td>'+esc(r.expiration)+' · '+esc(kind)+(r.expiration<=latest?' · vencido':'')+
+   (lastBefore?'<small class="block text-gray-400">OI previo '+fmtNum(total(lastBefore,'callOpenInterest','putOpenInterest'),0)+' · '+esc(beforeExpiry)+'</small>':'')+'</td>'+
+   '<td>'+fmtNum(old,0)+'</td><td>'+fmtNum(oi,0)+'</td><td>'+
+   (delta>0?'+':'')+fmtNum(delta,0)+'</td><td>'+fmtNum(volume,0)+'</td></tr>';
+ }).join('');
+ return '<details class="metric p-4"><summary class="cursor-pointer font-semibold">Vencimientos y rollover · Eurex '+esc(code)+'</summary>'+
+  '<p class="text-xs text-gray-400 my-3">Cierre '+esc(latest)+(previous?' · comparación con '+esc(previous):' · esperando otro cierre comparable')+
+  '. El cambio de interés abierto describe la posición agregada. El traslado efectivo entre vencimientos requiere identificar las operaciones vinculadas.</p>'+
+  '<div class="overflow-auto max-h-80"><table class="w-full text-xs"><thead><tr><th>Vencimiento</th><th>OI anterior</th><th>OI último</th><th>Variación OI</th><th>Volumen último</th></tr></thead><tbody>'+
+  body+'</tbody></table></div></details>';
+}
+
+const US_EXPIRY_SOURCES = {
+ Cboe:'https://cdn.cboe.com/resources/options/Cboe2026OPTIONSCalendar.pdf',
+ CME:'https://www.cmegroup.com/daily_bulletin/current/Section47_E_Mini_S_And_P_500_Call_Options.pdf',
+ Roll:'https://www.cmegroup.com/trading/equity-index/rolldates.html'
+};
+const US_EXPIRY_EVENTS = [
+ ['2026-11-18','Cboe','VIX','Mensual'],
+ ['2026-11-20','Cboe','SPX','Mensual · liquidación AM'],
+ ['2026-11-27','CME','ES','Semanal · EOW4'],
+ ['2026-11-30','Cboe','SPXW','Fin de mes · liquidación PM'],
+ ['2026-11-30','CME','ES','Fin de mes · opciones sobre futuros'],
+ ['2026-12-04','CME','ES','Semanal · EOW1'],
+ ['2026-12-11','CME','ES','Semanal · EOW2'],
+ ['2026-12-14','Roll','ES','Fecha habitual de rollover de futuros'],
+ ['2026-12-16','Cboe','VIX','Mensual'],
+ ['2026-12-18','Cboe','SPX','Mensual · liquidación AM'],
+ ['2026-12-18','CME','ES','Trimestral · futuro y opción trimestral'],
+ ['2026-12-31','Cboe','SPXW','Fin de trimestre · liquidación PM'],
+ ['2026-12-31','CME','ES','Fin de mes · opciones sobre futuros'],
+ ['2027-01-29','CME','ES','Fin de mes · opciones sobre futuros'],
+ ['2027-02-26','CME','ES','Fin de mes · opciones sobre futuros'],
+ ['2027-03-15','Roll','ES','Fecha habitual de rollover de futuros'],
+ ['2027-03-19','CME','ES','Trimestral · futuro y opción trimestral'],
+ ['2027-03-31','CME','ES','Fin de mes · opciones sobre futuros']
+];
+
+function renderUSExpiryCalendar() {
+ const today = new Date().toLocaleDateString('sv-SE',{timeZone:'America/New_York'});
+ const from = new Date(Date.parse(today+'T00:00:00Z')-14*86400000).toISOString().slice(0,10);
+ const events = US_EXPIRY_EVENTS.filter(([date])=>date>=from);
+ const rows = events.map(([date, source, code, label]) =>
+  '<tr><td>'+date+(date<today?' · pasado':'')+'</td><td>'+code+'</td><td>'+label+
+  '</td><td><a class="underline" target="_blank" rel="noopener noreferrer" href="'+
+  US_EXPIRY_SOURCES[source]+'">'+(source==='Roll'?'CME · calendario roll':source)+'</a></td></tr>').join('');
+ return '<details class="metric p-4"><summary class="font-semibold cursor-pointer">Vencimientos clave · EE. UU.</summary>'+
+  '<p class="text-xs text-gray-400 my-3">Selección verificada el 22/11/2026. Fechas de mercado. Calendario Cboe hasta diciembre de 2026 y CME hasta marzo de 2027. Para fechas diarias y cambios, consulta las listas oficiales.</p>'+
+  (rows?'<div class="overflow-auto max-h-72"><table class="w-full text-xs"><thead><tr><th>Fecha</th><th>Contrato</th><th>Evento</th><th>Fuente</th></tr></thead><tbody>'+rows+'</tbody></table></div>':
+    '<p class="text-xs text-gray-400">No hay eventos cubiertos en el periodo actual.</p>')+
+  '<p class="text-xs mt-3"><a class="underline" href="https://www.cboe.com/available_weeklys/" target="_blank" rel="noopener noreferrer">Series listadas Cboe</a> · '+
+  '<a class="underline" href="https://www.cmegroup.com/market-data/daily-bulletin.html" target="_blank" rel="noopener noreferrer">Boletín diario CME</a> · '+
+  '<a class="underline" href="https://www.cmegroup.com/trading/equity-index/paceofroll/main.html" target="_blank" rel="noopener noreferrer">Seguimiento oficial del rollover de futuros</a></p></details>';
+}
+
+function renderOptionsHistory(history) {
+ const openInterest = row => Number.isFinite(row?.callOi)&&Number.isFinite(row?.putOi) ? row.callOi+row.putOi : null;
+ const rows = history.map((row,i)=>{
+  const previous = history[i-1];
+  const a=openInterest(previous), b=openInterest(row);
+  const delta = row.source && previous?.source===row.source && row.expiration===previous.expiration &&
+   row.date<row.expiration && a!==null && b!==null ? b-a : null;
+  return '<tr><td>'+esc(row.date)+'</td><td>'+fmtNum(row.callOi,0)+'</td><td>'+fmtNum(row.putOi,0)+'</td>'+
+   '<td>'+(delta>0?'+':'')+fmtNum(delta,0)+'</td><td>'+fmtNum(row.gammaFlip,2)+'</td><td>'+esc(row.source||'—')+'</td></tr>';
+ }).join('');
+ return '<p class="mt-4 text-xs">Variación entre capturas de la misma fuente y el mismo vencimiento. Cobertura: '+history.length+
+  ' fechas capturadas.</p><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr>'+
+  '<th>Fecha</th><th>Call OI</th><th>Put OI</th><th>Variación OI</th><th>Flip</th><th>Fuente</th></tr></thead><tbody>'+
+  rows+'</tbody></table></div>';
+}
+
 const v7Options=renderOptionsSection;
 renderOptionsSection=function(){
  const html=v7Options(),o=macroDatabase.__options||{},m=(o.markets||[]).find(x=>x.ticker===window.__optTicker)||{},p=optionsSelectedProfile(m)||{};
  const roots=(p.gammaFlipRoots||[]).map(x=>fmtNum(x,2)).join(' · '),model=p.gammaFlipModel;
  const coverage = p.gammaFlipCoveragePct;
+ const sm=p.settlementModel;
+ const exsaSources=sm?.contractUrl&&sm?.dividendUrl?
+  '<p class="text-xs mt-2"><a class="underline" href="'+esc(sm.contractUrl)+'" target="_blank" rel="noopener noreferrer">Contrato EXSA en Eurex</a> · '+
+  '<a class="underline" href="'+esc(sm.dividendUrl)+'" target="_blank" rel="noopener noreferrer">Calendario de distribuciones de iShares</a></p>':'';
+ const settlementNotice=sm?'<div class="metric p-4 border border-amber-700/60"><b>Europa · '+esc(p.contractCode||'')+' · '+(sm.status==='derived'?'modelo diario de liquidación':Number.isFinite(p.ivAtm)?'IV de liquidación disponible · GEX sin dato':'modelo no disponible')+'</b><p class="text-sm text-gray-300 mt-2">'+(sm.status==='derived'?'GEX y Gamma Flip son estimaciones a fecha '+esc(p.observedAt)+', en '+esc(p.gexUnit||'EUR')+'. IV derivada de precios de liquidación, no griegas publicadas por Eurex. No son niveles intradía.':esc(sm.reason||p.gammaFlipStatus||'Faltan entradas verificables'))+'</p>'+(sm.status==='derived'?'<details class="mt-2 text-xs text-gray-400"><summary>Calidad y supuestos del cálculo</summary><p class="mt-2">'+esc(sm.method)+' · Cobertura OI '+fmtNum(sm.oiCoveragePct,1)+'% · '+sm.pairedStrikes+' pares call/put. Error de paridad '+fmtNum(sm.parityRmse,4)+' puntos. Multiplicador '+sm.multiplier+' EUR/punto.</p><p>Forward ajustado '+fmtNum(sm.forward,2)+' · descuento '+fmtNum(sm.discountFactor,6)+'. Tipos y carry implícitos en los precios; no expectativas oficiales del banco central. OI e IV por strike constantes, calls positivas y puts negativas como hipótesis; no posiciones observadas de dealers. ACT/365 por fechas; sin valoración intradía.</p></details>':'')+'</div>':'';
  const flipNote = p.gammaFlipStatus === 'Insufficient data' && Number.isFinite(coverage) && coverage < 90
   ? `<p class="text-xs text-gray-400">Gamma Flip · ${esc(p.expiration||'')}: ${fmtNum(coverage,1)}% del interés abierto con datos utilizables. Mínimo del modelo: 90%.</p>`
   : '';
  const history=(o.dailySnapshots?.[(m.ticker||'')+':'+(p.expiration||'')+(p.contractCode?':'+p.contractCode:'')]||[]).slice(-5);
- const details='<details class="metric p-4 mt-4"><summary class="cursor-pointer text-sm font-bold">Datos, modelo y evolución · '+esc(p.expiration||'sin vencimiento')+'</summary><div class="grid md:grid-cols-2 gap-4 mt-4 text-sm"><div><b>Gamma Flip</b><p>'+esc(p.gammaFlipStatus||'No calculable con este snapshot')+'</p><p>Cobertura OI con IV: '+fmtNum(p.gammaFlipCoveragePct,1)+'%. Cruces: '+esc(roots||'ninguno calculable')+'.</p><p>'+esc(model?.method||'Sin modelo revalorado disponible')+'</p><p>Supuestos: r='+fmtNum(model?.rate,3)+'; q='+fmtNum(model?.dividendYield,3)+'. OI fijo, IV por strike constante; exposición estimada.</p><p>Sensibilidad: '+esc(p.gammaFlipSensitivity?JSON.stringify(p.gammaFlipSensitivity):'no disponible')+'</p></div><div><b>Put/Call y Max Pain</b><p>OI: '+fmtNum(p.putCallOi,2)+' · Volumen: '+fmtNum(p.putCallVolume,2)+'. Mismo vencimiento; no son señales automáticas de compra/venta.</p><p>Max Pain minimiza el pago intrínseco agregado del OI observado. Walls OI son concentraciones de contratos; GEX aplica gamma y un supuesto de signo.</p><p>IV ATM es la volatilidad del activo y vencimiento seleccionados, no el VIX. Datos: '+esc(m.asOf||'sin fecha')+' · '+esc(m.source||'sin fuente')+'</p></div></div><div class="mt-4 text-xs">Últimas '+history.length+' fechas de snapshot capturadas · sin reconstrucción retrospectiva</div><div class="overflow-x-auto"><table class="w-full text-xs"><tr><th>Fecha</th><th>Call OI</th><th>Put OI</th><th>GEX</th><th>Flip</th></tr>'+history.map(r=>'<tr><td>'+esc(r.date)+'</td><td>'+fmtNum(r.callOi,0)+'</td><td>'+fmtNum(r.putOi,0)+'</td><td>'+fmtCompactMoney(r.gammaNet)+'</td><td>'+fmtNum(r.gammaFlip,2)+'</td></tr>').join('')+'</table></div></details>';
+ const details='<details class="metric p-4 mt-4"><summary class="cursor-pointer text-sm font-bold">Datos, modelo y evolución · '+esc(p.expiration||'sin vencimiento')+'</summary><div class="grid md:grid-cols-2 gap-4 mt-4 text-sm"><div><b>Gamma Flip</b><p>'+esc(p.gammaFlipStatus||'No calculable con este snapshot')+'</p><p>Cobertura OI con IV: '+fmtNum(p.gammaFlipCoveragePct,1)+'%. Cruces: '+esc(roots||'ninguno calculable')+'.</p><p>'+esc(model?.method||'Sin modelo revalorado disponible')+'</p><p>Supuestos: r='+fmtNum(model?.rate,3)+'; q='+fmtNum(model?.dividendYield,3)+'. OI fijo, IV por strike constante; exposición estimada.</p><p>Sensibilidad: '+esc(p.gammaFlipSensitivity?JSON.stringify(p.gammaFlipSensitivity):'no disponible')+'</p></div><div><b>Put/Call y Max Pain</b><p>OI: '+fmtNum(p.putCallOi,2)+' · Volumen: '+fmtNum(p.putCallVolume,2)+'. Mismo vencimiento; no son señales automáticas de compra/venta.</p><p>Max Pain minimiza el pago intrínseco agregado del OI observado. Walls OI son concentraciones de contratos; GEX aplica gamma y un supuesto de signo.</p><p>IV ATM es la volatilidad del activo y vencimiento seleccionados, no el VIX. Datos: '+esc(m.asOf||'sin fecha')+' · '+esc(m.source||'sin fuente')+'</p></div></div>'+renderOptionsHistory(history)+'</details>';
  const tabs='';
  const djx=(o.markets||[]).find(x=>x.ticker==='DJX'),rawDow=djx?.referenceIndex?.price;
  const dowValue=rawDow??(Number.isFinite(djx?.spot)?djx.spot*100:null);
  const dow=['DJX','DIA'].includes(window.__optTicker)?'<div class="metric p-4"><div class="flex flex-wrap gap-3 justify-between"><b>Dow Jones · DJIA / DJI</b><span>'+fmtNum(dowValue,2)+' puntos</span></div><p class="text-sm text-gray-400 mt-2">'+(rawDow!=null?'Precio del índice de referencia · '+esc(djx.referenceIndex.source):'Equivalente del índice calculado como DJX × 100')+' · '+esc(djx?.asOf||'sin fecha')+'</p><p class="text-xs text-gray-400 mt-2">DJX / DJXW: opciones sobre 1/100 del DJIA; multiplicador 100 USD por punto. DIA: ETF con precio y cadena propios. Los strikes y el OI se interpretan en la escala del instrumento seleccionado.</p></div>':'';
- return html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+tabs+dow).replace('</div></section>',flipNote+details+'</div></section>');
+ const rollover=renderEurexRollover(o.eurexExpiryHistory?.[p.contractCode],p.contractCode);
+ const calendar=renderUSExpiryCalendar();
+ return html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+tabs+dow+settlementNotice+exsaSources+rollover+calendar).replace('</div></section>',flipNote+details+'</div></section>');
 };
+
+function v7CboePrints(text) {
+ const lines = text.replace(/^\uFEFF/,'').split(/\r?\n/);
+ const fields = lines.shift().split(',').map(s=>s.trim());
+ const required = ['Trading Date Time','Publication Date Time','Trade ID','Symbol','Price',
+  'Price Currency','Price Notation','Executed Shares','Execution Venue','Market Mechanism',
+  'Modification Indicator','Deferral Or Enrichment Type'];
+ if (required.some(name=>!fields.includes(name))) throw new Error('El CSV carece de campos del formato posnegociación Cboe.');
+ const positions = Object.fromEntries(required.map(field=>[field,fields.indexOf(field)]));
+ const valid = new Map();
+ const cancelled = new Set();
+ for (const line of lines) {
+  if (!line.includes('DE0002635307')) continue;
+  const cells = line.split(',');
+  const value = field=>cells[positions[field]]?.trim();
+  if (cells.length!==fields.length || value('Symbol')!=='DE0002635307' || value('Price Currency')!=='EUR') continue;
+  const time = value('Trading Date Time'), published = value('Publication Date Time');
+  const id = value('Trade ID'), venue=value('Execution Venue');
+  const utc=s=>/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(s||'')&&Number.isFinite(Date.parse(s));
+  if (!utc(time) || !utc(published) || Date.parse(published)<Date.parse(time) ||
+      !/^[0-9A-Z]+$/.test(id||'') || !/^[A-Z0-9]{4}$/.test(venue||'')) continue;
+  const key = venue+'|'+published.slice(0,10)+'|'+id;
+  if (value('Modification Indicator')) {
+   cancelled.add(key);
+   continue;
+  }
+  if (value('Price Notation')!=='MONE' || value('Deferral Or Enrichment Type')) continue;
+  const price = Number(value('Price')), size = Number(value('Executed Shares'));
+  if (!(Number.isFinite(price)&&price>0&&Number.isSafeInteger(size)&&size>0)) continue;
+  const mechanism = value('Market Mechanism');
+  valid.set(key,{time,published,venue,price,size,
+   category:mechanism==='DB'?'Libro oscuro':mechanism==='OB'?'Fuera de libro':'Mecanismo '+(mechanism||'sin dato')});
+ }
+ return [...valid].filter(([key])=>!cancelled.has(key)).map(([, row])=>row).sort((a,b)=>b.time.localeCompare(a.time));
+}
+
+async function v7LoadCboePrints(input) {
+ const file = input.files[0];
+ if (!file) return;
+ const panel = input.closest('details');
+ const status = panel.querySelector('[role=status]');
+ const body = panel.querySelector('tbody');
+ const graph = panel.querySelector('.europe-print-plot');
+ input.disabled = true;
+ try {
+  if (file.size>32*1024*1024) throw new Error('Usa un archivo por minuto u hora de hasta 32 MB.');
+  const rows = v7CboePrints(await file.text());
+  const displayed = rows.slice(0,200);
+  body.innerHTML = displayed.map(p=>'<tr><td>'+esc(p.time)+'</td><td>'+fmtNum(p.price,4)+
+   '</td><td>'+fmtNum(p.size,0)+'</td><td>'+esc(p.venue)+' · '+esc(p.category)+'</td></tr>').join('');
+  const price = macroDatabase.__darkPoolPrints?.europePrice;
+  const candles = price?.ohlc || [];
+  const byDay = new Map(candles.map(c=>[new Date(c.ts*1000).toISOString().slice(0,10),c]));
+  const plotted = displayed.filter(p=>byDay.has(p.time.slice(0,10)));
+  status.textContent = rows.length+' operaciones individuales de EXSA en EUR en este archivo. '+
+   (rows.length>displayed.length?'Mostrando las '+displayed.length+' más recientes. ':'')+
+   plotted.length+' coinciden con una vela diaria de EXSA.DE. Cobertura limitada al archivo.';
+  graph.hidden = !plotted.length;
+  if (!plotted.length) return;
+  const P=await __loadPlotly();
+  const dates = candles.map(c=>new Date(c.ts*1000));
+  P.react(graph,[
+   {type:'candlestick',name:'EXSA.DE · Yahoo Finance',x:dates,open:candles.map(c=>c.open),
+    high:candles.map(c=>c.high),low:candles.map(c=>c.low),close:candles.map(c=>c.close)},
+   {type:'scatter',mode:'markers',name:'Cboe Europe',
+    x:plotted.map(p=>new Date(byDay.get(p.time.slice(0,10)).ts*1000)),
+    y:plotted.map(p=>p.price),marker:{size:8,color:'#38bdf8',line:{color:'#0f172a',width:1}},
+    customdata:plotted.map(p=>[p.time,p.size,p.venue,p.category]),
+    hovertemplate:'%{customdata[0]}<br>%{y:.4f} EUR · %{customdata[1]} participaciones<br>%{customdata[2]} · %{customdata[3]}<extra></extra>'}
+  ],{paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{color:'#cbd5e1'},
+   margin:{l:58,r:24,t:20,b:38},yaxis:{title:'Precio (EUR)'},xaxis:{rangeslider:{visible:false}},dragmode:'pan'},
+  {responsive:true,displaylogo:false,scrollZoom:true});
+ } catch (error) {
+  status.textContent=error.message;
+  body.replaceChildren();
+  graph.hidden = true;
+ } finally {
+  input.disabled = false;
+ }
+}
+
+function v7CboePrintPanel() {
+ return '<details class="metric p-4"><summary class="cursor-pointer font-semibold">Operaciones de EXSA · Cboe Europe</summary>'+
+  '<p class="text-xs text-gray-400 my-3">Importa un CSV posnegociación de Cboe Europe. Se procesa en este navegador. El gráfico agrupa por vela diaria y conserva la hora UTC de cada ejecución.</p>'+
+  '<label class="block text-sm">Archivo CSV de Cboe <input class="block mt-2" type="file" accept=".csv,text/csv" onchange="v7LoadCboePrints(this)"></label>'+
+  '<p class="text-xs my-3" role="status" aria-live="polite"></p>'+
+  '<div hidden class="europe-print-plot" style="height:360px"></div>'+
+  '<div class="overflow-auto max-h-72"><table class="w-full text-xs"><thead><tr><th>Ejecución UTC</th><th>Precio EUR</th><th>Participaciones</th><th>Centro y mecanismo</th></tr></thead><tbody></tbody></table></div>'+
+  '<a class="text-xs underline" href="https://www.cboe.com/markets/eu/equities/transparency-data/" target="_blank" rel="noopener noreferrer">Descargas posnegociación de Cboe Europe</a></details>';
+}
 
 const v7Dark=renderDarkPoolSection;
 renderDarkPoolSection=function(){
  const html=v7Dark(),a=macroDatabase.__darkPoolPrints?.assets?.[window.__darkPoolTicker]||{};
  const frames=a.ohlcTimeframes||{},chosen=window.__darkTimeframe||'1d';
  const timeframe='<div class="metric p-4 flex flex-wrap gap-3 items-center"><label>Velas <select aria-label="Temporalidad dark pools" onchange="window.__darkTimeframe=this.value;renderContent()">'+['1d','4h','1h'].map(k=>'<option value="'+k+'" '+(chosen===k?'selected ':'')+((frames[k]?.candles?.length|| (k==='1d'&&a.ohlc?.length))?'':'disabled')+'>'+({'1d':'Diario','4h':'4 horas · agregado','1h':'1 hora'})[k]+'</option>').join('')+'</select></label><span class="text-xs text-gray-400">'+esc(frames[chosen]?.observedAt||a.ohlcObservedAt||'sin fecha')+' · '+esc(frames[chosen]?.timezone||'UTC')+' · retrasado'+(chosen==='4h'?' · agrupado por sesión; última vela puede ser inferior a 4 h':'')+'</span></div>';
- const controls='<details class="metric p-4"><summary class="cursor-pointer text-sm">Dark pools · fechas y presentación</summary><div class="flex flex-wrap gap-4 mt-4 text-sm"><label>Desde <input type="date" value="'+esc(window.__darkFrom||'')+'" onchange="window.__darkFrom=this.value;renderContent()"></label><label>Hasta <input type="date" value="'+esc(window.__darkTo||'')+'" onchange="window.__darkTo=this.value;renderContent()"></label><label>Línea <input type="range" min="1" max="2" step="0.25" value="'+(window.__darkLineWidth||1)+'" onchange="window.__darkLineWidth=Number(this.value);renderContent()"></label><label>Opacidad <input type="range" min="0.2" max="1" step="0.05" value="'+(window.__darkOpacity??.65)+'" onchange="window.__darkOpacity=Number(this.value);renderContent()"></label><label>Texto <input type="range" min="10" max="15" value="'+(window.__darkLabelSize||11)+'" onchange="window.__darkLabelSize=Number(this.value);renderContent()"></label><label><input type="checkbox" '+(window.__darkHideLabels?'':'checked')+' onchange="window.__darkHideLabels=!this.checked;renderContent()"> Etiquetas</label></div></details><p class="text-xs text-gray-400">Precio: '+esc(a.ohlcObservedAt||'sin fecha OHLC')+' · '+esc(a.ohlcSource||'serie puntual')+' · Prints verificables: '+(a.prints||[]).filter(p=>p.realPrint&&p.price!=null&&p.timestamp).length+'. Los agregados ATS no identifican compras o ventas individuales.</p>';
- return html.replace(/(<section id="sec-darkpool"[^>]*>)/,'$1'+timeframe+controls);
+ const controls='<details class="metric p-4"><summary class="cursor-pointer text-sm">Dark pools · fechas y presentación</summary><div class="flex flex-wrap gap-4 mt-4 text-sm"><label>Desde <input type="date" value="'+esc(window.__darkFrom||'')+'" onchange="window.__darkFrom=this.value;renderContent()"></label><label>Hasta <input type="date" value="'+esc(window.__darkTo||'')+'" onchange="window.__darkTo=this.value;renderContent()"></label><label>Línea <input type="range" min="1" max="2" step="0.25" value="'+(window.__darkLineWidth||1)+'" onchange="window.__darkLineWidth=Number(this.value);renderContent()"></label><label>Opacidad <input type="range" min="0.2" max="1" step="0.05" value="'+(window.__darkOpacity??.65)+'" onchange="window.__darkOpacity=Number(this.value);renderContent()"></label><label>Texto <input type="range" min="10" max="15" value="'+(window.__darkLabelSize||11)+'" onchange="window.__darkLabelSize=Number(this.value);renderContent()"></label><label><input type="checkbox" '+(window.__darkHideLabels?'':'checked')+' onchange="window.__darkHideLabels=!this.checked;renderContent()"> Etiquetas</label></div></details><p class="text-xs text-gray-400">Precio: '+esc(a.ohlcObservedAt||'sin fecha OHLC')+' · '+esc(a.ohlcSource||'serie puntual')+' · Filas reportadas con precio y fecha: '+(a.prints||[]).filter(v7PrintRecord).length+'. Los agregados ATS no identifican compras o ventas individuales.</p>';
+ return html.replace(/(<section id="sec-darkpool"[^>]*>)/,'$1'+timeframe+controls+v7PrintCoverage(a,chosen)+v7CboePrintPanel());
 };
 
 const v7Sentiment=renderCryptoBondSection;

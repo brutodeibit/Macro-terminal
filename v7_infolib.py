@@ -23,10 +23,29 @@ def update(feed):
     normalized=[p for row in rows if (p:=normalize(row))]
     if not normalized:raise ValueError('No valid provider rows')
     section=feed.setdefault('darkPoolPrints',{});assets=section.setdefault('assets',{})
+    fetched = datetime.now(timezone.utc).isoformat()
+    visible = []
     for symbol,asset in assets.items():
         incoming=[p for p in normalized if p['ticker']==symbol]
         existing=asset.get('prints',[])
         keyed={(p.get('source'),p.get('reportedTime') or p.get('timestamp'),p.get('price'),p.get('size')):p for p in existing+incoming}
         asset['prints']=sorted(keyed.values(),key=lambda p:str(p.get('timestamp','')))[-300:]
-    section['infolib']={'fetchedAt':datetime.now(timezone.utc).isoformat(),'rows':len(normalized),'sourceUrl':URL,
+        if incoming:
+            asset['printCount'] = len(asset['prints'])
+            asset['shareCount'] = sum(float(p.get('size') or 0) for p in asset['prints'])
+            asset['notional'] = sum(float(p.get('notional') or 0) for p in asset['prints'])
+            asset['observedAt'] = max(p['timestamp'] for p in incoming)
+            asset['fetchedAt'] = fetched
+            asset['dataStatus'] = 'PROVIDER REPORTED · InfoLib · fecha ' + asset['observedAt']
+            asset['note'] = ('InfoLib: filas reportadas por el proveedor; no verificadas contra un tape consolidado. '
+                             'Sin zona horaria ni venue documentados: solo fecha, sin inferir BUY/SELL o instituciones.')
+        visible.extend(asset['prints'])
+    keyed = {(p.get('source'), p.get('ticker'), p.get('reportedTime') or p.get('timestamp'),
+              p.get('price'), p.get('size')): p for p in visible}
+    section['prints'] = sorted(keyed.values(), key=lambda p: str(p.get('timestamp', '')), reverse=True)[:300]
+    section['visiblePrintCount'] = len(keyed)
+    section['sources'] = list(dict.fromkeys(section.get('sources', []) + ['InfoLib']))
+    section['dataStatus'] = 'PARTIAL · provider-reported rows; other sources may be stale or unavailable'
+    section['infolib']={'fetchedAt':fetched,'rows':len(normalized),'sourceUrl':URL,
+                       'visibleRows':sum(p.get('sourceMode') == 'PROVIDER_REPORTED' for p in keyed.values()),
                        'note':'Provider-reported rows. Timezone not supplied: plotted by date only on daily charts; no BUY/SELL or institution inference.'}

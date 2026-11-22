@@ -8,8 +8,10 @@ on:
       - "design-preview-v2.js"
       - "design-preview-v2.css"
       - "v7-ui.js"
+      - "source-refresh.js"
       - "tests/dashboard-runtime.cjs"
       - "tests/chart-config.cjs"
+      - "tests/print-precision.cjs"
   pull_request:
     branches: [main]
     paths:
@@ -18,8 +20,10 @@ on:
       - "design-preview-v2.js"
       - "design-preview-v2.css"
       - "v7-ui.js"
+      - "source-refresh.js"
       - "tests/dashboard-runtime.cjs"
       - "tests/chart-config.cjs"
+      - "tests/print-precision.cjs"
 permissions:
   contents: read
 jobs:
@@ -32,5 +36,7 @@ jobs:
           python-version: "3.12"
       - run: python validate_dashboard.py
       - run: node --check design-preview-v2.js
+      - run: node --check source-refresh.js
       - run: node tests/dashboard-runtime.cjs
       - run: node tests/chart-config.cjs
+      - run: node tests/print-precision.cjs
