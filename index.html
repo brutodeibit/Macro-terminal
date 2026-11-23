@@ -1261,19 +1261,30 @@ function optionsDisplayCatalog(o){
 }
 function optionsUsableProfiles(m){
  const today=new Date().toISOString().slice(0,10);
- return (m.profiles||[]).filter(q=>/^\d{4}-\d{2}-\d{2}$/.test(q.expiration||'')&&q.expiration>=today&&(!q.expirationAt||Date.parse(q.expirationAt)>Date.now())).sort((a,b)=>a.expiration.localeCompare(b.expiration));
+ return (m.profiles||[]).filter(q=>/^\d{4}-\d{2}-\d{2}$/.test(q.expiration||'')&&(window.__optShowExpired||(q.expiration>=today&&(!q.expirationAt||Date.parse(q.expirationAt)>Date.now())))).sort((a,b)=>a.expiration.localeCompare(b.expiration));
 }
 function optionProfileKey(p){return p.contractCode ? p.contractCode+':'+p.expiration : p.expiration;}
 function optionsSelectedProfile(m){
  const rows=optionsUsableProfiles(m);if(!rows.length)return null;
- return rows.find(q=>optionProfileKey(q)===String(window.__optExpiration||''))||rows[0];
+ return rows.find(q=>optionProfileKey(q)===String(window.__optExpiration||''))||rows.find(q=>Number(q.totalOpenInterest)>0)||rows[0];
 }
 function optionSnapshotNotice(m){
  const raw=String(m.asOf||'');
  const at=Date.parse(raw.replace(' ','T')+(raw.includes('T')||/Z|[+-]\d\d:\d\d$/.test(raw)?'':'Z'));
  const age=Number.isFinite(at)?(Date.now()-at)/86400000:null;
- const stale=age===null||age>2;
- return '<div class="metric rounded-xl p-3 mt-3 border '+(stale?'border-amber-600/50':'border-slate-700')+'"><b class="text-xs '+(stale?'text-amber-300':'text-emerald-300')+'">'+(stale?'DATOS HISTÓRICOS / SNAPSHOT ANTIGUO':'SNAPSHOT DISPONIBLE · RETRASADO')+'</b><div class="text-[11px] text-gray-300 mt-1">Activo '+esc(m.ticker||'—')+' · última captura '+esc(m.asOf||'sin fecha')+'. Los muros y el GEX pertenecen al vencimiento indicado, no son niveles en tiempo real.</div></div>';
+ const stale=m.retainedChain||age===null||age>2;
+ return '<div class="metric rounded-xl p-3 mt-3 border '+(stale?'border-amber-600/50':'border-slate-700')+'"><b class="text-xs '+(stale?'text-amber-300':'text-emerald-300')+'">'+(stale?'DATOS HISTÓRICOS / SNAPSHOT ANTIGUO':'SNAPSHOT DISPONIBLE · RETRASADO')+'</b><div class="text-[11px] text-gray-300 mt-1">Activo '+esc(m.ticker||'—')+' · fecha del snapshot '+esc(m.asOf||'sin fecha')+'. Los muros y el GEX pertenecen al vencimiento indicado, no son niveles en tiempo real. '+esc(m.timestampConvention||'')+'</div></div>';
+}
+function optionAvailabilityNotice(m){
+ const all=(m.profiles||[]).filter(p=>/^\d{4}-\d{2}-\d{2}$/.test(p.expiration||''));
+ const today=new Date().toISOString().slice(0,10);
+ const expired=all.filter(p=>p.expiration<today||(p.expirationAt&&Date.parse(p.expirationAt)<=Date.now())).length;
+ const control=expired?'<label class="block mt-2 text-xs"><input type="checkbox" '+(window.__optShowExpired?'checked ':'')+'onchange="window.__optShowExpired=this.checked;window.__optExpiration=null;renderContent()"> Consultar vencimientos caducados ('+expired+') · solo histórico</label>':'';
+ const warning=window.__optShowExpired?'<p class="text-xs text-amber-300 mt-2">Modo histórico: incluye contratos caducados. Sus niveles no representan posicionamiento vigente.</p>':'';
+ const unavailable=!optionsUsableProfiles(m).length?'<p class="text-sm text-amber-200">'+(expired?'No quedan vencimientos vigentes en la última cadena guardada. Puedes consultar el histórico.':'No se ha recuperado una cadena por vencimiento para este activo. La cotización no sustituye los datos de opciones.')+'</p>':'';
+ const p=optionsSelectedProfile(m);
+ const quality=p?.oiStatus?'<p class="text-xs text-amber-300 mt-2">'+esc(p.oiStatus)+'</p>':'';
+ return '<div id="options-availability" class="metric rounded-xl p-4">'+unavailable+(m.retainedChain?'<p class="text-sm text-amber-200">La fuente no entregó una cadena nueva. Se conserva la anterior con su precio y fecha originales.</p>':'')+(all.length?optionSnapshotNotice(m):'')+quality+control+warning+'</div>';
 }
 function renderOptionsSection(){
  const o=macroDatabase.__options||{updated:'—',markets:[],catalog:[],flow:[]};
@@ -1412,7 +1423,7 @@ renderOptionsSection=function(){
  const errText=(ps.errors||[]).slice(0,3).join(' · ');
  const diag='<div class="py-3 mt-3 border-t border-slate-700"><div class="flex flex-wrap items-center justify-between gap-2"><b class="text-xs text-white">ESTADO DE FUENTES · OPTIONS</b><span class="mini-pill">'+(Number(ps.fullChainMarkets)||0)+' cadenas completas / '+(Number(ps.referenceOnlyMarkets)||0)+' referencias</span></div><p class="text-[10px] text-gray-400 mt-2">Una referencia conserva el activo, pero no tiene cadena suficiente para calcular GEX, Max Pain u OI por strike. No equivale a una cadena vacía de mercado.</p>'+(errText?'<p class="text-[10px] text-amber-300 mt-2">Incidencias proveedor: '+esc(errText)+'</p>':'<p class="text-[10px] text-emerald-300 mt-2">Sin incidencias reportadas por el recolector.</p>')+'</div>';
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
- const out=html.replace(marker,chart+'<div id="options-data-details" class="metric rounded-xl p-5"><h3 class="text-base font-bold">Opciones · fuente, vigencia y metodología</h3>'+optionSnapshotNotice(m)+diag+marker).replace('</section>','</div></section>');
+ const out=html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+optionAvailabilityNotice(m)).replace(marker,chart+'<div id="options-data-details" class="metric rounded-xl p-5"><h3 class="text-base font-bold">Opciones · fuente, vigencia y metodología</h3>'+diag+marker).replace('</section>','</div></section>');
  setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
 };

@@ -243,19 +243,25 @@ def _yahoo_option_chain(sym,expiration=None):
  try:
   if _YAHOO_OPTIONS_SESSION is None or not _YAHOO_OPTIONS_CRUMB:
    session=requests.Session()
-   session.headers.update({"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36","Accept":"application/json,text/plain,*/*","Accept-Language":"en-US,en;q=0.9","Origin":"https://finance.yahoo.com","Referer":"https://finance.yahoo.com/"})
+   session.headers.update({"User-Agent":"Mozilla/5.0"})
    # Yahoo commonly requires a cookie-backed crumb for its options endpoint.
-   session.get("https://finance.yahoo.com/quote/"+requests.utils.quote(sym,safe="")+"/options/",timeout=T)
-   crumb=session.get("https://query1.finance.yahoo.com/v1/test/getcrumb",timeout=T).text.strip()
-   if not crumb or len(crumb)>100 or " " in crumb:
+   # This endpoint establishes Yahoo's anonymous A3 cookie (its body can be 404).
+   # The quote HTML page alone does not reliably establish this session.
+   session.get("https://fc.yahoo.com",timeout=T)
+   crumb_response=session.get("https://query1.finance.yahoo.com/v1/test/getcrumb",timeout=T)
+   crumb_response.raise_for_status()
+   crumb=crumb_response.text.strip()
+   if not crumb or len(crumb)>100 or any(c.isspace() for c in crumb) or '<' in crumb:
     raise ValueError("Yahoo Finance did not return a valid crumb")
    _YAHOO_OPTIONS_SESSION=session;_YAHOO_OPTIONS_CRUMB=crumb
   query=dict(params);query["crumb"]=_YAHOO_OPTIONS_CRUMB
   response=_YAHOO_OPTIONS_SESSION.get(u,params=query,timeout=T)
   if response.status_code in (401,403):
    # Refresh once in case the cookie/crumb pair expired during the workflow.
-   _YAHOO_OPTIONS_SESSION.get("https://finance.yahoo.com/quote/"+requests.utils.quote(sym,safe="")+"/options/",timeout=T)
-   _YAHOO_OPTIONS_CRUMB=_YAHOO_OPTIONS_SESSION.get("https://query1.finance.yahoo.com/v1/test/getcrumb",timeout=T).text.strip()
+   _YAHOO_OPTIONS_SESSION.get("https://fc.yahoo.com",timeout=T)
+   crumb_response=_YAHOO_OPTIONS_SESSION.get("https://query1.finance.yahoo.com/v1/test/getcrumb",timeout=T)
+   crumb_response.raise_for_status()
+   _YAHOO_OPTIONS_CRUMB=crumb_response.text.strip()
    query["crumb"]=_YAHOO_OPTIONS_CRUMB
    response=_YAHOO_OPTIONS_SESSION.get(u,params=query,timeout=T)
   response.raise_for_status()
@@ -264,7 +270,7 @@ def _yahoo_option_chain(sym,expiration=None):
  except Exception as e:
   msg="Yahoo options "+sym+": "+type(e).__name__+" (cookie/crumb)"
   if msg not in _OPTIONS_PROVIDER_ERRORS:_OPTIONS_PROVIDER_ERRORS.append(msg)
-  print("YAHOO OPTIONS AUTH",sym,type(e).__name__,str(e)[:150])
+  print("YAHOO OPTIONS AUTH",sym,type(e).__name__)  # Request URLs may contain the crumb.
   # Preserve the old direct route as a final fallback for environments where Yahoo does not require a crumb.
   try:
    j=get(u,params).json().get("optionChain",{}).get("result",[])
@@ -490,11 +496,12 @@ def _cboe_option_chain(sym):
 
 def opt(sym):
  try:
-  base=_yahoo_option_chain(sym)
+  yahoo_symbol={'SPX':'^SPX','NDX':'^NDX','DJX':'^DJX','RUT':'^RUT','VIX':'^VIX'}.get(sym,sym)
+  base=_yahoo_option_chain(yahoo_symbol)
   if not base:return None
   spot=num(base.get("quote",{}).get("regularMarketPrice") or base.get("quote",{}).get("postMarketPrice"))
   expirations=[int(x) for x in (base.get("expirationDates") or [])]
-  now=datetime.now(timezone.utc);expirations=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc)>now]
+  now=datetime.now(timezone.utc);expirations=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc).date()>=now.date()]
   if not spot or not expirations:return None
   monthly=[x for x in expirations if datetime.fromtimestamp(x,tz=timezone.utc).weekday()==4 and 15<=datetime.fromtimestamp(x,tz=timezone.utc).day<=21]
   # Keep a compact but useful horizon: 0DTE (when available), next, 7-30D and 30-90D.
@@ -512,24 +519,28 @@ def opt(sym):
   selected=[]
   for label,ex in buckets:
    if ex not in selected:selected.append(ex)
-  if monthly:
-   mex=monthly[0]
-   if mex not in selected and len(selected)<4:selected.append(mex)
+  # Weekly buckets must not crowd out the standard monthly expirations, where
+  # Yahoo often has substantially better OI coverage. At most six requests.
+  for mex in monthly[:2]:
+   if mex not in selected:selected.append(mex)
   profiles=[];all_raw=[]
-  for ex in selected[:4]:
-   chain=_yahoo_option_chain(sym,ex)
+  for ex in selected[:6]:
+   chain=_yahoo_option_chain(yahoo_symbol,ex)
    if not chain:continue
+   # Yahoo nests calls/puts under options[], not at the result root.
+   expiry_rows=next((item for item in chain.get('options',[]) if item.get('expirationDate')==ex),None)
+   if expiry_rows is None:continue
    rows=[]
    for typ,key in (("C","calls"),("P","puts")):
-    for x in chain.get(key,[]) or []:
+    for x in expiry_rows.get(key,[]) or []:
      K=num(x.get("strike"));oi_raw=num(x.get("openInterest"));vol_raw=num(x.get("volume"));iv_raw=num(x.get("impliedVolatility"))
      if not K:continue
-     iv_provider_available=iv_raw is not None and iv_raw>0
+     # Yahoo's near-zero solver floor is not an identified volatility estimate.
+     iv_provider_available=iv_raw is not None and iv_raw>0.0001
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
      bid=num(x.get("bid"));ask=num(x.get("ask"));last_price=num(x.get("lastPrice"))
      mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
-     if (iv_raw is None or iv_raw<=0) and mark is not None:iv_raw=_implied_volatility(mark,spot,K,T,0.04,typ)
-     iv=iv_raw if iv_raw is not None and iv_raw>0 else None
+     iv=iv_raw if iv_provider_available else None
      oi=oi_raw if oi_raw is not None else 0;vol=vol_raw if vol_raw is not None else 0
      delta,gamma,vanna,charm=_bs_greeks(spot,K,T,iv if iv is not None and iv<3 else (iv/100 if iv is not None else None),0.04,typ)
      sigma=(iv if iv<3 else iv/100) if iv is not None and iv>0 else None
@@ -551,6 +562,29 @@ def opt(sym):
     p["providerIvCoveragePct"]=round(sum(x.get("ivProviderAvailable",False) for x in rows)/len(rows)*100,1)
     p["providerGreeksCoveragePct"]=0
     p["greeksCoveragePct"]=round(sum(x.get("greeksAvailable",False) for x in rows)/len(rows)*100,1)
+    p['expirationPrecision']='date'
+    # Yahoo exposes a date encoded at midnight, not a verified settlement time.
+    # Same-day OI is useful, but a zero-day model needs that missing convention.
+    roots=sorted({re.sub(r'\d{6}[CP]\d{8}$','',str(x.get('contractSymbol') or sym)) for x in rows})
+    p['contractRoots']=roots
+    if len(roots)==1:p['contractCode']=roots[0]
+    reason=('Yahoo proporciona fecha, no hora de liquidación verificada' if datetime.fromtimestamp(ex,tz=timezone.utc).date()==today else
+            'VIX requiere valoración sobre forward, no el modelo spot' if sym=='VIX' else
+            'La respuesta combina clases de contrato con convenciones distintas' if len(roots)>1 else None)
+    if reason:
+     for k in ('gammaFlip','zeroGamma','gammaNet','gammaPositive','gammaNegative','gammaTotal','expectedMove','expectedMovePct','atmGamma','atmDelta','atmVega','atmCharm','dexProxy','vannaProxy','charm'):
+      p[k]=None
+     p['gammaFlipStatus']='Sin modelo: '+reason
+     p['gammaFlipRoots']=[]
+     for row in p.get('strikeMap',[]):row['gex']=None
+     p['topGexStrikes']=[]
+     p['gammaRegime']='UNAVAILABLE · settlement time not verified'
+    if p['totalOpenInterest']==0:
+     for k in ('gammaNet','gammaPositive','gammaNegative','gammaTotal','callWall','putWall','callWallOi','putWallOi','maxPain','maxPainDistance','maxPainDistancePct'):
+      p[k]=None
+     p['oiStatus']='La fuente informa OI cero en todos los strikes; no permite identificar concentraciones ni exposición.'
+     for row in p.get('strikeMap',[]):row['gex']=None
+     p['topGexStrikes']=[]
     p["dataStatus"]="REAL / DELAYED · Yahoo OI/volumen/IV pública + Black-Scholes para griegas"+(" · cobertura parcial de IV" if p["ivCoveragePct"]<90 else "")
     profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
@@ -558,7 +592,13 @@ def opt(sym):
    ex=int(datetime.fromisoformat(p["expiration"]).replace(tzinfo=timezone.utc).timestamp());rr=[x for x in all_raw if x["expiration"]==ex]
    coi=sum(x["openInterest"] for x in rr if x["type"]=="C");poi=sum(x["openInterest"] for x in rr if x["type"]=="P");cv=sum(x["volume"] for x in rr if x["type"]=="C");pv=sum(x["volume"] for x in rr if x["type"]=="P")
    p["putCallOi"]=poi/coi if coi else None;p["putCallVolume"]=pv/cv if cv else None;p["putCallVol"]=p["putCallVolume"];p["totalVolume"]=cv+pv
-  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,"expiration":datetime.fromtimestamp(selected[0],tz=timezone.utc).date().isoformat(),"monthlyExpiration":datetime.fromtimestamp(monthly[0],tz=timezone.utc).date().isoformat() if monthly else None,"profiles":profiles,"method":"Yahoo Finance public option chain · OI/volume/IV + Black-Scholes Greeks. GEX/Gamma Flip/DEX/Vanna/Charm are modeled proxies, not observed dealer positioning.","source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/"+sym+"/options/","gammaNote":"GEX by strike is an exposure model based on public OI, IV and model gamma; call/put walls are OI concentrations and do not guarantee support/resistance."}
+  captured=datetime.now(timezone.utc).isoformat()
+  return {"name":("USO · ETF proxy WTI" if sym=="USO" else sym),"ticker":sym,"spot":spot,"expiration":profiles[0]['expiration'],"monthlyExpiration":datetime.fromtimestamp(monthly[0],tz=timezone.utc).date().isoformat() if monthly else None,"profiles":profiles,
+          "asOf":captured,"fetchedAt":captured,"observedAt":None,"oiObservedAt":None,
+          "quoteObservedAt":datetime.fromtimestamp(base['quote']['regularMarketTime'],tz=timezone.utc).isoformat() if base.get('quote',{}).get('regularMarketTime') else None,
+          "timestampConvention":"Fecha de captura; Yahoo no identifica aquí la fecha de cálculo del OI. Cotización fechada por separado.",
+          "dataStatus":"DELAYED · Yahoo snapshot; OI observation time not supplied",
+          "method":"Yahoo Finance public option chain · OI/volume/IV + Black-Scholes Greeks. GEX/Gamma Flip/DEX/Vanna/Charm are modeled proxies, not observed dealer positioning. Model uses r=4%, q=0 and date-only expiries; no modeled 0DTE, VIX or mixed-root levels.","source":"Yahoo Finance public option chain","sourceUrl":"https://finance.yahoo.com/quote/"+requests.utils.quote(yahoo_symbol,safe='')+"/options/","gammaNote":"GEX by strike is an exposure model based on public OI, IV and model gamma; call/put walls are OI concentrations and do not guarantee support/resistance."}
  except Exception as e:
   print("OPTIONS_CHAIN",sym,type(e).__name__,str(e)[:180]); return None
 
@@ -1206,21 +1246,16 @@ def update_options(feed):
  old_by={m.get("ticker"):m for m in previous.get("markets",[]) if isinstance(m,dict) and m.get("ticker")}
  chain_targets=("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT")
  detailed={}
- # Preferred chain source: Massive.  Cboe is the no-login delayed fallback for
- # listed US options; Yahoo is deliberately last because its public endpoint
- # frequently rejects unattended requests.
+ # Prefer a configured chain provider; otherwise use Yahoo's anonymous session.
  for sym in chain_targets:
   try:
    x=_massive_option_chain(sym)
    if x:detailed[sym]=x
   except Exception as e:print("MASSIVE TARGET",sym,type(e).__name__,str(e)[:120])
- for sym in ("SPX","SPY","NDX","QQQ","DJX","DIA","RUT","IWM","EWG","FEZ","GLD","IAU","SLV","USO","BNO","VIX","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
-  if sym in detailed:continue
-  try:
-   x=_cboe_option_chain(sym)
-   if x:detailed[sym]=x
-  except Exception as e:print("CBOE FALLBACK",sym,type(e).__name__,str(e)[:140])
- for sym in ("SPY","QQQ","DIA","IWM","EWG","FEZ","GLD","IAU","USO","BNO","AAPL","NVDA","HYG","LQD","TLT","SGOV","IBIT"):
+ # Cboe's public quote dashboard explicitly prohibits automated extraction.
+ # Keep the parser for archived/authorized fixtures, never poll that dashboard.
+ # https://www.cboe.com/data/quotes/spx/options
+ for sym in chain_targets:
   if sym in detailed:continue
   try:
    x=opt(sym)
@@ -1310,9 +1345,8 @@ def update_options(feed):
      if st:ref["stats"]=st
     except Exception as e:print("BARCHART REFERENCE",code,type(e).__name__,str(e)[:100])
    out.append(ref);present.add(code)
- for code,m in old_by.items():
-  if code not in present and m.get("profiles"):
-   m=dict(m);m["dataStatus"]="UNAVAILABLE · último snapshot válido retenido";m["updatedAttempt"]=datetime.now(timezone.utc).isoformat();out.append(m)
+ from v7_option_retention import retain_chains
+ out=retain_chains(out,list(old_by.values()))
 
  flow=feed.get("squawkFlow",{}) if isinstance(feed.get("squawkFlow"),dict) else {}
  flow_data=flow.get("unusualOptions",{}).get("data") if isinstance(flow.get("unusualOptions"),dict) else []
@@ -1320,7 +1354,7 @@ def update_options(feed):
 
  hist=dict(previous.get("history") or {});stamp=datetime.now(timezone.utc).isoformat()
  for m in out:
-  if m.get("referenceOnly"):continue
+  if m.get("referenceOnly") or m.get('retainedChain'):continue
   p=(m.get("profiles") or [{}])[0];arr=hist.get(m.get("ticker"),[])
   snap={"asOf":stamp,"expiration":m.get("expiration") or p.get("expiration"),"spot":m.get("spot"),
         "gammaNet":p.get("gammaNet"),"gammaFlip":p.get("gammaFlip"),"maxPain":p.get("maxPain"),
@@ -1334,7 +1368,11 @@ def update_options(feed):
   "markets":out,"history":hist,"flow":flow_data,
   "optionsStats":feed.get("optionsStats") if isinstance(feed.get("optionsStats"),dict) else {},
   "catalog":OPTION_CATALOG,
-  "source":"Massive full-chain snapshots + Cboe + Barchart + Deribit/CME + Yahoo fallback",
+  "providerStatus":{"fullChainMarkets":sum(bool(m.get('profiles')) and not m.get('referenceOnly') for m in out),
+                    "referenceOnlyMarkets":sum(not m.get('profiles') or bool(m.get('referenceOnly')) for m in out),
+                    "retainedMarkets":sum(bool(m.get('retainedChain')) for m in out),
+                    "errors":list(_OPTIONS_PROVIDER_ERRORS)},
+  "source":"Massive full-chain snapshots + Barchart + Deribit/CME + Yahoo fallback; Cboe public chain automation disabled",
   "sourceStatus":"REAL / DELAYED · multi-source",
   "publication":"Massive supplies chain-level OI/volume/IV/Greeks where available; Cboe supplies market-wide statistics; Barchart complements IV rank/percentile; Deribit is primary crypto chain; Yahoo is fallback only.",
   "note":"No se rellenan métricas inexistentes. Reference-only instruments muestran precio/fecha y explican por qué no hay cadena. Max Pain/GEX/Gamma Flip/DEX son cálculos sobre snapshots públicos y no observación directa del libro de dealers."
