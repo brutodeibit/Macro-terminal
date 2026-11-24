@@ -1283,7 +1283,8 @@ function optionAvailabilityNotice(m){
  const warning=window.__optShowExpired?'<p class="text-xs text-amber-300 mt-2">Modo histórico: incluye contratos caducados. Sus niveles no representan posicionamiento vigente.</p>':'';
  const unavailable=!optionsUsableProfiles(m).length?'<p class="text-sm text-amber-200">'+(expired?'No quedan vencimientos vigentes en la última cadena guardada. Puedes consultar el histórico.':'No se ha recuperado una cadena por vencimiento para este activo. La cotización no sustituye los datos de opciones.')+'</p>':'';
  const p=optionsSelectedProfile(m);
- const quality=p?.oiStatus?'<p class="text-xs text-amber-300 mt-2">'+esc(p.oiStatus)+'</p>':'';
+ const quality=(p?.oiStatus?'<p class="text-xs text-amber-300 mt-2">'+esc(p.oiStatus)+'</p>':'')+
+  (p?.strikeMapTotalStrikes?'<p class="text-xs text-gray-400 mt-2">Gráfico: '+(p.strikeMap||[]).length+' de '+p.strikeMapTotalStrikes+' strikes recibidos · '+fmtNum(p.strikeMapOiCoveragePct,1)+'% del OI devuelto por la fuente. La cadena puede ser parcial: Max Pain y muros describen solo esa muestra.</p>':'');
  return '<div id="options-availability" class="metric rounded-xl p-4">'+unavailable+(m.retainedChain?'<p class="text-sm text-amber-200">La fuente no entregó una cadena nueva. Se conserva la anterior con su precio y fecha originales.</p>':'')+(all.length?optionSnapshotNotice(m):'')+quality+control+warning+'</div>';
 }
 function optionRecoveryArchive(m){
@@ -1362,8 +1363,8 @@ function __drawOptionsCharts(m,p){
  const byStrike=new Map();
  for(const x of source){
   const strike=__optNum(x.strike);if(strike===null)continue;
-  const q=byStrike.get(strike)||{strike,gex:0,callOi:0,putOi:0};
-  q.gex+=__optNum(x.gex)||0;
+  const q=byStrike.get(strike)||{strike,gex:null,callOi:0,putOi:0};
+  const gex=__optNum(x.gex);if(gex!==null)q.gex=(q.gex??0)+gex;
   const typ=String(x.type||'').toUpperCase();
   if(typ==='C'||typ==='CALL')q.callOi+=__optNum(x.callOi??x.callOpenInterest??x.oi)||0;
   else if(typ==='P'||typ==='PUT')q.putOi+=__optNum(x.putOi??x.putOpenInterest??x.oi)||0;

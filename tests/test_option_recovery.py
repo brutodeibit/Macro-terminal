@@ -42,6 +42,24 @@ class OptionRecovery(unittest.TestCase):
         self.assertEqual(result['recoveryArchive'],archived)
         self.assertNotIn('recoveryArchive',new)
 
+    def test_missing_gamma_never_discards_observed_oi(self):
+        expiry=datetime.now(timezone.utc)+timedelta(days=30)
+        rows=[{'strike':100,'type':'C','openInterest':123,'gamma':None},
+              {'strike':100,'type':'P','openInterest':45,'gamma':None}]
+        result=mf._option_summary(rows,100,expiry)
+        self.assertEqual(result['strikeMap'][0]['callOi'],123)
+        self.assertEqual(result['strikeMap'][0]['putOi'],45)
+        self.assertIsNone(result['strikeMap'][0]['gex'])
+        self.assertIsNone(result['gammaNet'])
+        self.assertEqual(result['strikeMapOiCoveragePct'],100)
+
+    def test_chart_keeps_oi_concentrations_outside_nearest_strikes(self):
+        rows=[{'strike':k,'type':'C','openInterest':10000 if k==10 else 1,'gamma':None} for k in range(10,150)]
+        result=mf._option_summary(rows,100,datetime.now(timezone.utc)+timedelta(days=30))
+        self.assertEqual(len(result['strikeMap']),60)
+        self.assertIn(10,[r['strike'] for r in result['strikeMap']])
+        self.assertEqual(result['strikeMapTotalStrikes'],140)
+
     def test_yahoo_initializes_cookie_and_does_not_leak_crumb(self):
         session=Mock()
         session.get.side_effect=[Mock(status_code=404),Mock(text='test-crumb'),

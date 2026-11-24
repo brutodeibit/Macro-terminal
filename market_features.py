@@ -131,7 +131,7 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
    if vp is not None:vanna=(vanna or 0)+oi*vp*100.0
   if x.get("charm") is not None:charm_vals.append(oi*float(x["charm"])*100.0)
   sign=1 if x.get("type")=="C" else -1
-  gex_by.append({"strike":x.get("strike"),"gex":sign*oi*gamma*(spot**2)*0.01*100.0,"oi":oi,"volume":float(x.get("volume",0) or 0),"type":x.get("type")})
+  gex_by.append({"strike":x.get("strike"),"gex":sign*oi*gamma*(spot**2)*0.01*100.0 if x.get("gamma") is not None else None,"oi":oi,"volume":float(x.get("volume",0) or 0),"type":x.get("type")})
  oi_delta=None;largest_oi_change=None
  if oi_prev:
   oi_delta=sum(float(x.get("openInterest",0) or 0)-float(oi_prev.get(x.get("key"),0) or 0) for x in rows)
@@ -157,18 +157,25 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   k=z.get("strike")
   if k is None:continue
   key=str(k); a=strike_map.setdefault(key,{"strike":k,"gex":0.0,"callOi":0.0,"putOi":0.0,"callVolume":0.0,"putVolume":0.0})
-  a["gex"]+=float(z.get("gex") or 0)
+  a["gex"]=a["gex"]+float(z["gex"]) if a["gex"] is not None and z.get("gex") is not None else None
   if z.get("type")=="C":a["callOi"]+=float(z.get("oi") or 0);a["callVolume"]+=float(z.get("volume") or 0)
   else:a["putOi"]+=float(z.get("oi") or 0);a["putVolume"]+=float(z.get("volume") or 0)
  strike_map=sorted(strike_map.values(),key=lambda z:float(z["strike"]))
+ strike_count=len(strike_map)
  if len(strike_map)>60:
-  strike_map=sorted(strike_map,key=lambda z:abs(float(z["strike"])-spot))[:60]
-  strike_map=sorted(strike_map,key=lambda z:float(z["strike"]))
+  nearest=sorted(strike_map,key=lambda z:abs(float(z["strike"])-spot))
+  largest=sorted(strike_map,key=lambda z:z["callOi"]+z["putOi"],reverse=True)[:20]
+  selected={z["strike"]:z for z in largest}
+  for z in nearest:
+   if len(selected)>=60:break
+   selected.setdefault(z["strike"],z)
+  strike_map=sorted(selected.values(),key=lambda z:float(z["strike"]))
  # Never publish a synthetic zero when too few contracts have calculable Greeks.
  if gamma_coverage<0.65:
   for key in ("gammaPositive","gammaNegative","gammaNet","gammaTotal","gammaFlip","zeroGamma","callWall","putWall"):gp[key]=None
   gp["gammaRegime"]="UNAVAILABLE · insufficient gamma coverage";gp["gammaEffect"]="No se publica GEX agregado porque faltan demasiadas griegas verificables."
-  gp["positiveZones"]=[];gp["negativeZones"]=[];gex_by=[];strike_map=[]
+  gp["positiveZones"]=[];gp["negativeZones"]=[];gex_by=[]
+  for z in strike_map:z["gex"]=None
  if delta_coverage<0.65:dex=None
  if iv_coverage<0.5:vanna=None
  return {
@@ -184,8 +191,10 @@ def _option_summary(rows,spot,expiration,oi_prev=None):
   "putWallOi":put_oi_wall.get("strike") if put_oi_wall else None,"putWallOiValue":put_oi_wall.get("openInterest") if put_oi_wall else None,"putWallVolume":put_oi_wall.get("volume") if put_oi_wall else None,
   "dexProxy":dex,"vannaProxy":vanna,"charm":charm,"oiChange":oi_delta,"largestOiChange":largest_oi_change,
   **gp,"gammaFlipDistance":(gp.get("gammaFlip")-spot) if gp.get("gammaFlip") is not None else None,"gammaFlipDistancePct":(gp.get("gammaFlip")-spot)/spot*100 if gp.get("gammaFlip") is not None and spot else None,
-  "topGexStrikes":sorted(gex_by,key=lambda z:abs(z["gex"]),reverse=True)[:16],
+  "topGexStrikes":sorted((z for z in gex_by if z["gex"] is not None),key=lambda z:abs(z["gex"]),reverse=True)[:16],
   "strikeMap":strike_map,
+  "strikeMapTotalStrikes":strike_count,
+  "strikeMapOiCoveragePct":round(sum(z["callOi"]+z["putOi"] for z in strike_map)/total_oi*100,2) if total_oi else None,
   "sourceWindow":"Public delayed chain · OI/volume/IV; Greeks calculated with Black-Scholes"
  }
 
