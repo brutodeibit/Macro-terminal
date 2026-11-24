@@ -10,6 +10,11 @@ on:
       - "v7-ui.js"
       - "tests/dashboard-runtime.cjs"
       - "tests/chart-config.cjs"
+      - "market_features.py"
+      - "v7_option_retention.py"
+      - "tests/test_option_recovery.py"
+      - "tests/options-recovery.cjs"
+      - ".github/workflows/validate-dashboard.yml"
   pull_request:
     branches: [main]
     paths:
@@ -20,6 +25,11 @@ on:
       - "v7-ui.js"
       - "tests/dashboard-runtime.cjs"
       - "tests/chart-config.cjs"
+      - "market_features.py"
+      - "v7_option_retention.py"
+      - "tests/test_option_recovery.py"
+      - "tests/options-recovery.cjs"
+      - ".github/workflows/validate-dashboard.yml"
 permissions:
   contents: read
 jobs:
@@ -31,6 +41,10 @@ jobs:
         with:
           python-version: "3.12"
       - run: python validate_dashboard.py
+      - run: pip install -r requirements.txt
+      - run: python -m py_compile market_features.py v7_option_retention.py
+      - run: python -m unittest discover -s tests -q
       - run: node --check design-preview-v2.js
       - run: node tests/dashboard-runtime.cjs
       - run: node tests/chart-config.cjs
+      - run: node tests/options-recovery.cjs
