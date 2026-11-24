@@ -95,6 +95,24 @@ class OptionRecovery(unittest.TestCase):
         self.assertIsNone(p['gammaNet'])
         self.assertTrue(all(x['gex'] is None for x in p['strikeMap']))
 
+    def test_yahoo_future_expiry_restores_labeled_sample_levels(self):
+        day=(datetime.now(timezone.utc)+timedelta(days=20)).replace(hour=0,minute=0,second=0,microsecond=0)
+        expiry=int(day.timestamp())
+        calls=[{'strike':k,'openInterest':100,'volume':3,'impliedVolatility':.2,
+                'bid':2,'ask':2.1,'contractSymbol':f'SPY{day:%y%m%d}C{int(k*1000):08d}'}
+               for k in (90,95,100,105,110)]
+        puts=[{**x,'contractSymbol':x['contractSymbol'].replace('C','P')} for x in calls]
+        payload={'quote':{'regularMarketPrice':100},'expirationDates':[expiry],
+                 'options':[{'expirationDate':expiry,'calls':calls,'puts':puts}]}
+        with patch.dict('os.environ',{'MACRO_V7':'1'}),patch.object(mf,'_yahoo_option_chain',return_value=payload):
+            result=mf.opt('SPY')
+        p=result['profiles'][0]
+        self.assertEqual(p['maxPain'],100)
+        self.assertIsNotNone(p['gammaNet'])
+        self.assertTrue(any(x['gex'] is not None for x in p['strikeMap']))
+        self.assertIn('MUESTRA YAHOO',p['modelScope'])
+        self.assertEqual(p['gammaFlipCoveragePct'],100)
+
     def test_monthly_not_excluded_by_four_weekly_buckets(self):
         start=datetime.now(timezone.utc).replace(hour=0,minute=0,second=0,microsecond=0)
         dates=[start+timedelta(days=n) for n in (0,1,8,32)]
