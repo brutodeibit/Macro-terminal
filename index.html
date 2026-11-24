@@ -1286,6 +1286,12 @@ function optionAvailabilityNotice(m){
  const quality=p?.oiStatus?'<p class="text-xs text-amber-300 mt-2">'+esc(p.oiStatus)+'</p>':'';
  return '<div id="options-availability" class="metric rounded-xl p-4">'+unavailable+(m.retainedChain?'<p class="text-sm text-amber-200">La fuente no entregó una cadena nueva. Se conserva la anterior con su precio y fecha originales.</p>':'')+(all.length?optionSnapshotNotice(m):'')+quality+control+warning+'</div>';
 }
+function optionRecoveryArchive(m){
+ const old=m.recoveryArchive;if(!old)return '';
+ const cell=v=>v==null?'—':fmtNum(v,2);
+ const rows=(old.profiles||[]).map(p=>'<tr><td class="p-2">'+esc(p.expiration||'sin vencimiento')+'</td><td class="p-2">'+cell(p.totalOpenInterest)+'</td><td class="p-2">'+cell(p.ivAtm)+'</td><td class="p-2">'+cell(p.maxPain)+'</td><td class="p-2">'+cell(m.ticker==='VIX'?null:p.gammaFlip)+'</td><td class="p-2">'+cell(p.callWallOi??p.callWall)+'</td><td class="p-2">'+cell(p.putWallOi??p.putWall)+'</td></tr>').join('');
+ return '<details id="options-recovery-archive" class="metric rounded-xl p-4"><summary class="cursor-pointer text-sm">Consultar datos anteriores a la pérdida · '+esc(old.asOf||'sin fecha')+'</summary><p class="text-xs text-amber-300 mt-3">HISTÓRICO · '+esc(old.source||'')+'. Valores guardados antes del fallo, con la metodología de aquella captura. No son niveles actuales; pueden incluir contratos caducados.</p><div class="overflow-x-auto"><table class="text-xs w-full mt-3"><thead><tr><th>Vencimiento</th><th>OI contratos</th><th>IV %</th><th>Max Pain</th><th>Gamma Flip</th><th>Call Wall</th><th>Put Wall</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>';
+}
 function renderOptionsSection(){
  const o=macroDatabase.__options||{updated:'—',markets:[],catalog:[],flow:[]};
  const markets=o.markets||[], catalog=optionsDisplayCatalog(o), families=[...new Set(catalog.map(x=>x.family).filter(Boolean))];
@@ -1421,9 +1427,9 @@ renderOptionsSection=function(){
  if(!chart)return html;
  const ps=o.providerStatus||{};
  const errText=(ps.errors||[]).slice(0,3).join(' · ');
- const diag='<div class="py-3 mt-3 border-t border-slate-700"><div class="flex flex-wrap items-center justify-between gap-2"><b class="text-xs text-white">ESTADO DE FUENTES · OPTIONS</b><span class="mini-pill">'+(Number(ps.fullChainMarkets)||0)+' cadenas completas / '+(Number(ps.referenceOnlyMarkets)||0)+' referencias</span></div><p class="text-[10px] text-gray-400 mt-2">Una referencia conserva el activo, pero no tiene cadena suficiente para calcular GEX, Max Pain u OI por strike. No equivale a una cadena vacía de mercado.</p>'+(errText?'<p class="text-[10px] text-amber-300 mt-2">Incidencias proveedor: '+esc(errText)+'</p>':'<p class="text-[10px] text-emerald-300 mt-2">Sin incidencias reportadas por el recolector.</p>')+'</div>';
+ const diag='<div class="py-3 mt-3 border-t border-slate-700"><div class="flex flex-wrap items-center justify-between gap-2"><b class="text-xs text-white">ESTADO DE FUENTES · OPTIONS</b><span class="mini-pill">'+(Number(ps.fullChainMarkets)||0)+' activos con perfiles / '+(Number(ps.referenceOnlyMarkets)||0)+' referencias</span></div><p class="text-[10px] text-gray-400 mt-2">Una referencia conserva el activo, pero no tiene cadena suficiente para calcular GEX, Max Pain u OI por strike. No equivale a una cadena vacía de mercado.</p>'+(errText?'<p class="text-[10px] text-amber-300 mt-2">Incidencias proveedor: '+esc(errText)+'</p>':'<p class="text-[10px] text-emerald-300 mt-2">Sin incidencias reportadas por el recolector.</p>')+'</div>';
  const marker='<div class="metric rounded-xl p-4"><b class="text-sm text-white">METODOLOGÍA</b>';
- const out=html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+optionAvailabilityNotice(m)).replace(marker,chart+'<div id="options-data-details" class="metric rounded-xl p-5"><h3 class="text-base font-bold">Opciones · fuente, vigencia y metodología</h3>'+diag+marker).replace('</section>','</div></section>');
+ const out=html.replace('<section id="sec-options" class="space-y-4">','<section id="sec-options" class="space-y-4">'+optionAvailabilityNotice(m)+optionRecoveryArchive(m)).replace(marker,chart+'<div id="options-data-details" class="metric rounded-xl p-5"><h3 class="text-base font-bold">Opciones · fuente, vigencia y metodología</h3>'+diag+marker).replace('</section>','</div></section>');
  setTimeout(()=>__drawOptionsCharts(m,p),80);
  return out;
 };

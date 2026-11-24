@@ -536,7 +536,9 @@ def opt(sym):
      K=num(x.get("strike"));oi_raw=num(x.get("openInterest"));vol_raw=num(x.get("volume"));iv_raw=num(x.get("impliedVolatility"))
      if not K:continue
      # Yahoo's near-zero solver floor is not an identified volatility estimate.
-     iv_provider_available=iv_raw is not None and iv_raw>0.0001
+     bid=num(x.get("bid"));ask=num(x.get("ask"))
+     # Solver-floor IVs with an empty/crossed quote are not usable volatility.
+     iv_provider_available=iv_raw is not None and iv_raw>0.0001 and bid is not None and ask is not None and 0<bid<=ask
      T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
      bid=num(x.get("bid"));ask=num(x.get("ask"));last_price=num(x.get("lastPrice"))
      mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price

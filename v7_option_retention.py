@@ -24,6 +24,9 @@ def retain_chains(current, previous):
                 retained.setdefault('layers', {}).update(deepcopy(market['layers']))
             result.append(retained)
         else:
+            if prior and prior.get('recoveryArchive'):
+                market = deepcopy(market)
+                market['recoveryArchive'] = deepcopy(prior['recoveryArchive'])
             result.append(market)
     for prior in old.values():
         if has_strikes(prior):

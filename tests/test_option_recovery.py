@@ -34,6 +34,14 @@ class OptionRecovery(unittest.TestCase):
         ref={'ticker':'GLD','profiles':[]}
         self.assertEqual(retain_chains([ref], [ref]),[ref])
 
+    def test_refresh_preserves_recovery_archive_without_nesting(self):
+        archived={'asOf':'2026-11-19','profiles':[{'gammaFlip':100}]}
+        old={'ticker':'SPY','recoveryArchive':archived,'profiles':[{'strikeMap':[{'strike':100}]}]}
+        new={'ticker':'SPY','profiles':[{'strikeMap':[{'strike':101}]}]}
+        result=retain_chains([new],[old])[0]
+        self.assertEqual(result['recoveryArchive'],archived)
+        self.assertNotIn('recoveryArchive',new)
+
     def test_yahoo_initializes_cookie_and_does_not_leak_crumb(self):
         session=Mock()
         session.get.side_effect=[Mock(status_code=404),Mock(text='test-crumb'),
