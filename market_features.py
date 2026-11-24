@@ -596,7 +596,17 @@ def opt(sym):
      p['oiStatus']='La fuente informa OI cero en todos los strikes; no permite identificar concentraciones ni exposición.'
      for row in p.get('strikeMap',[]):row['gex']=None
      p['topGexStrikes']=[]
-    p["dataStatus"]="REAL / DELAYED · Yahoo OI/volumen/IV pública + Black-Scholes para griegas"+(" · cobertura parcial de IV" if p["ivCoveragePct"]<90 else "")
+    # Yahoo's public response is a strike sample, with no proof that the whole
+    # expiry was returned. Keep observed rows, never publish aggregate levels.
+    for k in ('maxPain','maxPainDistance','maxPainDistancePct','callWall','putWall',
+              'callWallOi','putWallOi','gammaFlip','zeroGamma','gammaNet',
+              'gammaPositive','gammaNegative','gammaTotal','dexProxy','vannaProxy','charm'):
+     p[k]=None
+    p['topGexStrikes']=[];p['gammaFlipRoots']=[]
+    for row in p.get('strikeMap',[]):row['gex']=None
+    p['oiStatus']='OI por strike de una muestra Yahoo; cobertura total del vencimiento no verificada. Max Pain, muros y GEX no publicables.'
+    p['gammaFlipStatus']='Sin cobertura completa y validada del interés abierto del vencimiento'
+    p["dataStatus"]="PARCIAL / DELAYED · Yahoo strike sample; aggregate levels unavailable"
     profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
   for p in profiles:
