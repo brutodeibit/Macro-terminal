@@ -539,6 +539,14 @@ def opt(sym):
    # Yahoo nests calls/puts under options[], not at the result root.
    expiry_rows=next((item for item in chain.get('options',[]) if item.get('expirationDate')==ex),None)
    if expiry_rows is None:continue
+   expiry_date=datetime.fromtimestamp(ex,tz=timezone.utc).date()
+   roots=sorted({re.sub(r'\d{6}[CP]\d{8}$','',str(x.get('contractSymbol') or sym))
+                 for key in ('calls','puts') for x in (expiry_rows.get(key,[]) or [])})
+   root=roots[0] if len(roots)==1 else None
+   am_settled=root in ('SPX','NDX','RUT','DJX')
+   expiry_at=datetime(expiry_date.year,expiry_date.month,expiry_date.day,
+                      9 if am_settled else 16,30 if am_settled else 0,
+                      tzinfo=ZoneInfo('America/New_York')).astimezone(timezone.utc)
    rows=[]
    for typ,key in (("C","calls"),("P","puts")):
     for x in expiry_rows.get(key,[]) or []:
@@ -548,7 +556,7 @@ def opt(sym):
      bid=num(x.get("bid"));ask=num(x.get("ask"))
      # Solver-floor IVs with an empty/crossed quote are not usable volatility.
      iv_provider_available=iv_raw is not None and iv_raw>0.0001 and bid is not None and ask is not None and 0<bid<=ask
-     T=max((ex-datetime.now(timezone.utc).timestamp())/(365*86400),1/3650)
+     T=max((expiry_at-datetime.now(timezone.utc)).total_seconds()/(365*86400),1/3650)
      bid=num(x.get("bid"));ask=num(x.get("ask"));last_price=num(x.get("lastPrice"))
      mark=(bid+ask)/2 if bid is not None and ask is not None and bid>0 and ask>=bid else last_price
      iv=iv_raw if iv_provider_available else None
@@ -567,21 +575,22 @@ def opt(sym):
       "gamma":gamma,"delta":delta,"vanna":vanna,"charm":charm,"vega":vega,"type":typ,"expiration":ex,"bid":num(x.get("bid")),"ask":num(x.get("ask")),"lastPrice":num(x.get("lastPrice")),"contractSymbol":x.get("contractSymbol")})
    oi_coverage=sum(x.get("oiDataAvailable",False) for x in rows)/len(rows) if rows else 0
    if rows and oi_coverage>=0.8:
-    p=_option_summary(rows,spot,datetime.fromtimestamp(ex,tz=timezone.utc));p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER")
+    p=_option_summary(rows,spot,expiry_at);p["bucket"]=next((b for b,e in buckets if e==ex),"OTHER")
     p["oiCoveragePct"]=round(oi_coverage*100,1)
     p["ivCoveragePct"]=round(sum(x.get("ivDataAvailable",False) for x in rows)/len(rows)*100,1)
     p["providerIvCoveragePct"]=round(sum(x.get("ivProviderAvailable",False) for x in rows)/len(rows)*100,1)
     p["providerGreeksCoveragePct"]=0
     p["greeksCoveragePct"]=round(sum(x.get("greeksAvailable",False) for x in rows)/len(rows)*100,1)
-    p['expirationPrecision']='date'
-    # Yahoo exposes a date encoded at midnight, not a verified settlement time.
-    # Same-day OI is useful, but a zero-day model needs that missing convention.
-    roots=sorted({re.sub(r'\d{6}[CP]\d{8}$','',str(x.get('contractSymbol') or sym)) for x in rows})
+    p['expirationPrecision']='assumed_standard_close'
+    p['expirationAt']=expiry_at.isoformat()
+    # Yahoo supplies the expiration date only. The regular-session close is a
+    # modeling convention, and same-day/AM/mixed-root gamma remains excluded.
     p['contractRoots']=roots
     if len(roots)==1:p['contractCode']=roots[0]
-    reason=('Yahoo proporciona fecha, no hora de liquidación verificada' if datetime.fromtimestamp(ex,tz=timezone.utc).date()==today else
+    reason=('Sin modelo de gamma 0DTE con la hora de Yahoo sin verificar' if expiry_date==today else
             'VIX requiere valoración sobre forward, no el modelo spot' if sym=='VIX' else
-            'La respuesta combina clases de contrato con convenciones distintas' if len(roots)>1 else None)
+            'La respuesta combina clases de contrato con convenciones distintas' if len(roots)>1 else
+            'La clase AM requiere valoración específica del cierre anterior' if am_settled else None)
     if reason:
      for k in ('gammaFlip','zeroGamma','gammaNet','gammaPositive','gammaNegative','gammaTotal','expectedMove','expectedMovePct','atmGamma','atmDelta','atmVega','atmCharm','dexProxy','vannaProxy','charm'):
       p[k]=None
@@ -596,17 +605,21 @@ def opt(sym):
      p['oiStatus']='La fuente informa OI cero en todos los strikes; no permite identificar concentraciones ni exposición.'
      for row in p.get('strikeMap',[]):row['gex']=None
      p['topGexStrikes']=[]
-    # Yahoo's public response is a strike sample, with no proof that the whole
-    # expiry was returned. Keep observed rows, never publish aggregate levels.
-    for k in ('maxPain','maxPainDistance','maxPainDistancePct','callWall','putWall',
-              'callWallOi','putWallOi','gammaFlip','zeroGamma','gammaNet',
-              'gammaPositive','gammaNegative','gammaTotal','dexProxy','vannaProxy','charm'):
-     p[k]=None
-    p['topGexStrikes']=[];p['gammaFlipRoots']=[]
-    for row in p.get('strikeMap',[]):row['gex']=None
-    p['oiStatus']='OI por strike de una muestra Yahoo; cobertura total del vencimiento no verificada. Max Pain, muros y GEX no publicables.'
-    p['gammaFlipStatus']='Sin cobertura completa y validada del interés abierto del vencimiento'
-    p["dataStatus"]="PARCIAL / DELAYED · Yahoo strike sample; aggregate levels unavailable"
+    p['modelScope']='MUESTRA YAHOO · no equivale al mercado completo'
+    if reason or p['totalOpenInterest']==0:
+     for k in ('maxPain','maxPainDistance','maxPainDistancePct','callWall','putWall','callWallOi','putWallOi'):
+      p[k]=None
+    gamma_oi_coverage=p.get('gammaFlipCoveragePct') or 0
+    if reason or gamma_oi_coverage<90:
+     for k in ('gammaFlip','zeroGamma','gammaNet','gammaPositive','gammaNegative','gammaTotal','dexProxy','vannaProxy','charm'):
+      p[k]=None
+     p['topGexStrikes']=[];p['gammaFlipRoots']=[]
+     for row in p.get('strikeMap',[]):row['gex']=None
+     if not reason:p['gammaFlipStatus']='IV utilizable en menos del 90% del OI devuelto por Yahoo'
+    elif p.get('gammaFlip') is not None:
+     p['gammaFlipStatus']='MODELO SOBRE MUESTRA YAHOO · posición de dealers no observada'
+    p['oiStatus']='Max Pain y muros: cálculo sobre el OI devuelto por Yahoo; cobertura del mercado completo no verificada. GEX y Gamma Flip son escenarios modelados de la misma muestra cuando hay IV suficiente.'
+    p["dataStatus"]="PARCIAL / DELAYED · Yahoo sample; derived levels describe only that sample"
     profiles.append(p);all_raw.extend(rows)
   if not profiles:return None
   for p in profiles:
