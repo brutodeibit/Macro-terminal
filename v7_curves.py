@@ -2,7 +2,9 @@
 import csv
 import io
 import re
-from datetime import datetime, timezone
+import zipfile
+from datetime import date, datetime, timezone
+from openpyxl import load_workbook
 import update_feed as api
 
 
@@ -64,6 +66,89 @@ def australia(feed):
                 status='estimated')
     for tenor in feed['economies']['au']['bonds']['tenors']:
         tenor['publishedAt'] = publication
+
+
+def parse_uk_workbook(content):
+    workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    rows = {}
+    for sheet_name, unit, wanted in (('3. spot, short end', 'months:', {3: '3M'}),
+                               ('4. spot curve', 'years:', {1: '1Y', 2: '2Y', 5: '5Y',
+                                                  10: '10Y', 20: '20Y', 30: '30Y'})):
+        sheet = workbook[sheet_name]
+        cells = sheet.iter_rows(values_only=True)
+        header = None
+        for line in cells:
+            if line[0] == unit:
+                header = {index: wanted[round(float(value))]
+                          for index, value in enumerate(line) if index and isinstance(value, (int, float))
+                          and round(float(value)) in wanted and abs(float(value)-round(float(value))) < 0.001}
+                continue
+            if not isinstance(line[0], datetime) or not header:
+                continue
+            day = line[0].date().isoformat()
+            values = {term: float(line[index]) for index, term in header.items()
+                      if index < len(line) and isinstance(line[index], (int, float))}
+            if values:
+                rows.setdefault(day, {}).update(values)
+    workbook.close()
+    return [{'date': day, 'values': values} for day, values in sorted(rows.items())]
+
+
+def united_kingdom(feed):
+    url = 'https://www.bankofengland.co.uk/-/media/boe/files/statistics/yield-curves/latest-yield-curve-data.zip'
+    response = api.requests.get(url, headers={'User-Agent': 'Mozilla/5.0',
+                                               'Referer': 'https://www.bankofengland.co.uk/'}, timeout=30)
+    response.raise_for_status()
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        workbook = archive.read('GLC Nominal daily data current month.xlsx')
+    recent = parse_uk_workbook(workbook)
+    prior = feed['economies']['uk'].get('bonds', {}).get('history', [])
+    store_curve(feed, 'uk', list(prior)+recent, 'Bank of England · nominal gilt spot curve', url,
+                'Official fitted nominal zero-coupon gilt curve; estimated spot yields, not individual bond quotes. Published next business day.',
+                status='estimated')
+
+
+def parse_rbnz_workbook(content):
+    """Read exact B2 benchmark IDs, never swap rates or dated individual issues."""
+    codes = {'INM.DG101.NZZCF': '1Y', 'INM.DG102.NZZCF': '2Y',
+             'INM.DG105.NZZCF': '5Y', 'INM.DG110.NZZCF': '10Y'}
+    workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    sheet = workbook['Data']
+    columns = None
+    rows = []
+    for cells in sheet.iter_rows(values_only=True):
+        if any(str(cell or '').strip().lower() == 'series id' for cell in cells):
+            columns = {index: codes[str(cell).strip()] for index, cell in enumerate(cells)
+                       if str(cell).strip() in codes}
+            continue
+        if not columns:
+            continue
+        day = cells[0]
+        if isinstance(day, (datetime, date)):
+            day = day.date().isoformat() if isinstance(day, datetime) else day.isoformat()
+        elif isinstance(day, str):
+            day = day.strip()[:10]
+        if not isinstance(day, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', day):
+            continue
+        values = {term: api.num(cells[index]) for index, term in columns.items()
+                  if index < len(cells) and api.num(cells[index]) is not None}
+        if values:
+            rows.append({'date': day, 'values': values})
+    workbook.close()
+    if not rows or not {'1Y', '2Y', '5Y', '10Y'}.issubset({term for row in rows for term in row['values']}):
+        raise ValueError('RBNZ B2: missing dated benchmark columns')
+    return rows
+
+
+def new_zealand(feed):
+    url = 'https://www.rbnz.govt.nz/-/media/project/sites/rbnz/files/statistics/series/b/b2/hb2-daily-close.xlsx'
+    response = api.requests.get(url, headers={'User-Agent': 'Mozilla/5.0',
+                                               'Referer': 'https://www.rbnz.govt.nz/statistics/'}, timeout=30)
+    response.raise_for_status()
+    rows = parse_rbnz_workbook(response.content)
+    store_curve(feed, 'nz', rows, 'Reserve Bank of New Zealand · B2', url,
+                'Official NZFMA indicative closing yields of benchmark government bonds, published with one-business-day lag. 90-day bank bills and individual long bonds are not sovereign constant-maturity 3M/20Y/30Y points.',
+                status='observed')
 
 
 def store_curve(feed, eid, rows, source, url, methodology, status='observed'):
