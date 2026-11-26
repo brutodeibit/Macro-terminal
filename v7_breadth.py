@@ -1,4 +1,25 @@
 """Closing-price breadth, with explicit sample requirements (no intraday highs)."""
+import csv
+import io
+from datetime import datetime
+
+
+def nasdaq_market_file(text):
+    """Nasdaq Trader annual daily file: all Nasdaq issues, not NDX constituents."""
+    result = []
+    for row in csv.DictReader(io.StringIO(text.replace('\r\r\n', '\n'))):
+        try:
+            day = datetime.strptime(row['Date'].split()[0], '%m/%d/%Y').date().isoformat()
+            advances, declines, unchanged = (int(float(row[key])) for key in ('Advances', 'Declines', 'Unchanged'))
+        except (KeyError, TypeError, ValueError, AttributeError):
+            continue
+        if min(advances, declines, unchanged) < 0 or advances + declines + unchanged < 1000:
+            continue
+        result.append({'date': day, 'advances': advances, 'declines': declines,
+                       'unchanged': unchanged, 'eligible': advances + declines + unchanged,
+                       'advanceDeclineRatio': round(advances / declines, 3) if declines else None})
+    return sorted(result, key=lambda row: row['date'])
+
 def same_session(rows):
     counts = {}
     for _, bars in rows:

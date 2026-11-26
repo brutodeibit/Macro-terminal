@@ -124,6 +124,18 @@ def finalize(feed):
             economy.setdefault('rates',{}).update(official=latest.get('officialRateLabel') or f"{latest['newRate']:.2f}%",
                 officialObservedAt=latest['date'], officialSourceUrl=latest['sourceUrl'])
         bonds=economy.get('bonds',{})
+        had_undated=False
+        for tenor in bonds.get('tenors', []):
+            if tenor.get('yield') and not tenor.get('observedAt'):
+                tenor['yield']=None
+                tenor['status']='unavailable · no dated source observation'
+                for field in ('change1dBp','change5sBp','change21sBp','changeYtdBp'):
+                    tenor[field]=None
+                had_undated=True
+        if had_undated and not bonds.get('history'):
+            bonds['shape']='Sin curva fechada'
+            bonds['shapeDesc']='El feed no ha recuperado observaciones oficiales fechadas para estos vencimientos.'
+            bonds['spreads']=[]
         if bonds.get('history'):
             vals=bonds['history'][-1]['values']
             spread=(vals['10Y']-vals['2Y'])*100 if '10Y' in vals and '2Y' in vals else None
@@ -309,9 +321,14 @@ def dark_prints(feed):
     mf.update_dark_pool_prints(feed)
     current = feed.setdefault('darkPoolPrints', {})
     for symbol, asset in previous.get('assets', {}).items():
+        target = current.setdefault('assets', {}).setdefault(symbol, {})
+        if len(asset.get('priceSeries', [])) > len(target.get('priceSeries', [])):
+            target['priceSeries'] = copy.deepcopy(asset['priceSeries'])
+        for field in ('ohlcTimeframes', 'ohlc', 'ohlcSource', 'ohlcObservedAt', 'ohlcErrors'):
+            if asset.get(field) is not None and target.get(field) is None:
+                target[field] = copy.deepcopy(asset[field])
         rows = [p for p in asset.get('prints', []) if p.get('sourceMode') == 'PROVIDER_REPORTED']
         if rows:
-            target = current.setdefault('assets', {}).setdefault(symbol, {})
             target['prints'] = [p for p in target.get('prints', []) if p.get('sourceMode') != 'PROVIDER_REPORTED'] + rows
     if previous.get('infolib'):
         current['infolib'] = previous['infolib']
@@ -321,6 +338,8 @@ JOBS = {
  'TREASURY':(treasury, 6), 'CURVES':(curves, 6), 'CANADA_CURVE':(v7_curves.canada, 24), 'ECB_CURVE':(v7_curves.euro_area, 24),
  'CANADA_LONG_CURVE':(v7_curves.canada_long, 24), 'JAPAN_CURVE':(v7_curves.japan, 24),
  'AUSTRALIA_CURVE':(v7_curves.australia, 24),
+ 'UK_CURVE':(v7_curves.united_kingdom, 24),
+ 'NZ_CURVE':(v7_curves.new_zealand, 24),
  'SWISS_CURVE':(v7_curves.switzerland, 24),
  'GERMANY_CURVE':(v7_curves.germany, 24),
  'ETF':(etf_flows, 6), 'MEETINGS':(meetings, 2),
@@ -330,7 +349,8 @@ JOBS = {
  'EUREX':(v7_eurex.update, 2),
  'COT':(mf.update_cot, 24), 'DARK_PRINTS':(dark_prints, 12),
  'INFOLIB_PRINTS':(v7_infolib.update, 12),
- 'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 6), 'RISK':(legacy.update_risk, 1),
+ 'GLOBAL':(mf.update_global_markets, 6), 'BREADTH':(mf.update_market_breadth, 6),
+ 'ROTATION':(mf.update_markets_rotation, 24), 'RISK':(legacy.update_risk, 1),
  'BONDS':(mf.update_bond_market, 6), 'SENTIMENT':(mf.update_traditional_sentiment, 24),
  'FEAR':(mf.update_traditional_fear_greed, 6), 'OHLC':(dark_ohlc,12),
 }

@@ -1766,51 +1766,11 @@ def update_dark_pool_prints(feed):
   "UUP":{"label":"UUP","proxyFor":"DXY / USD Index"},"FXE":{"label":"FXE","proxyFor":"Euro FX"},"GLD":{"label":"GLD","proxyFor":"Gold"},"SLV":{"label":"SLV","proxyFor":"Silver"},
   "USO":{"label":"USO","proxyFor":"WTI"},"BNO":{"label":"BNO","proxyFor":"Brent"},"AAPL":{"label":"AAPL","proxyFor":"Equity"},"NVDA":{"label":"NVDA","proxyFor":"Equity"},"IWM":{"label":"IWM","proxyFor":"Small Caps"}
  }
- try:
-  html=get("https://capitolwhale.com/dark-pool-prints").text
-  soup=BeautifulSoup(html,"html.parser"); text=" ".join(soup.stripped_strings)
-  def money(pattern):
-   m=re.search(pattern,text,re.I);return _parse_money_token(m.group(1)) if m else None
-  def pct(pattern):
-   m=re.search(pattern,text,re.I);return float(m.group(1)) if m else None
-  def integer(pattern):
-   m=re.search(pattern,text,re.I);return int(m.group(1).replace(",","")) if m else None
-
-  print_count=integer(r'\bPrints\s+([\d,]+)'); total_premium=money(r'Total premium\s+\$?([\d.,]+[KMB]?)')
-  bullish=pct(r'Bullish\s+([\d.]+)%'); largest=money(r'Largest\s+\$?([\d.,]+[KMB]?)')
-  mb=re.search(r'Aggressor imbalance\s+Buy\s+([\d.]+)%\s*Sell\s+([\d.]+)%',text,re.I)
-  buy_pct=float(mb.group(1)) if mb else None; sell_pct=float(mb.group(2)) if mb else None
-
-  structured=_capitol_structured_rows(soup); structured_count=0
-  for row in structured:
-   sym=str(row.get("ticker") or row.get("symbol") or "").upper()
-   if sym not in universe:continue
-   p=_norm_dark_print(row,sym,"Capitol Whale · structured free data")
-   if not p.get("timestamp") or not p.get("size"):continue
-   p["sourceMode"]="EXACT_STRUCTURED"; prints.append(p);structured_count+=1
-
-  # Server-rendered rows are split across nested spans on the current free page.
-  # Joining text nodes before matching restores the compact trade rows.
-  seen={(x["ticker"],str(x.get("timestamp")),round(float(x.get("size") or 0),2)) for x in prints}
-  compact_page="".join(soup.stripped_strings)
-  # All rows before the expiration ladder are considered, because the provider
-  # repeats the words "Dark pool prints" in both the heading and its FAQ.
-  ladder=re.search(r"Expiration ladder",compact_page,re.I)
-  row_text=compact_page[:ladder.start()] if ladder else compact_page
-  row_pattern=re.compile(r"\d{1,2}:\d{2}(?::\d{2})?[A-Z][A-Z0-9.\-]{0,7}\d+(?:[.,]\d+)?[KMB]?[A-Z0-9\-]+[+\-]\d+(?:\.\d+)?%",re.I)
-  for match in row_pattern.finditer(row_text):
-   p=_parse_capitol_print_line(match.group(0))
-   if not p or p["ticker"] not in universe:continue
-   key=(p["ticker"],str(p["time"]),round(float(p.get("size") or 0),2))
-   if key in seen:continue
-   p.update({"timestamp":p.pop("time"),"price":None,"priceApprox":None,"notional":None,"side":"UNKNOWN","directionConfidence":None,
-             "sideBasis":"La fila pública no identifica el lado de la ejecución","source":"Capitol Whale · fila pública compacta","realPrint":True,"sourceMode":"COMPACT"})
-   prints.append(p);seen.add(key)
-  prints=prints[-300:]
-  if prints:sources.append("Capitol Whale")
- except Exception as e:
-  print("CAPITOL DARK PRINTS",type(e).__name__,str(e)[:180])
-  print_count=total_premium=bullish=largest=buy_pct=sell_pct=None;structured_count=0
+ # Capitol Whale's free page has no dated, priced equity tape per row and also
+ # mixes options-flow examples. Do not promote its counters or compact rows to
+ # observed off-exchange executions.
+ print_count=total_premium=bullish=largest=buy_pct=sell_pct=None
+ structured_count=0
 
  for t,meta in universe.items():
   try:
@@ -1849,8 +1809,8 @@ def update_dark_pool_prints(feed):
      "printCount":len(arr),"shareCount":sum(float(x.get("size") or 0) for x in arr),
      "notional":sum(float(x.get("notional") or 0) for x in arr),
      "dailyOffExchange":cs,"venueClusters":sorted(venue_map.values(),key=lambda x:x["shares"],reverse=True)[:8],
-     "source":"Capitol Whale free prints + Yahoo intraday overlay + ChartExchange public off-exchange totals",
-     "note":"Los prints son ejecuciones TRF reales. Cuando el proveedor gratuito no expone precio por fila, el punto usa el cierre Yahoo 5m más cercano a la hora del print y queda etiquetado como aproximación."}
+     "source":"Yahoo price overlay + ChartExchange public off-exchange totals; provider-reported rows separately attributed",
+     "note":"El total off-exchange no identifica operaciones individuales ni sentido comprador/vendedor. Las filas de otros proveedores se atribuyen por separado y conservan su fecha."}
   except Exception as e:print("DARK ASSET",t,type(e).__name__,str(e)[:140])
 
  # If a free print provider temporarily returns no rows, keep the last successful
@@ -1862,10 +1822,11 @@ def update_dark_pool_prints(feed):
   cur=assets.get(sym)
   if cur is None and old_asset:
    cur=dict(old_asset);assets[sym]=cur;stale_symbols.append(sym)
+   cur['prints']=[p for p in cur.get('prints',[]) if p.get('sourceMode')=='PROVIDER_REPORTED']
    cur["dataStatus"]="STALE · último snapshot válido retenido"
    continue
   if cur is None:continue
-  old_rows=old_asset.get("prints",[]) if old_asset else []
+  old_rows=[p for p in old_asset.get('prints',[]) if p.get('sourceMode')=='PROVIDER_REPORTED'] if old_asset else []
   if not cur.get("prints") and old_rows:
    cur["prints"]=old_rows[-100:]
    cur["printCount"]=len(cur["prints"])
@@ -1888,7 +1849,7 @@ def update_dark_pool_prints(feed):
   return (str(x.get("ticker") or ""),str(x.get("timestamp") or x.get("time") or ""),round(float(x.get("size") or 0),2))
  merged={}
  for row in previous_prints:
-  if isinstance(row,dict):merged[_dp_key(row)]=row
+  if isinstance(row,dict) and row.get("sourceMode")=="PROVIDER_REPORTED":merged[_dp_key(row)]=row
  for row in prints:
   if isinstance(row,dict):merged[_dp_key(row)]=row
  merged_prints=sorted(merged.values(),key=lambda x:str(x.get("timestamp") or ""),reverse=True)[:300]
@@ -1901,12 +1862,12 @@ def update_dark_pool_prints(feed):
  feed["darkPoolPrints"]={
    "updated":now_stamp,"lastSuccessfulUpdate":now_stamp if has_fresh_data else previous.get("lastSuccessfulUpdate",previous.get("updated","—")),
    "prints":merged_prints,"assets":assets,"sources":list(dict.fromkeys(sources+(previous.get("sources",[]) if retained else []))),
-   "printCount":print_count if print_count is not None else previous.get("printCount"),
-   "totalPremium":total_premium if total_premium is not None else previous.get("totalPremium"),
-   "bullishPct":bullish if bullish is not None else previous.get("bullishPct"),
-   "largestPrintPremium":largest if largest is not None else previous.get("largestPrintPremium"),
-   "buyPct":buy_pct if buy_pct is not None else previous.get("buyPct"),
-   "sellPct":sell_pct if sell_pct is not None else previous.get("sellPct"),
+   "printCount":None,
+   "totalPremium":None,
+   "bullishPct":None,
+   "largestPrintPremium":None,
+   "buyPct":None,
+   "sellPct":None,
    "topTickers":previous.get("topTickers",[]),"structuredPrints":structured_count,
    "dataStatus":status,"staleSymbols":stale_symbols,
    "free":True,"documentedDelay":"Capitol Whale free core view is intraday; SensaMarket free view is ~4h delayed.",
@@ -1920,7 +1881,7 @@ def update_market_breadth(feed):
  from concurrent.futures import ThreadPoolExecutor, as_completed
  from statistics import median
  from zoneinfo import ZoneInfo
- from v7_breadth import price_metrics, same_session
+ from v7_breadth import price_metrics, same_session, nasdaq_market_file
 
  previous=feed.get("marketBreadth",{}) if isinstance(feed.get("marketBreadth"),dict) else {}
  # Migrate both older scalar snapshots and the newer paired shape.
@@ -1969,6 +1930,21 @@ def update_market_breadth(feed):
  except Exception as e:
   print("MARKET BREADTH SP500",type(e).__name__,str(e)[:160])
   if sp:sp={**sp,"dataStatus":"STALE / UNAVAILABLE · last verified S&P 500 snapshot retained"}
+
+ # The exchange-wide series is a separate universe from the Nasdaq-100 sample.
+ nasdaq_all=previous.get('nasdaqMarket') if isinstance(previous.get('nasdaqMarket'),dict) else {}
+ market_url=f'https://nasdaqtrader.com/dynamic/dailyfiles/daily{now.year}.csv'
+ try:
+  all_rows=nasdaq_market_file(get(market_url).text)
+  if not all_rows:raise ValueError('Nasdaq Trader annual market file has no valid A/D observations')
+  latest=all_rows[-1];lag=(now.date()-datetime.fromisoformat(latest['date']).date()).days
+  nasdaq_all={**latest,'universe':'All Nasdaq issues', 'source':'Nasdaq Trader · Daily Market Files',
+   'sourceUrl':market_url,'history':all_rows[-25:],
+   'dataStatus':('EOD · official' if lag<=2 else f'DELAYED · {lag} calendar days behind'),
+   'method':'Official daily advances/declines/unchanged for all Nasdaq issues. Includes more than Nasdaq-100 constituents; not an index constituent count. No per-issue 52-week high/low or SMA data in this file.'}
+ except Exception as e:
+  print('NASDAQ MARKET FILE',type(e).__name__,str(e)[:160])
+  if nasdaq_all:nasdaq_all={**nasdaq_all,'dataStatus':'STALE · last Nasdaq Trader file retained'}
 
  # Calculate a real daily Nasdaq-100 breadth snapshot at most once per completed US session.
  # The source constituent list is refreshed weekly; quotes and moving averages use Yahoo daily history.
@@ -2105,7 +2081,7 @@ def update_market_breadth(feed):
    ndx={**ndx,"dataStatus":"STALE · no fresh complete Nasdaq-100 breadth snapshot"}
 
  # Retain a single top-level S&P 500 snapshot for backward compatibility with the current UI.
- combined={**sp,"sp500":sp,"nasdaq100":ndx,"sp500History":sp_hist,"nasdaq100History":ndx_hist,
+ combined={**sp,"sp500":sp,"nasdaq100":ndx,"nasdaqMarket":nasdaq_all,"sp500History":sp_hist,"nasdaq100History":ndx_hist,
            "nasdaq100AttemptDate":ndx_attempt,"updated":stamp,"source":"S&P 500 public breadth snapshot + Nasdaq-100 breadth calculated from Yahoo daily closes",
            "sourceUrl":sp_url,
            "method":"La amplitud es distinta del CNN Fear & Greed. S&P 500: snapshot público calculado por terceros; Nasdaq-100: cálculos propios a partir de precios ajustados de cierre y lista de componentes."}
@@ -2349,14 +2325,17 @@ def update_bond_curves(feed):
 def update_markets_rotation(feed):
  sector_cfg=[("Tecnología","XLK"),("Energía","XLE"),("Financieras","XLF"),("Industriales","XLI"),("Salud","XLV"),("Consumo discrecional","XLY"),("Consumo básico","XLP"),("Utilities","XLU"),("Materiales","XLB"),("Comunicación","XLC"),("REITs","XLRE")]
  style_cfg=[("Growth vs Value","VUG","VTV"),("Cíclicos vs Defensivos","XLY","XLP"),("Small vs Large","IWM","SPY"),("High Beta vs Low Vol","SPHB","SPLV"),("Nasdaq vs S&P","QQQ","SPY")]
+ series_cache={}
  def series(sym):
+  if sym in series_cache:return series_cache[sym]
   r=chart(sym)
   if not r:return None
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:return None
   y=yahoo_ytd(sym) or {}
-  return {"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"d3":(q[-1]/q[-4]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),
+  series_cache[sym]={"last":q[-1],"d1":(q[-1]/q[-2]-1)*100,"d3":(q[-1]/q[-4]-1)*100,"w1":(q[-1]/q[-6]-1)*100,"m1":(q[-1]/q[-22]-1)*100,"ytd":y.get("changeYtd"),
           "p1":q[-1]-q[-2],"p3":q[-1]-q[-4],"pw":q[-1]-q[-6],"pm":q[-1]-q[-22]}
+  return series_cache[sym]
  def rel(a,b,key):
   x=series(a);y=series(b)
   if not x or not y:return None
@@ -2383,14 +2362,20 @@ def update_markets_rotation(feed):
  sentiment={"bullishPct":round(up*100/len(sectors),1) if sectors else None,"neutralPct":round(neutral*100/len(sectors),1) if sectors else None,"bearishPct":round(down*100/len(sectors),1) if sectors else None}
  breadth_proxy={}
  try:
-  rsp=series("RSP");spy=series("SPY");qqew=series("QQEW");qqq=series("QQQ")
+  rsp=series("RSP");spy=series("SPY");iwm=series("IWM");qqew=series("QQEW");qqq=series("QQQ")
   if rsp and spy:
    breadth_proxy["sp500EqualWeightVsCap"]={"threeSessionRelativePct":round(rsp["d3"]-spy["d3"],3),"fiveSessionRelativePct":round(rsp["w1"]-spy["w1"],3),"twentyOneSessionRelativePct":round(rsp["m1"]-spy["m1"],3),"equalWeightTicker":"RSP","capWeightTicker":"SPY"}
   if qqew and qqq:
    breadth_proxy["nasdaqEqualWeightVsCap"]={"threeSessionRelativePct":round(qqew["d3"]-qqq["d3"],3),"fiveSessionRelativePct":round(qqew["w1"]-qqq["w1"],3),"twentyOneSessionRelativePct":round(qqew["m1"]-qqq["m1"],3),"equalWeightTicker":"QQEW","capWeightTicker":"QQQ"}
+  for name,left,right in (("rspVsRussell",rsp,iwm),("spyVsRussell",spy,iwm)):
+   if left and right:
+    breadth_proxy[name]={"fiveSessionRelativePct":round(left['w1']-right['w1'],3),
+                         "twentyOneSessionRelativePct":round(left['m1']-right['m1'],3),
+                         "method":"Difference of ETF percentage returns; Russell 2000 proxy is IWM, not the index itself.",
+                         "source":"Yahoo Finance daily ETF closes"}
  except Exception as e:print("BREADTH PROXY",type(e).__name__,str(e)[:120])
  feed["rotation"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"sectors":sectors,"styles":styles,"sentimentTraditional":sentiment,"breadthProxy":breadth_proxy,
-  "method":"ETF sectorial: retornos 1D/3/5/21 sesiones/YTD + fuerza relativa vs SPY. RSP/SPY y QQEW/QQQ son proxies de concentración, no recuentos de acciones."}
+  "method":"ETF sectorial: retornos 1D/3/5/21 sesiones/YTD + fuerza relativa vs SPY. RSP/SPY, QQEW/QQQ y comparaciones con IWM son diferencias de rentabilidad de ETF, no recuentos de acciones ni señales causales."}
 
 def update_global_markets(feed):
  regions={
@@ -2499,7 +2484,9 @@ def update_bond_market(feed):
   q=[float(x) for x in r.get("indicators",{}).get("quote",[{}])[0].get("close",[]) if x is not None]
   if len(q)<22:continue
   ytd=yahoo_ytd(sym) or {}
-  out.append({"name":name,"symbol":sym,"last":q[-1],"change1d":(q[-1]/q[-2]-1)*100,
+  dates=[datetime.fromtimestamp(float(ts),tz=timezone.utc).date().isoformat() for ts,value in zip(r.get('timestamp') or [],r.get('indicators',{}).get('quote',[{}])[0].get('close',[])) if value is not None]
+  out.append({"name":name,"symbol":sym,"last":q[-1],"observedAt":dates[-1] if dates else None,
+   "source":"Yahoo Finance daily ETF closes","sourceUrl":"https://finance.yahoo.com/quote/"+sym+"/", "change1d":(q[-1]/q[-2]-1)*100,
    "change3s":(q[-1]/q[-4]-1)*100,"change5s":(q[-1]/q[-6]-1)*100,"change21s":(q[-1]/q[-22]-1)*100,"changeYtd":ytd.get("changeYtd"),
    "change1w":(q[-1]/q[-6]-1)*100,"change1m":(q[-1]/q[-22]-1)*100})
  feed["bondMarket"]={"updated":datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"),"markets":out,
